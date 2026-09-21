@@ -49,7 +49,7 @@ Resolve all of it before touching the working tree, so the run never pauses mid-
 
 | Slot | Used by | Absent means |
 | --- | --- | --- |
-| `verify` | Stage 1 | Compose one from the tools the project configures. |
+| `verify` | Stages 1 and 3 | Compose one from the tools the project configures. |
 | `base` | Stages 1-3 | The remote's default branch. |
 | `branch` | Preflight | The project's observed naming convention, else `<type>/<slug>`. |
 | `worktrees` | Preflight | Branch in place, no worktree. |
@@ -58,7 +58,7 @@ Resolve all of it before touching the working tree, so the run never pauses mid-
 | `pr-hook` | Stage 3 | No injected routine; stage 3 runs its own steps. |
 | `light-paths` | Lanes | No light lane; every run gets the subagent review. |
 | `security-paths` | Lanes | No security review beside the Code Reviewer. |
-| `drive` | Stage 3 | No drive; the subagent's confirmation round runs instead. |
+| `drive` | Stage 3 | No drive; the confirmation pass runs as written in stage 3, step 5. |
 
 There is no review slot to resolve, because the pre-merge review is always a Code Reviewer subagent, and is never a command nor a review skill that wraps one.
 A review skill offering to handle it - including one whose own description says it triggers whenever a review is needed - is describing the general case, and this run is not it: this run's reviewer is settled here, and a skill that shells out to a vendor CLI is the thing this rule exists to keep out.
@@ -72,8 +72,8 @@ Without that, a project whose docs name one command and that command is a review
 
 Resolve `pr-hook` here rather than at the moment a pull request is created: a routine that takes over review and merge decides how stage 3 behaves, and discovering it mid-run means stage 3 changes shape after the work is already pushed.
 Look for a hook the agent runs on pull-request creation in the project's and the user's agent configuration, and record what it injects.
-A hook substitutes for stage 3's review and merge steps only, and it has to hand back what those steps produce: the merged pull request and the SHA of the merge commit.
-It never relaxes their conditions - the merge still waits on a settled review with no actionable findings and on fully green checks - and it never absorbs the steps after the merge.
+A hook substitutes for stage 3's bot polling and its merge step only, never for the subagent round, and it has to hand back what those steps produce: the merged pull request and the SHA of the merge commit.
+It never relaxes their conditions - the merge still waits on stage 3's termination condition, a settled pass that pushed nothing with every actionable finding dispositioned or resolved, and on fully green checks - and it never absorbs the steps after the merge.
 Nor does it loosen stage 3's blocking bar, its single batched fix push, or its caps: where an injected routine and this skill disagree on any of those, the stricter one holds, because a routine written to fix every nit buys a fresh review round with every push.
 The release watch, the cleanup, and the final report always run as written here, whatever the hook claims to do, because a hook that says it handled the release gives you no way to tell a finished release from a failed one.
 Those steps key off the merge SHA, so a hook that merges without reporting one leaves the release watch with no run to follow; treat a missing SHA as a stop, and recover it from the pull request's merge commit before continuing.
@@ -83,19 +83,20 @@ A `base` carried in from `.ship/config.md` is a deliberate answer that may well 
 
 ### Lanes
 
-Three optional slots decide how much review a run buys, and they are read from `.ship/config.md` alone: no other tier answers them, this run never asks about them, and an absent one takes its default from the table.
+Three optional slots decide how much review a run buys, and they are read from `.ship/config.md` as it stands on `origin/<base>`, and from nowhere else: no other tier answers them, this run never asks about them, and an absent one takes its default from the table.
+Read them from the base rather than from the working tree, because a change could otherwise widen its own lane before anyone reviewed it; for the same reason a change that touches `.ship/config.md` at all is never light.
 `light-paths` and `security-paths` each hold a comma-separated list of globs, matched against repository-relative paths, with `**` crossing directories.
 Project paths belong in that file and never in this skill.
 
 Resolve the lane here, from every file this run will ship: whatever differs from `origin/<base>`, committed or not, plus the untracked files that belong to the change.
 
-- Light: EVERY changed file matches `light-paths`. Stage 3 skips the subagent review and expects the bot's first pass to be the only one.
+- Light: EVERY changed file matches `light-paths`. Stage 3 skips the subagent review, and the bot is the only reviewer.
 - Security: ANY changed file matches `security-paths`. Stage 3's subagent round also runs a security review of the diff.
 - Standard: neither, which is every run in a repository with no lane slots.
 
 Security outranks light: a glob broad enough to call a security-sensitive file light is a mistake in the config, and the cheap lane is the wrong way to find that out.
 The light lane needs a configured review bot, because it trades the subagent for the bot, and a run with neither has had no review at all; without one, run the standard lane.
-A lane describes the change rather than the run, so re-check it before every push: a light run whose fixes reach a file outside `light-paths` becomes a standard run and owes the subagent review it skipped.
+A lane describes the change rather than the run, so re-check it before every push: a light run whose fixes reach a file outside `light-paths` becomes a standard run and owes the subagent review it skipped, which runs as a full-diff round against the new head in place of step 5's fix-only one, and counts as the first of the two subagent rounds.
 No lane skips verify, the bot, or the merge conditions.
 
 `drive` names a command that exercises the running product and leaves evidence behind, for example `bin/drive.sh run`; stage 3 says when it runs.
@@ -215,7 +216,7 @@ Then commit any `.ship/config.md` stage 0 wrote, on its own, before stage 1 star
 
 ## Stage 1 - Verify, fix until clean
 
-Verify is the only gate that runs before the push.
+Verify is the only gate that runs before the first push.
 Review waits for the pull request, where both reviewers read the same pushed head at the same time; stage 3 says why.
 
 Each round:
@@ -271,14 +272,16 @@ Review gates the merge, not the pull request.
 Every fix is new material a reviewer has not seen, so every push buys a fresh round: a bot review out of a rate-limited allowance, a CI run, and the wait for both.
 Nearly all of a reviewer's value arrives in its first pass, and re-running reviewers on fix code is the part that does not pay.
 So this stage spends both first passes on the same pushed head at the same time, then pays for one batch of fixes and one confirmation.
-The normal run is exactly two pushes: the one stage 2 made, and the batched fixes.
+The normal run is two pushes, the one stage 2 made and the batched fixes, and a run with nothing blocking is one.
 
 When stage 0 resolved a `pr-hook` that injects its own review and merge routine, that routine is the authority for the bot half of this stage - polling, settling, collecting the bot's findings, and the merge in step 7 - and it is followed to completion.
 The subagent round, the blocking bar, the single batch, and the caps below still hold under it, by the stricter-one-holds rule from stage 0.
 
 1. Launch both reviewers against the pushed head, concurrently.
+   Capture that head's SHA once, before launching either, and hold both reviewers to it: the subagent is told the SHA and reviews that diff, and the bot's review counts only when it settled on that SHA.
    Review dispatches a Code Reviewer subagent, in the background, on the diff of the pushed head against `base`, told what changed and why.
    The light lane skips it; the security lane dispatches a second subagent beside it, on the same diff, briefed to review it for security alone.
+   That second subagent shares the Code Reviewer's round rather than spending one of its own.
    Both are subagents, never a review CLI nor a review skill that wraps one.
    Tell each what stage it is: findings feed one batched fix rather than a loop, and severity is what sorts them in step 3, so require exactly one severity per finding, drawn from critical, major, minor, nit, or informational.
    A subagent that returns nothing usable fails its round rather than passing silently: record that the review produced no result, and count the round against the cap in step 6.
@@ -287,10 +290,12 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    When a review bot such as CodeRabbit is configured, poll until its review of the CURRENT head SHA fully settles, re-reading the SHA every pass.
    This bot is the final bar and is never skipped: the subagent is a different reviewer with a different brief, and a clean subagent round says nothing about what the bot will find.
    A "success" that is actually rate-limited or skipped does not count: wait and re-queue.
-   Give the wait a deadline of roughly thirty minutes; past it, stop and report that the review never settled rather than polling on.
+   Give the wait a deadline of roughly thirty minutes, on every pass; past it, stop and report that the review never settled rather than polling on.
    Collect findings from every surface - inline comments, the summary comment, and full review bodies - because nitpicks hide in collapsed sections.
    Wait for BOTH reviewers before touching the tree: a fix pushed while either is still reading stales that reviewer's diff, and splits one batch into two pushes.
 2. Triage every finding with rigor, then dedupe by root cause.
+   Re-read the pull request's head first: when it no longer equals the SHA both reviewers read, a push landed underneath them, so discard both results and restart the pass on the new head, counted against the caps in step 6.
+   Otherwise the subagent's verdict describes one commit and the bot's another, and the merge ships one the subagent never read.
    Reviewers are sometimes wrong, so check each claim against the code before acting on it.
    Neither reviewer's labels are this skill's severities: assign every finding exactly one of critical, major, minor, nit, or informational from what it describes, not from what the bot or the subagent called it.
    A finding with no severity, or with one outside that set, is severity-assigned here the same way, and treated as major when triage cannot place it.
@@ -308,12 +313,13 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    Re-run `verify` under stage 1's rules until it is clean, re-check the lane, then commit and push once, behind the same branch guard stage 2 uses.
    Update this run's section of the pull request body with the review outcome and every disposition recorded so far.
    When nothing was blocking, nothing is pushed, and this pass is the one step 6 can terminate on.
-5. Confirm the batch, once.
+5. Confirm the batch, once, and only when step 4 pushed.
    The push buys one confirmation pass on the new head: the bot re-reviews it on its own, and concurrently a Code Reviewer subagent reads the fix commits alone, at the same bar, looking for what the fixes broke rather than re-reading the whole change.
    The light lane confirms with the bot alone.
+   In the security lane the security subagent reads the fix commits in the same pass, and a drive does not stand in for it: a blocking fix can land inside `security-paths` as easily as the change did.
    When stage 0 resolved a `drive` and the diff changes behavior, run the drive once here in place of that subagent round, and put the path of the evidence it leaves in the pull request body.
    A diff changes behavior when it alters what the running product does; documentation, comments, tests, and tooling configuration do not.
-   The drive replaces further subagent rounds and nothing else: it never replaces verify, and it never replaces the bot.
+   The drive replaces the Code Reviewer's further rounds and nothing else: it never replaces verify, the bot, or the security lane's subagent.
    Give it a timeout like any other gate, and treat a failed drive as a blocking finding under step 3.
    Findings from this pass go through steps 2 and 3 again, at the same bar.
 6. Terminate only on a settled pass that pushed NOTHING and whose actionable findings are, after triage, all dispositioned or already resolved.
