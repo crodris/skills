@@ -96,7 +96,8 @@ Resolve the lane here, from every file this run will ship: whatever differs from
 
 Security outranks light: a glob broad enough to call a security-sensitive file light is a mistake in the config, and the cheap lane is the wrong way to find that out.
 The light lane needs a configured review bot, because it trades the subagent for the bot, and a run with neither has had no review at all; without one, run the standard lane.
-A lane describes the change rather than the run, so re-check it before every push: a light run whose fixes reach a file outside `light-paths` becomes a standard run and owes the subagent review it skipped, which runs as a full-diff round against the new head in place of step 5's fix-only one, and counts as the first of the two subagent rounds.
+A lane describes the change rather than the run, so re-check it before every push: a light run that stops being light, because its fixes reach a file outside `light-paths` or into `security-paths`, owes the subagent review it skipped, which runs as a full-diff Code Reviewer round against the new head in place of step 5's fix-only one, and counts as the first of the two subagent rounds.
+A run that became a security run this way gets the security subagent on the full diff in that same round.
 No lane skips verify, the bot, or the merge conditions.
 
 `drive` names a command that exercises the running product and leaves evidence behind, for example `bin/drive.sh run`; stage 3 says when it runs.
@@ -281,13 +282,13 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    Capture that head's SHA once, before launching either, and hold both reviewers to it: the subagent is told the SHA and reviews that diff, and the bot's review counts only when it settled on that SHA.
    Review dispatches a Code Reviewer subagent, in the background, on the diff of the pushed head against `base`, told what changed and why.
    The light lane skips it; the security lane dispatches a second subagent beside it, on the same diff, briefed to review it for security alone.
-   That second subagent shares the Code Reviewer's round rather than spending one of its own.
+   That second subagent never spends a round of its own: it shares the Code Reviewer's round here, and at step 5 it shares the confirmation pass whether or not a drive replaced the Code Reviewer there.
    Both are subagents, never a review CLI nor a review skill that wraps one.
    Tell each what stage it is: findings feed one batched fix rather than a loop, and severity is what sorts them in step 3, so require exactly one severity per finding, drawn from critical, major, minor, nit, or informational.
    A subagent that returns nothing usable fails its round rather than passing silently: record that the review produced no result, and count the round against the cap in step 6.
    Give it a timeout, generous against the size of the diff, and treat one that blows through it the same way.
    A run whose subagent never produced a usable review inside the cap has not been reviewed by it, and that is a stop-and-report rather than a merge on the bot alone.
-   When a review bot such as CodeRabbit is configured, poll until its review of the CURRENT head SHA fully settles, re-reading the SHA every pass.
+   When a review bot such as CodeRabbit is configured, poll until its review of the captured SHA fully settles, re-reading the pull request's head on every poll; a head that moved is step 2's restart, never a new SHA to chase.
    This bot is the final bar and is never skipped: the subagent is a different reviewer with a different brief, and a clean subagent round says nothing about what the bot will find.
    A "success" that is actually rate-limited or skipped does not count: wait and re-queue.
    Give the wait a deadline of roughly thirty minutes, on every pass; past it, stop and report that the review never settled rather than polling on.
@@ -329,6 +330,7 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    So a blocking finding from the confirmation pass can still be fixed and pushed once, for the bot's third pass to review, and a blocking finding on that third pass cannot.
    Without a bot, the subagent's second round is the last permitted pass.
    Reaching a cap with a confirmed critical or major finding still open is a stop-and-report: say what is open, and leave the pull request unmerged.
+   So is reaching a cap on a pass that step 2 discarded rather than one that settled: nothing is open there only because nothing was read, and that is never a clean pass to merge on.
 7. Merge when the loop is clean AND `gh pr checks` is fully green.
    Re-read the pull request's state immediately before merging and confirm all three of: it is still open, it still targets `base`, and its head is still the SHA the review settled on.
    Then merge that SHA explicitly: `gh pr merge <n> --squash --match-head-commit <reviewed-sha>`, adding `--delete-branch` only when this run did NOT use a worktree.
