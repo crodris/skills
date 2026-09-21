@@ -84,9 +84,9 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v1.1.0)
+### ship (v1.2.0)
 
-Ship takes the current branch from working tree to merged release in one pass: review and verification run in parallel with a batched fix loop until both are clean, then commit, push, pull request, automated-review loop, squash-merge, release watch, and post-merge cleanup.
+Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by a subagent and the pull-request bot, one batched fix push, one confirmation pass, squash-merge, release watch, and post-merge cleanup.
 Everything from the pull request onward needs an installed and authenticated GitHub CLI; without one, ship stops after pushing the branch and printing the compare URL, and the review, merge, and release are yours to drive.
 
 #### Prerequisites
@@ -116,10 +116,11 @@ ship it
 - **Project-resolved pipeline** - the verify command comes from `.ship/config.md`, then the project's docs, then a declared aggregate task, then the pull-request CI job, then a composed fallback; the first tier that answers wins
 - **Asks once, remembers** - when detection is ambiguous ship asks a single question before touching the tree, then records the answer in `.ship/config.md` and commits it on its own, so the decision reaches the next branch, clone, and teammate; the commit keeps it separable from the change it rode in with, and it is still reviewed and merged as part of the pull request
 - **No config for free answers** - a pipeline detection resolved on its own gets no file, because a file that restates what is already discoverable only goes stale; `.ship/config.md` exists to preserve a human decision
-- **Parallel gates** - review and verification diagnose the same HEAD concurrently, with fixes batched between rounds so neither gate ever reads a stale tree
-- **Exit only on an untouched round** - the last round has to pass both gates with no fixes applied, so a green result always describes the code that actually merges
-- **A blocking bar, not a nit hunt** - stage 1 fixes verify failures and confirmed critical or major findings, records the disposition of everything else into the pull request body, and terminates; fixing every nit hands the next round fresh code to find fault with, which is how a review loop never converges
-- **Two reviewers, not one twice** - the pre-push review is a Code Reviewer subagent reading this run's intent, and the pull-request bot is the final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway
+- **Review gates the merge, not the pull request** - the subagent and the pull-request bot read the same pushed head at the same time, their findings are deduped by root cause, and every blocking fix lands in one batched push followed by one confirmation pass; the normal run is two pushes, and one when nothing was blocking
+- **Exit only on an untouched pass** - the review loop ends only on a settled pass that pushed nothing, capped at two subagent rounds and three bot passes with no push on the last one, so a green result always describes the code that actually merges
+- **A blocking bar, not a nit hunt** - ship fixes verify failures and confirmed critical or major findings, replies with a disposition for everything else, and never pushes for a minor; fixing every nit hands the next pass fresh code to find fault with, which is how a review loop never converges
+- **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagent for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive` command runs once after the batched fix push on a behavior-changing diff, replacing the subagent's confirmation round with evidence from the running product
+- **Two reviewers, not one twice** - the pre-merge review is a Code Reviewer subagent reading this run's intent, and the pull-request bot is the final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway
 - **Project-local override** - a repository that ships its own `.claude/skills/ship/SKILL.md` takes precedence, carrying its specialized pipeline
 
 ---
