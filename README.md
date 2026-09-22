@@ -1,6 +1,6 @@
 # skills
 
-[![SkillSpector](https://github.com/crod951/skills/actions/workflows/skillspector.yml/badge.svg)](https://github.com/crod951/skills/actions/workflows/skillspector.yml)
+[![SkillSpector](https://github.com/crodris/skills/actions/workflows/skillspector.yml/badge.svg)](https://github.com/crodris/skills/actions/workflows/skillspector.yml)
 
 Personal agent skills for issue-driven development workflow automation, installable as Claude Code plugins or onto any agent via [skills.sh](https://www.skills.sh).
 All skills are scanned with [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) on every change; the build fails on any non-suppressed security finding.
@@ -10,9 +10,9 @@ All skills are scanned with [NVIDIA SkillSpector](https://github.com/NVIDIA/Skil
 **Claude Code** - run these inside a session for a managed install that updates when this repo ships:
 
 ```text
-/plugin marketplace add crod951/skills
-/plugin install fathom@crod951
-/plugin install ship@crod951
+/plugin marketplace add crodris/skills
+/plugin install fathom@crodris
+/plugin install ship@crodris
 ```
 
 The two plugins are independent: install either one alone.
@@ -21,7 +21,7 @@ Fathom needs a tracker MCP. Ship needs a git repository with a remote.
 **Kiro, Codex, and other agents** - use [skills.sh](https://www.skills.sh) for an editable copy on any agent:
 
 ```bash
-npx skills@latest add crod951/skills
+npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill in `skills/` regardless of which plugin owns it.
@@ -47,7 +47,7 @@ It works with Asana or Linear as your issue tracker, and both skills run unchang
 #### Install
 
 ```bash
-/plugin install fathom@crod951
+/plugin install fathom@crodris
 ```
 
 #### Skills
@@ -97,7 +97,7 @@ Everything from the pull request onward needs an installed and authenticated Git
 #### Install
 
 ```bash
-/plugin install ship@crod951
+/plugin install ship@crodris
 ```
 
 #### Skills
@@ -127,7 +127,7 @@ ship it
 
 ## Standalone Skills
 
-Skills here that no plugin claims. They install through [skills.sh](https://www.skills.sh) (`npx skills@latest add crod951/skills`) rather than `/plugin install`.
+Skills here that no plugin claims. They install through [skills.sh](https://www.skills.sh) (`npx skills@latest add crodris/skills`) rather than `/plugin install`.
 
 ### review (v1.0.0)
 
@@ -144,7 +144,7 @@ Its premise is that a diff review cannot see the things worth catching. The find
 #### Install
 
 ```bash
-npx skills@latest add crod951/skills
+npx skills@latest add crodris/skills
 ```
 
 #### Skills
