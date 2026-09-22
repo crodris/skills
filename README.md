@@ -84,7 +84,7 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v1.2.0)
+### ship (v1.3.0)
 
 Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by a subagent and the pull-request bot, one batched fix push, one confirmation pass, squash-merge, release watch, and post-merge cleanup.
 Everything from the pull request onward needs an installed and authenticated GitHub CLI; without one, ship stops after pushing the branch and printing the compare URL, and the review, merge, and release are yours to drive.
@@ -119,7 +119,7 @@ ship it
 - **Review gates the merge, not the pull request** - the subagent and the pull-request bot read the same pushed head at the same time, their findings are deduped by root cause, and every blocking fix lands in one batched push followed by one confirmation pass; the normal run is two pushes, and one when nothing was blocking
 - **Exit only on an untouched pass** - the review loop ends only on a settled pass that pushed nothing, capped at two subagent rounds and three bot passes with no push on the last one, so a green result always describes the code that actually merges
 - **A blocking bar, not a nit hunt** - ship fixes verify failures and confirmed critical or major findings, replies with a disposition for everything else, and never pushes for a minor; fixing every nit hands the next pass fresh code to find fault with, which is how a review loop never converges
-- **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagent for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive` command runs once after the batched fix push on a behavior-changing diff, replacing the subagent's confirmation round with evidence from the running product
+- **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagent for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive`, a command or a `skill:<name>` verification skill, runs once before the push on a behavior-changing diff and once more after the batched fix push, replacing the subagent's confirmation round with evidence from the running product
 - **Two reviewers, not one twice** - the pre-merge review is a Code Reviewer subagent reading this run's intent, and the pull-request bot is the final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway
 - **Project-local override** - a repository that ships its own `.claude/skills/ship/SKILL.md` takes precedence, carrying its specialized pipeline
 

@@ -58,7 +58,7 @@ Resolve all of it before touching the working tree, so the run never pauses mid-
 | `pr-hook` | Stage 3 | No injected routine; stage 3 runs its own steps. |
 | `light-paths` | Lanes | No light lane; every run gets the subagent review. |
 | `security-paths` | Lanes | No security review beside the Code Reviewer. |
-| `drive` | Stage 3 | No drive; the confirmation pass runs as written in stage 3, step 5. |
+| `drive` | Stages 1 and 3 | No drive; stage 1 ends on verify alone, and the confirmation pass runs as written in stage 3, step 5. |
 
 There is no review slot to resolve, because the pre-merge review is always a Code Reviewer subagent, and is never a command nor a review skill that wraps one.
 A review skill offering to handle it - including one whose own description says it triggers whenever a review is needed - is describing the general case, and this run is not it: this run's reviewer is settled here, and a skill that shells out to a vendor CLI is the thing this rule exists to keep out.
@@ -100,7 +100,9 @@ A lane describes the change rather than the run, so re-check it before every pus
 A run that became a security run this way gets the security subagent on the full diff in that same round.
 No lane skips verify, the bot, or the merge conditions.
 
-`drive` names a command that exercises the running product and leaves evidence behind, for example `bin/drive.sh run`; stage 3 says when it runs.
+`drive` names what exercises the running product and leaves evidence behind: a command such as `bin/drive.sh run`, or `skill:<name>` for a project verification skill that writes its own drive for each change.
+A skill-valued drive is invoked with what changed and why, and it owns launching the product, driving the changed behavior, and naming where its evidence landed.
+Stages 1 and 3 say when it runs.
 
 ### Where to look, in order
 
@@ -233,6 +235,12 @@ Each round:
 4. Cap the loop at five rounds.
    On reaching the cap, stop and report what is still failing and what was fixed along the way; do not commit, push, or open anything.
    A deterministic gate that keeps finding new failures is a change that is not ready, and running it a sixth time is not what tells you that.
+5. When stage 0 resolved a `drive` and the diff changes behavior, run it once after the round that ended the loop.
+   A diff changes behavior when it alters what the running product does; documentation, comments, tests, and tooling configuration do not.
+   Verify proves the code holds together, and the drive proves the product does what the change claims, before a reviewer spends a round on it.
+   A failed drive is a stage 1 failure: fix the cause, then go back to step 1, because the fix is new code verify has not seen, and the round counts against the cap.
+   A drive that leaves no evidence has not run; record where the evidence landed, because stage 2 puts that path in the pull request body.
+   Give it a timeout like any other gate, and treat one that blows through it as failed.
 
 ## Stage 2 - Commit, push, open the review
 
@@ -264,7 +272,7 @@ Each round:
    Reusing it means updating its body, not leaving it stale: replace this run's own delimited section with the new summary, evidence, and dispositions, and leave everything a human wrote around it untouched.
    Otherwise create it with every value named explicitly - `gh pr create --base "$base" --head "$settled" --title "..." --body-file <path>` - so that a repository whose default branch is not this run's base cannot silently retarget the review, and so that `gh` never drops into its interactive prompt.
    An unattended run that hits that prompt hangs until it is killed, which looks exactly like a slow pull request being created.
-   The body carries the summary and the verification evidence, inside a delimited section this run owns; stage 3 adds the review outcome to that section once there is one.
+   The body carries the summary and the verification evidence, with the path of the drive's evidence when stage 1 ran one, inside a delimited section this run owns; stage 3 adds the review outcome to that section once there is one.
    Without a working `gh`, push the branch, print the compare URL the remote host expects, and hand the review off to the user; the run then ends after reporting, with no merge and no release watch.
 
 ## Stage 3 - Review once, fix in one batch, confirm, merge, release, cleanup
@@ -316,7 +324,8 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    When nothing was blocking, nothing is pushed, and this pass is the one step 6 can terminate on.
 5. Confirm the batch, once, and only when step 4 pushed.
    The push buys one confirmation pass on the new head: the bot re-reviews it on its own, and concurrently a Code Reviewer subagent reads the fix commits alone, at the same bar, looking for what the fixes broke rather than re-reading the whole change.
-   The light lane confirms with the bot alone.
+   A bot configured to review only the first push is not re-requested here: its one pass read the change, and the fix commits are the subagent's to confirm, so the pass settles on the subagent alone, and a drive then runs beside that subagent rather than in its place, because nothing else reads the fix commits.
+   The light lane confirms with the bot alone, requesting it once when it reviews only the first push, since that lane has no subagent to confirm with.
    In the security lane the security subagent reads the fix commits in the same pass, and a drive does not stand in for it: a blocking fix can land inside `security-paths` as easily as the change did.
    When stage 0 resolved a `drive` and the diff changes behavior, run the drive once here in place of that subagent round, and put the path of the evidence it leaves in the pull request body.
    A diff changes behavior when it alters what the running product does; documentation, comments, tests, and tooling configuration do not.
