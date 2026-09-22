@@ -1,6 +1,6 @@
 # Issue Lifecycle v3 - E2E Matrix Log
 
-Fixtures: il-test-app (github.com/crod951/il-test-app), Asana workspace "My Company" project "Issue Lifecycle Test" (sections Backlog / To do / In Progress / In Review / Done), beads v0.49.0, Kiro IDE with skills symlinked and Asana MCP via ~/.kiro/settings/mcp.json.
+Fixtures: il-test-app (github.com/crodris/il-test-app), Asana workspace "My Company" project "Issue Lifecycle Test" (sections Backlog / To do / In Progress / In Review / Done), beads v0.49.0, Kiro IDE with skills symlinked and Asana MCP via ~/.kiro/settings/mcp.json.
 
 ## Combo 4: Kiro + Asana + beads
 
@@ -250,7 +250,7 @@ The same repo, state directory, and beads database were driven by Kiro (IDE and 
 
 ## Claude Code pass (workbench plugin, local marketplace install)
 
-Installed via `/plugin marketplace add <local path>` then `/plugin install workbench@crod951`.
+Installed via `/plugin marketplace add <local path>` then `/plugin install workbench@crodris`.
 Both skills loaded as workbench:execute and workbench:scaffold with no collision against the separately installed slickage plugin.
 
 ### Sequenced first-run setup + both-trackers ambiguity: PASS

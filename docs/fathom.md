@@ -58,8 +58,8 @@ Pick one - installing both leaves you with every skill twice.
 Run these inside a Claude Code session:
 
 ```text
-/plugin marketplace add crod951/skills
-/plugin install fathom@crod951
+/plugin marketplace add crodris/skills
+/plugin install fathom@crodris
 /reload-plugins
 ```
 
@@ -71,7 +71,7 @@ Confirm both skills loaded by asking for the skill list; you should see `fathom:
 <summary><strong>Kiro, Codex, and other agents</strong></summary>
 
 ```bash
-npx skills@latest add crod951/skills
+npx skills@latest add crodris/skills
 ```
 
 Pick which coding agents to install onto - the installer auto-detects what you have.
@@ -468,7 +468,7 @@ Either reinstall after each change:
 
 ```
 /plugin uninstall fathom
-/plugin install fathom@crod951
+/plugin install fathom@crodris
 /reload-plugins
 ```
 
@@ -495,8 +495,8 @@ If the repo used beads, confirm `.beads/.gitignore` and `.gitattributes` exist, 
 
 The plugin name and the state directory both moved, and nothing migrates automatically.
 
-1. `/plugin uninstall workbench`, refresh the marketplace listing so it carries the new plugin name, then `/plugin install fathom@crod951` and `/reload-plugins`.
-   A cached listing still names the plugin `workbench`, so the install may fail until it refreshes; `/plugin marketplace update crod951` does it, and removing and re-adding the marketplace works too.
+1. `/plugin uninstall workbench`, refresh the marketplace listing so it carries the new plugin name, then `/plugin install fathom@crodris` and `/reload-plugins`.
+   A cached listing still names the plugin `workbench`, so the install may fail until it refreshes; `/plugin marketplace update crodris` does it, and removing and re-adding the marketplace works too.
 2. `git mv .workbench .fathom`.
 3. `git mv .github/workflows/workbench-close.yml .github/workflows/fathom-close.yml`, then change its `name:` to `fathom-close` and every `.workbench/` path inside it to `.fathom/`.
 4. Change the first line of `.fathom/config.md` to `# fathom tracker profile`.
@@ -526,7 +526,7 @@ Either way the merge-closer finds no record for the branch and takes the same gr
 Step 3 matters more than it looks.
 A merge-closer left pointing at `.workbench/` finds no file, takes its zero-match branch, and exits successfully, so every merge shows a green check that closed nothing.
 
-On a skills.sh install, re-run `npx skills@latest add crod951/skills` and take all three entries.
+On a skills.sh install, re-run `npx skills@latest add crodris/skills` and take all three entries.
 `fathom-shared` is a new skill name at the destination, so nothing installs it in place of the old one, and without it both skills stop at the first step.
 Then delete the stale `workbench-shared/` directory from your skills root, since `execute/` and `scaffold/` are overwritten in place but the old shared directory is not removed.
 

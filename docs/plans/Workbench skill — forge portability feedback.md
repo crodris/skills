@@ -1,6 +1,6 @@
 # Workbench skill — forge portability feedback
 
-Feedback for `crod951/skills` (workbench v1.0.0), prepared 2026-08-02.
+Feedback for `crodris/skills` (workbench v1.0.0), prepared 2026-08-02.
 
 Context: I evaluated whether `execute` and `scaffold` could run in an environment whose git hosting and code review system are not GitHub. The tracker abstraction held up well. The forge layer did not. Everything below is about that gap.
 
@@ -12,7 +12,7 @@ The specific review system is not important to the findings, so this writeup des
 - **A review can span multiple repositories** and is reviewed and merged as one unit.
 - **CI checks are configured per-repository, independent of any GitHub-Actions-like mechanism.** There is no `.github/workflows` equivalent.
 
-All findings were verified against the skill source at commit `HEAD` of `crod951/skills`, plus that forge's public-facing CLI documentation and a live CLI run. Line numbers refer to files under `skills/`.
+All findings were verified against the skill source at commit `HEAD` of `crodris/skills`, plus that forge's public-facing CLI documentation and a live CLI run. Line numbers refer to files under `skills/`.
 
 ## Root cause
 
