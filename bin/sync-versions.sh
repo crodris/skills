@@ -23,6 +23,11 @@ if [ ! -f "$MARKETPLACE" ]; then
   exit 1
 fi
 
+if [ ! -f "$README" ]; then
+  echo "No README found at $README" >&2
+  exit 1
+fi
+
 changed=0
 problems=0
 
@@ -60,11 +65,21 @@ for p in data.get('plugins', []):
 # "skills" replace the default skills/ scan, so a new directory reaches users
 # only once some entry lists it.
 
-claim_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" <<'PY'
-import json, os, sys
+claim_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" "$README" <<'PY'
+import json, os, re, sys
 
-marketplace, repo_root = sys.argv[1], sys.argv[2]
+marketplace, repo_root, readme = sys.argv[1], sys.argv[2], sys.argv[3]
 data = json.load(open(marketplace))
+
+# A skill no plugin claims is fine when README.md declares it under
+# "## Standalone Skills" (installed via skills.sh, not /plugin install).
+# Anything else unclaimed is a directory that reaches nobody.
+standalone = set()
+text = open(readme).read()
+m = re.search(r'^## Standalone Skills\n(.*?)(?=^## |\Z)', text, re.S | re.M)
+if m:
+    for name in re.findall(r'^### ([\w-]+) \(', m.group(1), re.M):
+        standalone.add(os.path.join('skills', name))
 
 claims = {}
 for plugin in data.get('plugins', []):
@@ -79,7 +94,7 @@ if os.path.isdir(skills_dir):
         if os.path.isfile(os.path.join(skills_dir, entry, 'SKILL.md')):
             on_disk.add(os.path.join('skills', entry))
 
-for path in sorted(on_disk - set(claims)):
+for path in sorted(on_disk - set(claims) - standalone):
     print('unclaimed\t%s' % path)
 for path, owners in sorted(claims.items()):
     if path not in on_disk:
@@ -99,7 +114,7 @@ if [ -n "$claim_report" ]; then
     problems=$((problems + 1))
   done <<< "$claim_report"
 else
-  echo "  skills/: every skill is claimed by exactly one plugin"
+  echo "  skills/: every skill is claimed by exactly one plugin or declared standalone in README.md"
 fi
 
 # --- Summary ---
