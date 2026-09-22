@@ -23,6 +23,11 @@ if [ ! -f "$MARKETPLACE" ]; then
   exit 1
 fi
 
+if [ ! -f "$README" ]; then
+  echo "No README found at $README" >&2
+  exit 1
+fi
+
 changed=0
 problems=0
 

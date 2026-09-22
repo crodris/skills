@@ -77,6 +77,8 @@ It never relaxes their conditions - the merge still waits on stage 3's terminati
 Nor does it loosen stage 3's blocking bar, its single batched fix push, or its caps: where an injected routine and this skill disagree on any of those, the stricter one holds, because a routine written to fix every nit buys a fresh review round with every push.
 The release watch, the cleanup, and the final report always run as written here, whatever the hook claims to do, because a hook that says it handled the release gives you no way to tell a finished release from a failed one.
 Those steps key off the merge SHA, so a hook that merges without reporting one leaves the release watch with no run to follow; treat a missing SHA as a stop, and recover it from the pull request's merge commit before continuing.
+Resolve, beside the bot itself, whether it reviews every push or only the first: read the bot's own configuration in the repository (for CodeRabbit, `reviews.auto_review.auto_incremental_review: false` in `.coderabbit.yaml`) and what the injected routine says.
+A first-push-only bot settles once, on the head stage 2 pushes, and stage 3 says what confirms the fix push instead; waiting on it a second time is a thirty-minute deadline spent on a review that will never be posted.
 
 Resolve `base` before anything depends on it, and confirm the resolved value still exists on the remote.
 A `base` carried in from `.ship/config.md` is a deliberate answer that may well not be the remote's default branch, so do not overwrite it with the default; a base that has since disappeared from the remote is a stop-and-ask, not a cue to guess a replacement.
@@ -101,6 +103,8 @@ A run that became a security run this way gets the security subagent on the full
 No lane skips verify, the bot, or the merge conditions.
 
 `drive` names what exercises the running product and leaves evidence behind: a command such as `bin/drive.sh run`, or `skill:<name>` for a project verification skill that writes its own drive for each change.
+`skill:<name>` resolves only to a skill the repository itself ships, under its `.claude/skills/`, `.agents/skills/`, or `.kiro/skills/`, and never to a personal, plugin, or added-directory skill of the same name, which could otherwise put instructions from outside the shipped repository in charge of a pre-push gate.
+The resolved skill's instructions, and every command they launch, are subject to Authority and boundary exactly as a command-valued drive is, and a skill cannot relax those checks any more than a repository-local ship skill can.
 A skill-valued drive is invoked with what changed and why, and it owns launching the product, driving the changed behavior, and naming where its evidence landed.
 Stages 1 and 3 say when it runs.
 
@@ -183,7 +187,7 @@ release: semantic-release on main
 post-merge: /post-merge
 light-paths: docs/**, **/*.md      # optional, hand-written
 security-paths: **/auth/**, db/migrations/**
-drive: bin/drive.sh run
+drive: bin/drive.sh run           # or skill:verify-<app>, a skill the repository ships
 ```
 
 Write the file now, but commit it only after preflight has settled which branch this run ships, and before stage 1 begins.
@@ -238,7 +242,8 @@ Each round:
 5. When stage 0 resolved a `drive` and the diff changes behavior, run it once after the round that ended the loop.
    A diff changes behavior when it alters what the running product does; documentation, comments, tests, and tooling configuration do not.
    Verify proves the code holds together, and the drive proves the product does what the change claims, before a reviewer spends a round on it.
-   A failed drive is a stage 1 failure: fix the cause, then go back to step 1, because the fix is new code verify has not seen, and the round counts against the cap.
+   A failed drive is a stage 1 failure: fix the cause, then go back to step 1, because the fix is new code verify has not seen, and the round counts against the cap; at the cap, stop and report as step 4 says, a drive that keeps failing being the same kind of not-ready.
+   The stage ends only when the round that ended the loop passed verify untouched AND the drive, when one ran, passed.
    A drive that leaves no evidence has not run; record where the evidence landed, because stage 2 puts that path in the pull request body.
    Give it a timeout like any other gate, and treat one that blows through it as failed.
 
@@ -298,6 +303,7 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    A run whose subagent never produced a usable review inside the cap has not been reviewed by it, and that is a stop-and-report rather than a merge on the bot alone.
    When a review bot such as CodeRabbit is configured, poll until its review of the captured SHA fully settles, re-reading the pull request's head on every poll; a head that moved is step 2's restart, never a new SHA to chase.
    This bot is the final bar and is never skipped: the subagent is a different reviewer with a different brief, and a clean subagent round says nothing about what the bot will find.
+   A first-push-only bot, as stage 0 resolved it, is polled on this pass and on no later one.
    A "success" that is actually rate-limited or skipped does not count: wait and re-queue.
    Give the wait a deadline of roughly thirty minutes, on every pass; past it, stop and report that the review never settled rather than polling on.
    Collect findings from every surface - inline comments, the summary comment, and full review bodies - because nitpicks hide in collapsed sections.
@@ -319,17 +325,17 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    This bar is what makes the stage terminate.
    Every fix is new code the reviewers have not seen, so a policy of fixing everything hands the next pass fresh material and the finding count never reaches zero.
 4. Apply every blocking fix, from both reviewers, in ONE batch.
-   Re-run `verify` under stage 1's rules until it is clean, re-check the lane, then commit and push once, behind the same branch guard stage 2 uses.
+   Re-run `verify` under stage 1's rules, steps 1 to 4, until it is clean, re-check the lane, then commit and push once, behind the same branch guard stage 2 uses; the drive is step 5's to run, not this step's.
    Update this run's section of the pull request body with the review outcome and every disposition recorded so far.
    When nothing was blocking, nothing is pushed, and this pass is the one step 6 can terminate on.
 5. Confirm the batch, once, and only when step 4 pushed.
    The push buys one confirmation pass on the new head: the bot re-reviews it on its own, and concurrently a Code Reviewer subagent reads the fix commits alone, at the same bar, looking for what the fixes broke rather than re-reading the whole change.
-   A bot configured to review only the first push is not re-requested here: its one pass read the change, and the fix commits are the subagent's to confirm, so the pass settles on the subagent alone, and a drive then runs beside that subagent rather than in its place, because nothing else reads the fix commits.
-   The light lane confirms with the bot alone, requesting it once when it reviews only the first push, since that lane has no subagent to confirm with.
+   A first-push-only bot is not re-requested here: its one pass read the change, and the fix commits are the subagent's to confirm, so the pass settles on the subagent alone.
+   The light lane confirms with the bot alone; with a first-push-only bot it requests that one more review with the bot's own command, a `@coderabbitai review` comment for CodeRabbit, since that lane has no subagent to confirm with, and it polls that review as step 1 does.
    In the security lane the security subagent reads the fix commits in the same pass, and a drive does not stand in for it: a blocking fix can land inside `security-paths` as easily as the change did.
-   When stage 0 resolved a `drive` and the diff changes behavior, run the drive once here in place of that subagent round, and put the path of the evidence it leaves in the pull request body.
+   When stage 0 resolved a `drive` and the diff changes behavior, run the drive once here and put the path of the evidence it leaves in the pull request body: with a bot that re-reviews on its own it runs in place of that subagent round, and with a first-push-only bot it runs beside the subagent, because nothing else reads the fix commits.
    A diff changes behavior when it alters what the running product does; documentation, comments, tests, and tooling configuration do not.
-   The drive replaces the Code Reviewer's further rounds and nothing else: it never replaces verify, the bot, or the security lane's subagent.
+   Where the drive replaces the Code Reviewer's round it replaces that and nothing else: it never replaces verify, the bot, or the security lane's subagent.
    Give it a timeout like any other gate, and treat a failed drive as a blocking finding under step 3.
    Findings from this pass go through steps 2 and 3 again, at the same bar.
 6. Terminate only on a settled pass that pushed NOTHING and whose actionable findings are, after triage, all dispositioned or already resolved.
@@ -337,7 +343,7 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    A pass that pushed anything always re-polls, however complete the fixing felt.
    The caps are two subagent rounds and three bot passes, and they bound pushes as well as polls: never push a fix on the last permitted pass, since that pushes work no pass will ever review.
    So a blocking finding from the confirmation pass can still be fixed and pushed once, for the bot's third pass to review, and a blocking finding on that third pass cannot.
-   Without a bot, the subagent's second round is the last permitted pass.
+   Without a bot, the subagent's second round is the last permitted pass, and the same holds with a first-push-only bot, whose one pass is the only bot pass there is.
    Reaching a cap with a confirmed critical or major finding still open is a stop-and-report: say what is open, and leave the pull request unmerged.
    So is reaching a cap on a pass that step 2 discarded rather than one that settled: nothing is open there only because nothing was read, and that is never a clean pass to merge on.
 7. Merge when the loop is clean AND `gh pr checks` is fully green.
