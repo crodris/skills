@@ -25,7 +25,10 @@ rules:
       this rule suppresses ANY "without asking" EA2 hit in any SKILL.md of
       this plugin, including future ones this reason does not cover; when
       adding that phrase to a skill, re-review whether the suppression still
-      only hides benign uses.
+      only hides benign uses. Re-reviewed for voice: "the one place this skill
+      writes without asking" limits unprompted writes to the user's own voice
+      config directory, refuses symlinks out of it, and requires approval of
+      each specific change for any other write.
 
   # fathom-shared carries the contract files execute and scaffold read;
   # its SKILL.md exists so directory-copying installers (npx skills) bring it
