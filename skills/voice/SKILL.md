@@ -47,8 +47,9 @@ The voice lives in the user's config directory. This skill ships no voice of its
 
 Look for `$XDG_CONFIG_HOME/voice/config.md`, falling back to `~/.config/voice/config.md` when the variable is unset, empty, or not an absolute path.
 This lookup is the only way to find the config.
-When the lookup lands on `$XDG_CONFIG_HOME/voice`, the user set it on purpose: do not read, list, or copy from `~/.config/voice` on your own, even when it exists.
-The exceptions are a file the user names there in path A and a file the config lists; read only that file, and record its path without copying it.
+When the lookup lands on `$XDG_CONFIG_HOME/voice` and that is a different directory from `~/.config/voice`, the user set it on purpose: do not read, list, or copy from `~/.config/voice` on your own, even when it exists.
+The exceptions are what the config lists there and what the user names there; read those the way this section describes, and never copy them into the config directory.
+A missing `config.md` in `$XDG_CONFIG_HOME/voice` means first run, not a fallback.
 A path remembered from an earlier session, a memory file, or a note is not the config either.
 The directory the lookup lands on is the config directory for the rest of the run.
 
@@ -182,7 +183,7 @@ A rule the user typed by hand is theirs; say that the samples disagree with it a
 Show the changes before saving, and keep the `samples` list as it was unless the user adds to it.
 
 A config with no `samples` entry cannot recalibrate.
-Say so, and offer to collect some: a folder they point at, or pasted pieces saved to `samples.md` in the config directory.
+Say so, and offer to collect some: a folder they point at, or pasted pieces appended to `samples.md` in the config directory, which is created when missing.
 
 ## Modes
 
