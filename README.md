@@ -14,7 +14,7 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship` or `review` on its own if that is all you want; take `execute`, `scaffold`, and `fathom-shared` together, since `fathom-shared` carries the contract files the other two read.
+Take `ship`, `review`, or `voice` on its own if that is all you want; take `execute`, `scaffold`, and `fathom-shared` together, since `fathom-shared` carries the contract files the other two read.
 
 **Claude Code plugins** - also available, for Claude Code only:
 
@@ -26,7 +26,7 @@ Take `ship` or `review` on its own if that is all you want; take `execute`, `sca
 
 The two plugins are independent: install either one alone.
 Fathom needs a tracker MCP. Ship needs a git repository with a remote.
-`review` belongs to no plugin on purpose, so it installs through skills.sh and not through `/plugin install`.
+`review` and `voice` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
 
 > Individual plugins may have additional prerequisites that run in your **terminal** (e.g., `brew install`). See each plugin's README for details.
 
@@ -172,6 +172,53 @@ review #107
 
 ---
 
+### voice (v1.0.0)
+
+Voice drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
+PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
+It reads your voice file at the start of each conversation and applies a built-in floor of AI writing patterns on top: the negation-then-correction construction ("it's not X, it's Y"), the rule of three, puffery, participle tails, chat leakage, dead vocabulary.
+Your voice file wins over the floor, so anything it re-allows comes back.
+
+Nothing personal ships in this repository.
+The skill reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset.
+On first run it takes a voice file you already have, or a folder of things you wrote and builds the voice file from excerpts of it, or interviews you and builds one from the bundled `template.md`.
+The folder or pasted samples stay listed in the config, so when the output drifts you can say "recalibrate my voice" and the skill goes back to your real writing instead of its own last draft.
+
+#### Prerequisites
+
+- A writable `$XDG_CONFIG_HOME/voice/` (or `~/.config/voice/` when that variable is unset) for the config file and, when the interview builds one, the voice file
+
+#### Install
+
+```bash
+npx skills@latest add crodris/skills
+```
+
+#### Skills
+
+| Skill | Description |
+|-------|-------------|
+| `voice` | Loads your voice file(s), drafts or rewrites the text in your register, then runs a pass for machine-writing tells before handing it back. |
+
+```bash
+rewrite this so it sounds like me
+this sounds too AI
+draft the PR description for this branch
+voice setup
+recalibrate my voice
+```
+
+#### Features
+
+- **Your file, your machine** - the voice lives wherever the config points, so the public skill carries no one's personal style doc and the same skill serves every installer
+- **First-run setup** - point it at a voice file you already have, or at a folder of things you wrote, or answer a short interview in your own words; it builds the file from the template and shows it to you before saving
+- **Recalibrate from the source** - the folder or samples the voice was built from stay in the config, so "recalibrate my voice" re-reads your real writing and fixes the excerpts and rules that drifted
+- **Samples beat rules** - the template keeps your real writing verbatim, and the skill matches rhythm and register against those before it reads any rule
+- **A floor everyone gets** - the built-in checklist covers the patterns research and readers both flag as machine-written, with the negation-then-correction construction treated as fatal; your voice file can re-allow any of it
+- **Four modes** - draft from facts, rewrite existing text keeping every fact and link, check-only, which quotes each failing line and names the tell without touching the text, and recalibrate
+- **Never from memory** - the voice files are read in full at the start of each conversation, because a summary of a voice is the default register with a costume on
+- **Knows when to stay out** - code, commit messages, test names, config, and text addressed to another agent are left alone
+
 ## Workflow
 
 1. **Scaffold requirements**: talk to the scaffold skill, for example "scaffold these requirements"
@@ -183,7 +230,7 @@ review #107
 ## Repository Layout
 
 Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/marketplace.json` decides which plugin owns which skill through a per-entry `skills` array.
-A skill claimed by no entry, such as `review`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
+A skill claimed by no entry, such as `review` or `voice`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the versions into this README and fails when a skill directory is claimed by no plugin, by more than one, or is claimed but missing.
 
