@@ -315,14 +315,15 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    Reviewers are sometimes wrong, so check each claim against the code before acting on it.
    Neither reviewer's labels are this skill's severities: assign every finding exactly one of critical, major, minor, nit, or informational from what it describes, not from what the bot or the subagent called it.
    A finding with no severity, or with one outside that set, is severity-assigned here the same way, and treated as major when triage cannot place it.
+   Minor and nit sit on opposite sides of step 3's bar, so place that line deliberately: a nit is cosmetic, such as formatting, wording, or a naming preference, and changes nothing the product or the next reader depends on; a defect, code smell, or piece of tech debt is at least minor, whatever section a bot filed it under.
    Placing a severity and confirming a claim are separate judgments on separate axes: a finding whose severity triage could not place is not thereby a finding triage could not confirm, and it still gets a confirmation attempt rather than falling into that bucket by default.
    Two independent reviewers often land on the same root cause, and that is one finding with two reports: it gets one fix, and each report gets the disposition.
 3. Sort the surviving findings into blocking and non-blocking, and fix only the blocking ones.
    Blocking means a verify failure, a failed drive, or a review finding at critical or major severity that triage confirmed.
-   A minor that triage confirmed is blocking too when its fix is contained: it changes only the code the finding names, plus a test for it, adds no behavior the change did not already intend, and triage can say in one sentence why the code is better after it.
-   Look at every confirmed minor against that test before merging rather than dispositioning minors as a class; a real defect with a two-line fix is cheaper to fix than to explain, and merging past one leaves known-wrong code on the base branch.
-   A minor whose fix is larger than that, speculative, or a matter of taste stays non-blocking, and its disposition says which.
-   Everything else - nit, informational, style, a minor that fails the containment test, and anything triage could not confirm against the code - is non-blocking: reply with the disposition and why, under the bot's comment for a bot finding and in this run's section of the pull request body for a subagent finding, and move on.
+   A minor that triage confirmed is blocking too when the fix is worth making before merge and stays contained: it changes only the code the finding names, plus at most a test for it, and adds no behavior the change did not already intend.
+   Judge every confirmed minor on its own, whether or not anything else blocks, rather than dispositioning minors as a class; worth fixing covers a real defect and a code smell or piece of tech debt the next reader would trip over, and triage states in one sentence why the code is better after the fix.
+   A minor whose fix sprawls past the flagged code, is speculative, or is pure preference stays non-blocking, and its disposition says which; a smell that needs a wider refactor names that follow-up in its disposition instead of growing this push.
+   Everything else - nit, informational, style, a minor judged not worth fixing or not contained, and anything triage could not confirm against the code - is non-blocking: reply with the disposition and why, under the bot's comment for a bot finding and in this run's section of the pull request body for a subagent finding, and move on.
    The non-blocking bucket is for findings judged below the blocking bar, never for findings nobody labelled: an unlabelled major would otherwise fall straight through the gate as "everything else".
    A non-blocking finding never causes a push.
    Apply one only when the edit is a one-liner, touches nothing the blocking fixes touch, AND a blocking fix is already buying the push it rides; when in doubt, disposition it.
@@ -350,6 +351,7 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    Without a bot, the subagent's second round is the last permitted pass, and the same holds with a first-push-only bot, whose one pass is the only bot pass there is; in the light lane with such a bot, the review step 5 requests is the last permitted pass.
    Reaching a cap with a confirmed critical or major finding still open is a stop-and-report: say what is open, and leave the pull request unmerged.
    So is reaching a cap on a pass that step 2 discarded rather than one that settled: nothing is open there only because nothing was read, and that is never a clean pass to merge on.
+   A worth-fixing minor still open at a cap does not hold the merge: disposition it as left for a follow-up, and name that follow-up.
 7. Merge when the loop is clean AND `gh pr checks` is fully green.
    Re-read the pull request's state immediately before merging and confirm all three of: it is still open, it still targets `base`, and its head is still the SHA the review settled on.
    Then merge that SHA explicitly: `gh pr merge <n> --squash --match-head-commit <reviewed-sha>`, adding `--delete-branch` only when this run did NOT use a worktree.
@@ -396,7 +398,7 @@ Each of these means stop and correct course, not continue:
 - About to run a verify command that no tier produced and the user never confirmed.
 - About to run a review CLI as the pre-merge review, whether directly, as part of `verify`, or by invoking a review skill that wraps one; this run reviews with a subagent, and the bot is the vendor pass.
 - About to push a fix while either first-pass reviewer is still reading, or to push a second fix batch where one would do.
-- About to push because of a nit, an informational note, an uncontained minor, or a finding triage could not confirm; only a confirmed critical, major, or contained minor buys a push.
+- About to push because of a nit, an informational note, a minor judged not worth fixing or not contained, or a finding triage could not confirm; only a confirmed critical, major, or worth-fixing contained minor buys a push.
 - About to skip the subagent review on a change that is not entirely inside `light-paths`, or to write a project's paths into this skill instead of its `.ship/config.md`.
 - About to let a drive stand in for verify or for the bot.
 - About to ask a second PIPELINE-SLOT question after stage 0 has already asked one; the safety stops are not covered by that rule and always fire.
