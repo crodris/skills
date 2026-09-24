@@ -1,6 +1,6 @@
 # Voice template
 
-Copy this file, fill it in, and list it under `voice:` in `~/.config/voice/config.md`.
+Copy this file, fill it in, and list it under `voice:` in `$XDG_CONFIG_HOME/voice/config.md`, or `~/.config/voice/config.md` when that variable is unset.
 Or point the voice skill at a folder of things you wrote, or let it interview you, and it fills this in for you.
 Either way, keep the raw writing it was built from listed under `samples:` in the same config, so the skill can go back to it when the voice drifts.
 

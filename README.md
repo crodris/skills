@@ -176,17 +176,17 @@ review #107
 
 Voice drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
 PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
-It reads your voice file every run and applies a built-in floor of AI writing patterns on top: the negation-then-correction construction ("it's not X, it's Y"), the rule of three, puffery, participle tails, chat leakage, dead vocabulary.
+It reads your voice file at the start of each conversation and applies a built-in floor of AI writing patterns on top: the negation-then-correction construction ("it's not X, it's Y"), the rule of three, puffery, participle tails, chat leakage, dead vocabulary.
 Your voice file wins over the floor, so anything it re-allows comes back.
 
 Nothing personal ships in this repository.
-The skill reads the voice file that `~/.config/voice/config.md` points at.
+The skill reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset.
 On first run it takes a voice file you already have, or a folder of things you wrote and builds the voice file from excerpts of it, or interviews you and builds one from the bundled `template.md`.
 The folder or pasted samples stay listed in the config, so when the output drifts you can say "recalibrate my voice" and the skill goes back to your real writing instead of its own last draft.
 
 #### Prerequisites
 
-- A writable `~/.config/voice/` (or `$XDG_CONFIG_HOME/voice/`) for the config file and, when the interview builds one, the voice file
+- A writable `$XDG_CONFIG_HOME/voice/` (or `~/.config/voice/` when that variable is unset) for the config file and, when the interview builds one, the voice file
 
 #### Install
 
@@ -215,8 +215,8 @@ recalibrate my voice
 - **Recalibrate from the source** - the folder or samples the voice was built from stay in the config, so "recalibrate my voice" re-reads your real writing and fixes the excerpts and rules that drifted
 - **Samples beat rules** - the template keeps your real writing verbatim, and the skill matches rhythm and register against those before it reads any rule
 - **A floor everyone gets** - the built-in checklist covers the patterns research and readers both flag as machine-written, with the negation-then-correction construction treated as fatal; your voice file can re-allow any of it
-- **Three modes** - draft from facts, rewrite existing text keeping every fact and link, or check-only, which quotes each failing line and names the tell without touching the text
-- **Never from memory** - the voice files are read in full on every run, because a summary of a voice is the default register with a costume on
+- **Four modes** - draft from facts, rewrite existing text keeping every fact and link, check-only, which quotes each failing line and names the tell without touching the text, and recalibrate
+- **Never from memory** - the voice files are read in full at the start of each conversation, because a summary of a voice is the default register with a costume on
 - **Knows when to stay out** - code, commit messages, test names, config, and text addressed to another agent are left alone
 
 ## Workflow
