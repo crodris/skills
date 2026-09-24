@@ -74,11 +74,11 @@ Resolve `pr-hook` here rather than at the moment a pull request is created: a ro
 Look for a hook the agent runs on pull-request creation in the project's and the user's agent configuration, and record what it injects.
 A hook substitutes for stage 3's bot polling and its merge step only, never for the subagent round, and it has to hand back what those steps produce: the merged pull request and the SHA of the merge commit.
 It never relaxes their conditions - the merge still waits on stage 3's termination condition, a settled pass that pushed nothing with every actionable finding dispositioned or resolved, and on fully green checks - and it never absorbs the steps after the merge.
-Nor does it loosen stage 3's blocking bar, its single batched fix push, or its convergence stops: where an injected routine and this skill disagree on any of those, the stricter one holds, because a routine written to fix every nit buys a fresh review round with every push.
+Nor does it loosen stage 3's blocking bar, its one batched fix push per pass, or its convergence stops: where an injected routine and this skill disagree on any of those, the stricter one holds, because a routine written to fix every nit buys a fresh review round with every push.
 The release watch, the cleanup, and the final report always run as written here, whatever the hook claims to do, because a hook that says it handled the release gives you no way to tell a finished release from a failed one.
 Those steps key off the merge SHA, so a hook that merges without reporting one leaves the release watch with no run to follow; treat a missing SHA as a stop, and recover it from the pull request's merge commit before continuing.
 Resolve, beside the bot itself, whether it reviews every push or only the first: read the bot's own configuration in the repository (for CodeRabbit, `reviews.auto_review.auto_incremental_review: false` in `.coderabbit.yaml`) and what the injected routine says.
-A first-push-only bot settles once, on the head stage 2 pushes, and stage 3 says what confirms the fix push instead; waiting on it a second time is a thirty-minute deadline spent on a review that will never be posted.
+A first-push-only bot settles once on its own, on the head stage 2 pushes; stage 3, step 5 says when to request another review from it and when the subagent confirms a fix push instead, and polling it without that request is a thirty-minute deadline spent on a review that will never be posted.
 When nothing says either way, treat the bot as one that re-reviews every push, and poll: a wait that ends is the cheaper mistake.
 
 Resolve `base` before anything depends on it, and confirm the resolved value still exists on the remote.
@@ -281,7 +281,7 @@ Each round:
    The body carries the summary and the verification evidence, with the path of the drive's evidence when stage 1 ran one, inside a delimited section this run owns; stage 3 adds the review outcome to that section once there is one.
    Without a working `gh`, push the branch, print the compare URL the remote host expects, and hand the review off to the user; the run then ends after reporting, with no merge and no release watch.
 
-## Stage 3 - Review once, fix in one batch, confirm, merge, release, cleanup
+## Stage 3 - Review, fix each pass in one batch, confirm, merge, release, cleanup
 
 Review gates the merge, not the pull request.
 Every fix is new material a reviewer has not seen, so every push buys a fresh round: a bot review out of a rate-limited allowance, a CI run, and the wait for both.
@@ -290,7 +290,7 @@ So this stage spends both first passes on the same pushed head at the same time,
 The normal run is two pushes, the one stage 2 made and the batched fixes, and a run with nothing blocking is one.
 
 When stage 0 resolved a `pr-hook` that injects its own review and merge routine, that routine is the authority for the bot half of this stage - polling, settling, collecting the bot's findings, and the merge in step 7 - and it is followed to completion.
-The subagent round, the blocking bar, the single batch, and the convergence stops below still hold under it, by the stricter-one-holds rule from stage 0.
+The subagent round, the blocking bar, one batch per pass, and the convergence stops below still hold under it, by the stricter-one-holds rule from stage 0.
 
 1. Launch both reviewers against the pushed head, concurrently.
    Capture that head's SHA once, before launching either, and hold both reviewers to it: the subagent is told the SHA and reviews that diff, and the bot's review counts only when it settled on that SHA.
@@ -323,8 +323,8 @@ The subagent round, the blocking bar, the single batch, and the convergence stop
    A minor that triage confirmed is blocking too when the fix is worth making before merge and stays contained: it changes only the code the finding names, plus at most a test for it, and adds no behavior the change did not already intend.
    Judge every confirmed minor on its own, whether or not anything else blocks, rather than dispositioning minors as a class; worth fixing covers a real defect and a code smell or piece of tech debt the next reader would trip over, and triage states in one sentence why the code is better after the fix.
    A minor whose fix sprawls past the flagged code, is speculative, or is pure preference stays non-blocking, and its disposition says which; a smell that needs a wider refactor names that follow-up in its disposition instead of growing this push.
-   A worth-fixing minor rides any push a critical or major buys, but minors buy a push on their own only once per run; after that, a minor is dispositioned, because fixing minors found in minor fixes is how the loop stops converging.
-   Everything else - nit, informational, style, a minor judged not worth fixing or not contained, and anything triage could not confirm against the code - is non-blocking: reply with the disposition and why, under the bot's comment for a bot finding and in this run's section of the pull request body for a subagent finding, and move on.
+   A worth-fixing minor rides any push a critical or major buys, but minors buy a push on their own only once per run; after that, a minor still rides a push a critical or major buys and otherwise is dispositioned, because fixing minors found in minor fixes is how the loop stops converging.
+   Everything else - nit, informational, cosmetic style, a minor judged not worth fixing or not contained, and anything triage could not confirm against the code - is non-blocking: reply with the disposition and why, under the bot's comment for a bot finding and in this run's section of the pull request body for a subagent finding, and move on.
    The non-blocking bucket is for findings judged below the blocking bar, never for findings nobody labelled: an unlabelled major would otherwise fall straight through the gate as "everything else".
    A non-blocking finding never causes a push.
    Apply one only when the edit is a one-liner, touches nothing the blocking fixes touch, AND a blocking fix is already buying the push it rides; when in doubt, disposition it.
@@ -334,13 +334,13 @@ The subagent round, the blocking bar, the single batch, and the convergence stop
    Re-run `verify` under stage 1's rules, steps 1 to 4, until it is clean, re-check the lane, then commit and push once, behind the same branch guard stage 2 uses; the drive is step 5's to run, not this step's.
    Update this run's section of the pull request body with the review outcome and every disposition recorded so far.
    When nothing was blocking, nothing is pushed, and this pass is the one step 6 can terminate on.
-5. Confirm the batch, once, and only when step 4 pushed.
+5. Confirm each push once, and only when step 4 pushed.
    The push buys one confirmation pass on the new head: the bot re-reviews it on its own, and concurrently a Code Reviewer subagent reads the fix commits alone, at the same bar, looking for what the fixes broke rather than re-reading the whole change.
    A first-push-only bot is re-requested here while its own latest review raised a confirmed critical or major that step 4's push fixed: request another review with the bot's own command, a `@coderabbitai review` comment for CodeRabbit, and poll it as step 1 does, beside the subagent.
-   Once the bot's latest review raised nothing above minor, it is not requested again, and the fix commits are the subagent's to confirm, so the pass settles on the subagent alone.
+   Once the bot's latest review raised no confirmed critical or major, it is not requested again, and the fix commits are the subagent's to confirm, so the pass settles on the subagent alone.
    The light lane confirms with the bot alone; with a first-push-only bot it requests the bot's review on every confirmation pass, since that lane has no subagent to confirm with.
    In the security lane the security subagent reads the fix commits in the same pass, and a drive does not stand in for it: a blocking fix can land inside `security-paths` as easily as the change did.
-   When stage 0 resolved a `drive` and the diff changes behavior, run the drive once here and put the path of the evidence it leaves in the pull request body: with a bot that re-reviews on its own it runs in place of that subagent round, and with a first-push-only bot it runs beside the subagent, or alone in the light lane, because nothing else reads the fix commits.
+   When stage 0 resolved a `drive` and the diff changes behavior, run the drive once here and put the path of the evidence it leaves in the pull request body: with a bot that re-reviews on its own it runs in place of that subagent round, and with a first-push-only bot it runs beside the subagent, or beside the requested bot review in the light lane, never in place of either.
    A diff changes behavior when it alters what the running product does; documentation, comments, tests, and tooling configuration do not.
    Where the drive replaces the Code Reviewer's round it replaces that and nothing else: it never replaces verify, the bot, or the security lane's subagent.
    Give it a timeout like any other gate, and treat a failed drive as a blocking finding under step 3.
@@ -348,8 +348,8 @@ The subagent round, the blocking bar, the single batch, and the convergence stop
 6. Terminate only on a settled pass that pushed NOTHING and whose actionable findings are, after triage, all dispositioned or already resolved.
    Both halves matter. Dropping the pushed-nothing half merges a SHA no pass ever reviewed, which is the same hole the merge step's SHA pin exists to close; dropping the other half terminates on novelty, and a finding the bot repeats because the last fix did not land is not new and is not resolved either.
    A pass that pushed anything always re-polls, however complete the fixing felt.
-   There is no cap on passes: the loop runs until neither reviewer's latest review holds a confirmed critical or major, and every push gets step 5's confirmation, so no push goes unreviewed.
-   Convergence bounds it instead: a confirmed critical or major whose root cause an earlier push already carried a fix for, raised again by either reviewer, is a stop-and-report, because the fixes are going in circles and choosing between them is the user's call.
+   There is no cap on passes: the loop runs until a settled pass has nothing blocking under step 3, and every push gets step 5's confirmation, so no push goes unreviewed.
+   Convergence bounds it instead: a confirmed critical or major, or a failed drive, whose root cause an earlier push already carried a fix for is a stop-and-report, because the fixes are going in circles and choosing between them is the user's call.
    Say what is open, and leave the pull request unmerged.
 7. Merge when the loop is clean AND `gh pr checks` is fully green.
    Re-read the pull request's state immediately before merging and confirm all three of: it is still open, it still targets `base`, and its head is still the SHA the review settled on.
@@ -397,7 +397,7 @@ Each of these means stop and correct course, not continue:
 - About to run a verify command that no tier produced and the user never confirmed.
 - About to run a review CLI as the pre-merge review, whether directly, as part of `verify`, or by invoking a review skill that wraps one; this run reviews with a subagent, and the bot is the vendor pass.
 - About to push a fix while either first-pass reviewer is still reading, or to push a second fix batch where one would do.
-- About to push because of a nit, an informational note, a minor judged not worth fixing or not contained, or a finding triage could not confirm; only a confirmed critical, major, or worth-fixing contained minor buys a push, and minors do so once per run.
+- About to push because of a nit, an informational note, a minor judged not worth fixing or not contained, or a finding triage could not confirm; only a failed drive, a confirmed critical or major, or a worth-fixing contained minor buys a push, and minors do so once per run.
 - About to skip the subagent review on a change that is not entirely inside `light-paths`, or to write a project's paths into this skill instead of its `.ship/config.md`.
 - About to let a drive stand in for verify or for the bot.
 - About to ask a second PIPELINE-SLOT question after stage 0 has already asked one; the safety stops are not covered by that rule and always fire.
