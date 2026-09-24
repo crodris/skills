@@ -7,7 +7,16 @@ All skills are scanned with [NVIDIA SkillSpector](https://github.com/NVIDIA/Skil
 
 ## Installation (30-second setup)
 
-**Claude Code** - run these inside a session for a managed install that updates when this repo ships:
+**Recommended: any agent** - use [skills.sh](https://www.skills.sh), which installs the same skills on Claude Code, Kiro, Codex, and other agents, and `npx skills update` pulls the latest when this repo ships:
+
+```bash
+npx skills@latest add crodris/skills
+```
+
+The installer lists every skill in `skills/` regardless of which plugin owns it.
+Take `ship` or `review` on its own if that is all you want; take `execute`, `scaffold`, and `fathom-shared` together, since `fathom-shared` carries the contract files the other two read.
+
+**Claude Code plugins** - also available, for Claude Code only:
 
 ```text
 /plugin marketplace add crodris/skills
@@ -17,16 +26,6 @@ All skills are scanned with [NVIDIA SkillSpector](https://github.com/NVIDIA/Skil
 
 The two plugins are independent: install either one alone.
 Fathom needs a tracker MCP. Ship needs a git repository with a remote.
-
-**Kiro, Codex, and other agents** - use [skills.sh](https://www.skills.sh) for an editable copy on any agent:
-
-```bash
-npx skills@latest add crodris/skills
-```
-
-The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship` or `review` on its own if that is all you want; take `execute`, `scaffold`, and `fathom-shared` together, since `fathom-shared` carries the contract files the other two read.
-
 `review` belongs to no plugin on purpose, so it installs through skills.sh and not through `/plugin install`.
 
 > Individual plugins may have additional prerequisites that run in your **terminal** (e.g., `brew install`). See each plugin's README for details.
@@ -97,8 +96,10 @@ Everything from the pull request onward needs an installed and authenticated Git
 #### Install
 
 ```bash
-/plugin install ship@crodris
+npx skills@latest add crodris/skills
 ```
+
+Pick `ship` in the installer. On Claude Code, `/plugin install ship@crodris` also works.
 
 #### Skills
 
@@ -118,9 +119,10 @@ ship it
 - **No config for free answers** - a pipeline detection resolved on its own gets no file, because a file that restates what is already discoverable only goes stale; `.ship/config.md` exists to preserve a human decision
 - **Review gates the merge, not the pull request** - the subagent and the pull-request bot read the same pushed head at the same time, their findings are deduped by root cause, and every blocking fix on a pass lands in one batched push followed by a confirmation pass; the normal run is two pushes, and one when nothing was blocking
 - **Exit only on an untouched pass** - the review loop ends only on a settled pass that pushed nothing, with no pass cap: it runs until neither reviewer's latest review has a confirmed critical or major, and stops to report when a root cause an earlier push carried a fix for comes back, so a green result always describes the code that actually merges
-- **A blocking bar, not a nit hunt** - ship fixes verify failures, confirmed critical or major findings, and confirmed minors, defects or code smells, that are worth fixing when the fix stays contained to the flagged code, replies with a disposition for everything else, and never pushes for a nit; fixing every nit hands the next pass fresh code to find fault with, which is how a review loop never converges
-- **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagent for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive`, a command or a `skill:<name>` verification skill, runs once before the push on a behavior-changing diff, and again on the confirmation pass when a fix push bought one, where it replaces the subagent's confirmation round unless the bot reviews only the first push
+- **A blocking bar, not a nit hunt** - ship fixes verify failures, confirmed critical or major findings, and confirmed minors, defects or code smells, that are worth fixing when the fix stays contained to the flagged code, replies with a disposition for everything else, lets minors buy a push on their own only once per run, and never pushes for a nit; fixing every nit hands the next pass fresh code to find fault with, which is how a review loop never converges
+- **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagent for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive`, a command or a `skill:<name>` verification skill, runs once before the push on a behavior-changing diff, and again on each confirmation pass a fix push buys, where it replaces the subagent's confirmation round unless the bot reviews only the first push
 - **Two reviewers, not one twice** - the pre-merge review is a Code Reviewer subagent reading this run's intent, and the pull-request bot is the final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway; a bot that reviews only the first push is asked for another review after each fix for a critical or major finding it raised, until its latest review raises nothing above minor, and the subagent confirms every other fix
+- **Bot review mode from the repo** - ship learns that CodeRabbit reviews only the first push from `reviews.auto_review.auto_incremental_review: false` in `.coderabbit.yaml`; a setting made only in the CodeRabbit web app is invisible to ship, which then waits on a re-review that never comes, so keep it in the file with `inheritance: true` to leave the web-app settings in force
 - **Project-local override** - a repository that ships its own `.claude/skills/ship/SKILL.md` takes precedence, carrying its specialized pipeline
 
 ---
