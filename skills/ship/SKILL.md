@@ -319,7 +319,10 @@ The subagent round, the blocking bar, the single batch, and the caps below still
    Two independent reviewers often land on the same root cause, and that is one finding with two reports: it gets one fix, and each report gets the disposition.
 3. Sort the surviving findings into blocking and non-blocking, and fix only the blocking ones.
    Blocking means a verify failure, a failed drive, or a review finding at critical or major severity that triage confirmed.
-   Everything else - minor, nit, informational, style, and anything triage could not confirm against the code - is non-blocking: reply with the disposition and why, under the bot's comment for a bot finding and in this run's section of the pull request body for a subagent finding, and move on.
+   A minor that triage confirmed is blocking too when its fix is contained: it changes only the code the finding names, plus a test for it, adds no behavior the change did not already intend, and triage can say in one sentence why the code is better after it.
+   Look at every confirmed minor against that test before merging rather than dispositioning minors as a class; a real defect with a two-line fix is cheaper to fix than to explain, and merging past one leaves known-wrong code on the base branch.
+   A minor whose fix is larger than that, speculative, or a matter of taste stays non-blocking, and its disposition says which.
+   Everything else - nit, informational, style, a minor that fails the containment test, and anything triage could not confirm against the code - is non-blocking: reply with the disposition and why, under the bot's comment for a bot finding and in this run's section of the pull request body for a subagent finding, and move on.
    The non-blocking bucket is for findings judged below the blocking bar, never for findings nobody labelled: an unlabelled major would otherwise fall straight through the gate as "everything else".
    A non-blocking finding never causes a push.
    Apply one only when the edit is a one-liner, touches nothing the blocking fixes touch, AND a blocking fix is already buying the push it rides; when in doubt, disposition it.
@@ -393,7 +396,7 @@ Each of these means stop and correct course, not continue:
 - About to run a verify command that no tier produced and the user never confirmed.
 - About to run a review CLI as the pre-merge review, whether directly, as part of `verify`, or by invoking a review skill that wraps one; this run reviews with a subagent, and the bot is the vendor pass.
 - About to push a fix while either first-pass reviewer is still reading, or to push a second fix batch where one would do.
-- About to push because of a minor, a nit, or a finding triage could not confirm; only a confirmed critical or major buys a push.
+- About to push because of a nit, an informational note, an uncontained minor, or a finding triage could not confirm; only a confirmed critical, major, or contained minor buys a push.
 - About to skip the subagent review on a change that is not entirely inside `light-paths`, or to write a project's paths into this skill instead of its `.ship/config.md`.
 - About to let a drive stand in for verify or for the bot.
 - About to ask a second PIPELINE-SLOT question after stage 0 has already asked one; the safety stops are not covered by that rule and always fire.
