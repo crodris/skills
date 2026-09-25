@@ -223,7 +223,7 @@ recalibrate my voice
 
 ### frontend-design-pipeline (v1.0.0)
 
-Frontend design pipeline takes a UI from product idea to finished build by chaining four design skills in a fixed order, with one stop for you to pick a direction.
+Frontend design pipeline takes a UI from product idea to finished build by chaining four design skills in a fixed order, and adds one stop for you to pick a direction.
 It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with one taste-skill preset, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
 It ships no design knowledge of its own and never copies the skills it calls.
 
@@ -254,7 +254,7 @@ run the full design flow
 
 - **One preset per candidate** - taste-skill presets contradict each other, so each candidate gets exactly one
 - **One source of truth** - after your pick, DESIGN.md beats the generated candidates, any ui-ux-pro-max MASTER.md, and taste-skill hard bans
-- **Refinements skip ahead** - a change that keeps the current look goes straight to motion or build
+- **Existing looks skip ahead** - a new page or a refinement inside the current look goes straight to motion or build
 - **Works outside Claude Code** - ui-ux-pro-max's search script is resolved from its own skill directory instead of the Claude Code-only `${CLAUDE_PLUGIN_ROOT}` path its SKILL.md uses
 
 ## Workflow

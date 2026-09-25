@@ -6,10 +6,10 @@ version: 1.0.0
 
 # Frontend design pipeline
 
-Take a UI from product idea to finished build through four installed skills, in a fixed order, with one stop for the user to pick a direction.
+Take a UI from product idea to finished build through installed design skills, in a fixed order, with one added stop for the user to pick a direction.
 
 This skill carries no design knowledge of its own.
-Each stage invokes another skill and follows that skill's instructions, except where this file overrides them.
+Every stage except the pick invokes another skill and follows that skill's instructions, except where this file overrides them.
 
 ## Required skills
 
@@ -33,12 +33,17 @@ Impeccable builds last and makes the final call on anything DESIGN.md leaves ope
 
 Pick the entry stage before anything else.
 
-- **New UI, or a redesign that replaces the current look:** start at stage 1.
-- **Refinement that keeps the current look:** skip stages 1-3. Start at stage 4 when the change touches motion or interaction, otherwise at stage 5. An existing DESIGN.md is the brief; without one, impeccable works from the incumbent code.
+- **No visual world yet, or a redesign that replaces the current look:** start at stage 1.
+- **Work inside the current look, whether a new page or a refinement:** skip stages 1-3. Start at stage 4 when the change touches motion or interaction, otherwise at stage 5.
+
+The current look is DESIGN.md when it exists, and otherwise the incumbent code.
 
 When the request does not say whether the current look stays, ask once.
 
 ## 1. Options (ui-ux-pro-max)
+
+When PRODUCT.md is missing, invoke the impeccable skill's `init` first, since its seed format needs one.
+Feed PRODUCT.md into the stage 1 queries and the stage 2 briefs.
 
 Invoke the ui-ux-pro-max skill and generate 2-3 candidate design systems for the product type with `--design-system`.
 Vary the query keywords or the `--variance`, `--motion`, and `--density` sliders between runs so the candidates differ.
@@ -52,28 +57,33 @@ Do not pass `--persist`.
 For each candidate, invoke exactly one taste-skill preset and turn the candidate into a direction brief.
 Never apply two presets to one candidate, because they contradict each other: minimalist-ui bans gradients, and gpt-taste is built on GSAP.
 Pick a different preset per candidate where the product allows it, so the briefs differ.
-On a redesign, use redesign-existing-projects in place of a preset.
+On a redesign, replace one candidate's preset with redesign-existing-projects.
 Take the preset's rules only and build nothing in this stage.
 
 Each brief states palette, type, layout, and motion stance in a few lines.
-Present the briefs to the user labelled A, B, and C.
+Present the briefs to the user labelled with letters.
 
 ## 3. Pick (user)
 
 Wait for the user to pick one brief or combine them, as in "B's type with A's palette".
-This is the only stage that waits for the user.
+This is the only stop the pipeline adds, and the skills it invokes still ask their own questions.
+When DESIGN.md already exists, say in the same question that the pick replaces it, and keep the old file unless the user confirms.
 
 Write the result to DESIGN.md at the project root, in the seed format that impeccable's `reference/document.md` defines under Seed mode, SEED marker included.
-From here on DESIGN.md is the authority, and the candidates, briefs, and any MASTER.md are not read again.
+DESIGN.md takes only what holds on every screen.
+The brief's page-specific layout goes to impeccable in stage 5, for its surface brief.
+From here on DESIGN.md is the authority, and the candidates and any MASTER.md are not read again.
 
 ## 4. Motion (emil-design-eng)
 
 Invoke the emil-design-eng skill for the picked direction.
 Decide what animates and what does not, the easing, and the durations.
-Add the decisions to DESIGN.md, the motion grammar in Overview and per-component interaction in Components, since the format has no motion section.
+After stage 3, add the decisions to the Overview section of DESIGN.md, since the seed format has no motion section and omits Components.
+On a refinement, pass them to stage 5 instead, and change DESIGN.md only when the user asks for a system-wide change.
 
 ## 5. Build and finish (impeccable)
 
 Invoke the impeccable skill last, every time, and build to DESIGN.md.
-Tell it the visual world is settled in DESIGN.md, so it inherits that world instead of choosing a new one.
+Tell it DESIGN.md is an established world the user pinned, so its new-work flow creates the surface inside that world instead of creating or replacing one.
+On a redesign, also tell it the DESIGN.md world replaces the incumbent look in the code.
 Then run impeccable's `critique` and `polish` on the result.
