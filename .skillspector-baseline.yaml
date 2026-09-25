@@ -126,10 +126,6 @@ rules:
     path: "SKILL.md"
     message: "*npx skills*"
     reason: >-
-  - id: "RP1"
-    path: "SKILL.md"
-    message: "*npx skills*"
-    reason: >-
       Reviewed, intentional: frontend-design-pipeline prints skills.sh
       install commands (npx skills@latest add) for the companion skills its
       stages call, and execute and scaffold print fathom-shared's install

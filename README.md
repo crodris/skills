@@ -306,4 +306,4 @@ When a finding is a reviewed false positive, suppress it in the repo-root `.skil
 
 MIT
 
-Some rules adapted from mattpocock/skills (MIT).
+Some rules adapted from mattpocock/skills and obra/superpowers (MIT).
