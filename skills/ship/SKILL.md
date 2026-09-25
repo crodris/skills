@@ -70,7 +70,7 @@ Wherever this skill says the code reviewer, it means the Standards and Spec suba
 Whenever a lane runs this review or the security lane's review beside it, dispatch each as the host agent's general-purpose subagent, subagent_type `general-purpose` on Claude Code, and write its brief from the change's intent and the SHA of the head it reviews; never pick any other agent type, including a plugin agent such as `coderabbit:code-reviewer`, since a named agent can wrap a vendor CLI or carry a generic brief.
 A review skill offering to handle it - including one whose own description says it triggers whenever a review is needed - is describing the general case, and this run is not it: this run's reviewer is settled here, and a skill that shells out to a vendor CLI is the thing this rule exists to keep out.
 A review CLI is the wrong tool at that point twice over: the vendors that ship one also run the pull-request bot that stage 3 waits on, so the CLI spends the same quota on a judgment stage 3 will reach on its own, and a rate limit earned locally surfaces as a review that will not settle half an hour later.
-Running a DIFFERENT reviewer beside the bot is what makes two reviewers worth having - a subagent reading this run's intent, and the bot reading the same pushed diff cold - because the two catch different classes of defect.
+Running a DIFFERENT reviewer beside the bot is what makes different reviewers worth having - the code reviewer reading this run's conventions and intent, and the bot reading the same pushed diff cold - because the two catch different classes of defect.
 So never route a review tool into `verify` either: a command this project names as a review step is not a verify gate, and adopting it there reintroduces exactly what this removes.
 Verify is for deterministic local gates - lint, types, tests, build; review is for judgment.
 Drop such a command from its tier's answer and keep whatever else that tier named; when nothing survives, the tier did not answer at all, so carry on to the next one and ask under "No tier produced a verify command" if none does.
@@ -357,6 +357,7 @@ The subagent round, the blocking bar, one batch per pass, and the convergence st
    Give it a timeout like any other gate, and treat a failed drive as a blocking finding under step 3.
    Findings from this pass go through steps 2 and 3 again, at the same bar.
 6. Terminate only on a settled pass that pushed NOTHING and whose actionable findings are, after triage, all dispositioned or already resolved.
+   A fixed finding counts as resolved only after a pass checked its fix commit against it: Spec where it runs, and step 2's triage where it does not.
    Both halves matter. Dropping the pushed-nothing half merges a SHA no pass ever reviewed, which is the same hole the merge step's SHA pin exists to close; dropping the other half terminates on novelty, and a finding the bot repeats because the last fix did not land is not new and is not resolved either.
    A pass that pushed anything always re-polls, however complete the fixing felt.
    There is no cap on passes: the loop runs until a settled pass has nothing blocking under step 3, and every push gets step 5's confirmation, so no push goes unreviewed.
