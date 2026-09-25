@@ -28,7 +28,7 @@ When one is missing, skip its stage, say so once with its install command, and c
 Never run an install command yourself.
 Stage 2 runs with whichever presets are installed and is skipped only when none are.
 Without ui-ux-pro-max, stage 2 builds 2-3 briefs from PRODUCT.md, one installed preset each.
-Without any taste preset, condense each stage 1 candidate into the brief shape and letter labels stage 2 defines, and offer those in stage 3.
+Without any taste preset, condense each stage 1 candidate into the brief shape stage 2 defines, label the briefs with letters, and offer them in stage 3.
 With neither, skip stage 3, and skip stage 4 too, since there is no direction to decide motion for yet.
 
 ## Precedence
@@ -107,4 +107,4 @@ When stage 3 did not run because nothing was installed to produce briefs, let im
 
 Then run impeccable's `critique` and `polish` on the result.
 When stage 3 wrote the seed, finish with impeccable's `document` in scan mode after `polish`, so the built tokens replace the seed.
-Tell it the seed is meant to be replaced and to merge, so the stage 4 motion decisions in Overview carry over.
+Tell it to merge: the scanned tokens and sections replace the seed, the SEED marker and placeholders are dropped, and the stage 4 motion decisions in Overview carry over.
