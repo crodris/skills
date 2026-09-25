@@ -83,9 +83,9 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v1.4.0)
+### ship (v1.5.0)
 
-Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by a subagent and the pull-request bot, batched fix pushes, each one confirmed, until nothing blocking remains, squash-merge, release watch, and post-merge cleanup.
+Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and the pull-request bot, batched fix pushes, each one confirmed, until nothing blocking remains, squash-merge, release watch, and post-merge cleanup.
 Everything from the pull request onward needs an installed and authenticated GitHub CLI; without one, ship stops after pushing the branch and printing the compare URL, and the review, merge, and release are yours to drive.
 
 #### Prerequisites
@@ -117,11 +117,11 @@ ship it
 - **Project-resolved pipeline** - the verify command comes from `.ship/config.md`, then the project's docs, then a declared aggregate task, then the pull-request CI job, then a composed fallback; the first tier that answers wins
 - **Asks once, remembers** - when detection is ambiguous ship asks a single question before touching the tree, then records the answer in `.ship/config.md` and commits it on its own, so the decision reaches the next branch, clone, and teammate; the commit keeps it separable from the change it rode in with, and it is still reviewed and merged as part of the pull request
 - **No config for free answers** - a pipeline detection resolved on its own gets no file, because a file that restates what is already discoverable only goes stale; `.ship/config.md` exists to preserve a human decision
-- **Review gates the merge, not the pull request** - the subagent and the pull-request bot read the same pushed head at the same time, their findings are deduped by root cause, and every blocking fix on a pass lands in one batched push followed by a confirmation pass; the normal run is two pushes, and one when nothing was blocking
+- **Review gates the merge, not the pull request** - the subagents and the pull-request bot read the same pushed head at the same time, their findings are deduped by root cause, and every blocking fix on a pass lands in one batched push followed by a confirmation pass; the normal run is two pushes, and one when nothing was blocking
 - **Exit only on an untouched pass** - the review loop ends only on a settled pass that pushed nothing, with no pass cap: it runs until a settled pass has nothing blocking, and stops to report when a root cause an earlier push carried a fix for comes back, so a green result always describes the code that actually merges
 - **A blocking bar, not a nit hunt** - ship fixes verify failures, confirmed critical or major findings, and confirmed minors (defects or code smells) worth fixing whose fix stays contained to the flagged code, replies with a disposition for everything else, lets minors buy a push on their own only once per run, and never pushes for a nit; fixing every nit hands the next pass fresh code to find fault with, which is how a review loop never converges
-- **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagent for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive`, a command or a `skill:<name>` verification skill, runs once before the push on a behavior-changing diff, and again on each confirmation pass a fix push buys, where it replaces the subagent's confirmation round unless the bot reviews only the first push
-- **Two reviewers, not one twice** - the pre-merge review is a `general-purpose` subagent briefed as the code reviewer, reading this run's intent, and the pull-request bot is the final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway; a bot that reviews only the first push is asked for another review after each fix for a critical or major finding it raised, until its latest review raises no confirmed critical or major, and the subagent confirms every other fix
+- **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagents for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive`, a command or a `skill:<name>` verification skill, runs once before the push on a behavior-changing diff, and again on each confirmation pass a fix push buys, where it replaces the subagents' confirmation round unless the bot reviews only the first push
+- **Different reviewers, not one twice** - the pre-merge review is two `general-purpose` subagents on the same SHA, one checking the repository's documented conventions and one checking the change against its issue or stated intent, and the pull-request bot is the final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway; a bot that reviews only the first push is asked for another review after each fix for a critical or major finding it raised, until its latest review raises no confirmed critical or major, and the subagents confirm every other fix
 - **Bot review mode from the repo** - ship learns that CodeRabbit reviews only the first push from `reviews.auto_review.auto_incremental_review: false` in `.coderabbit.yaml`; a setting made only in the CodeRabbit web app is invisible to ship, which then waits on a re-review that never comes, so keep it in the file with `inheritance: true` to leave the web-app settings in force
 - **Project-local override** - a repository that ships its own `.claude/skills/ship/SKILL.md` takes precedence, carrying its specialized pipeline
 
@@ -131,7 +131,7 @@ ship it
 
 Skills here that no plugin claims. They install through [skills.sh](https://www.skills.sh) (`npx skills@latest add crodris/skills`) rather than `/plugin install`.
 
-### review (v1.0.0)
+### review (v1.1.0)
 
 Review verifies a pull request against the tracker issue it claims to close, on a build it actually runs, and posts one review with line-specific findings anchored inline and general findings in the summary body.
 
@@ -165,6 +165,7 @@ review #107
 - **Never concludes from the diff** - the branch and its merge-base are built and served side by side, so every claim comes from a running app rather than from reading a change
 - **A/B before blame** - a finding measured on the base build too is reported as pre-existing, which is the difference between telling an author they broke something and telling them they inherited it
 - **Pixels over computed styles** - for any claim that something is or is not visible, the screenshot is decoded and the painted colours compared; `border: 0` plus a 1.1:1 background step reads as conclusive and is routinely wrong
+- **Checks the house rules too** - the diff is read against the conventions the repository documents, such as AGENTS.md, CLAUDE.md, and contributing docs, separately from the issue check
 - **Tests the tests** - reverts the changed source to confirm the new assertions fail without it, then adversarially checks the ones that pass either way by making the exact change they claim to catch
 - **Fails closed on a moved head** - the fetched ref is verified against the pull request's reported head before anything is measured, so a re-review never silently describes yesterday's commit
 - **Severity that means something** - 🔴 is reserved for a regression the pull request introduces with a cheap fix, and findings are deduped to root causes first, so a good pull request does not read as riddled with defects
@@ -298,3 +299,5 @@ When a finding is a reviewed false positive, suppress it in the repo-root `.skil
 ## License
 
 MIT
+
+Some rules adapted from mattpocock/skills (MIT).
