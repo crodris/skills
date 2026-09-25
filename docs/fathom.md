@@ -214,7 +214,7 @@ that PR got abandoned
 
 A run does this: verifies the tracker MCP, sweeps for merged work, resolves tracker and task memory, fetches the issue, reads relevant code, creates the branch from a freshly fetched base, builds the breakdown and plan document, moves the issue to in progress, then loops one task at a time.
 Each task gets claimed, implemented, tested with the typecheck and its own test files, committed on its own, and closed in both task memory and the tracker.
-The last task runs the full suite instead.
+The last task, or each bundle's last task on a stack, runs the typecheck and the full suite instead of its own test files.
 At the end it pushes, opens the review - or, in the manual tier, hands you everything needed to open it - and moves the issue to in review.
 
 Re-invoking on the same issue resumes it.
