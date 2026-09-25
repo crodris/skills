@@ -121,3 +121,16 @@ rules:
       stale and is not a security boundary; the command runs on the USER's
       machine at install time by their choice, and the installed content
       is this repository itself.
+
+  - id: "RP1"
+    path: "SKILL.md"
+    message: "*npx skills*"
+    reason: >-
+      Reviewed, intentional: frontend-design-pipeline's companion table
+      gives the user skills.sh install commands (npx skills@latest add) for
+      the skills its stages call, and tells the agent to show a missing
+      one's command rather than run it. Same reasoning as the agents.md
+      rule above: pinning the CLI goes stale and is not a security
+      boundary. Caution: path "SKILL.md" matches every skill's SKILL.md,
+      so this hides any RP1 "npx skills" hit repo-wide; re-review before
+      adding an npx skills command that a skill executes itself.

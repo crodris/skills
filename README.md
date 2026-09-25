@@ -226,11 +226,22 @@ recalibrate my voice
 Frontend design pipeline takes a UI from product idea to finished build by chaining four design skills in a fixed order, and adds one stop for you to pick a direction.
 It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with one taste-skill preset, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
 It ships no design knowledge of its own and never copies the skills it calls.
+Only impeccable is required; the rest improve the result when installed.
 
 #### Prerequisites
 
-- [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill), [taste-skill](https://github.com/Leonxlnx/taste-skill), [emil-design-eng](https://github.com/emilkowalski/skills), and [impeccable](https://github.com/pbakaus/impeccable) installed, for example with `npx skills add <owner>/<repo>`
-- `python3` (or `python`) for ui-ux-pro-max's search script
+- [impeccable](https://github.com/pbakaus/impeccable), which builds and finishes every run: `npx skills@latest add pbakaus/impeccable -s impeccable -g`
+
+#### Works best with
+
+Each of these runs one stage.
+When one is missing, the pipeline skips that stage, says so once with the install command, and carries on.
+
+| Skill | Stage | Install |
+|-------|-------|---------|
+| [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Candidate design systems (needs `python3` or `python`) | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
+| [taste-skill](https://github.com/Leonxlnx/taste-skill) presets | Direction briefs, one preset per candidate | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend redesign-existing-projects -g` |
+| [emil-design-eng](https://github.com/emilkowalski/skills) | Motion and interaction decisions | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
 
 #### Install
 
