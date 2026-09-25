@@ -139,6 +139,7 @@ Read them off CI first (`gh pr view <n> --json statusCheckRollup`). Run locally 
 ### 3b. Check the documented conventions
 
 Read what the repository documents about how code is written there: AGENTS.md, CLAUDE.md, CONTRIBUTING.md, and the intent behind its lint and format config.
+Read them from the base worktree, so a pull request that edits them is graded against the base's rules and its edit to them is itself checked.
 Check the diff against those rules separately from the issue check, because a change can do exactly what the issue asked and still break the house conventions.
 Cite the file and the rule for every breach, and skip anything a stage 3 gate already enforces.
 Each breach is a finding like any other, deduped in stage 9 and graded in stage 9b.
