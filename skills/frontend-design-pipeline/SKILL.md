@@ -42,7 +42,7 @@ When the request does not say whether the current look stays, ask once.
 
 ## 1. Options (ui-ux-pro-max)
 
-When PRODUCT.md is missing, invoke the impeccable skill's `init` first, since its seed format needs one.
+When PRODUCT.md is missing, invoke the impeccable skill's `init` first, since impeccable's seed mode and new-work flow require one.
 Feed PRODUCT.md into the stage 1 queries and the stage 2 briefs.
 
 Invoke the ui-ux-pro-max skill and generate 2-3 candidate design systems for the product type with `--design-system`.
@@ -68,6 +68,7 @@ Present the briefs to the user labelled with letters.
 Wait for the user to pick one brief or combine them, as in "B's type with A's palette".
 This is the only stop the pipeline adds, and the skills it invokes still ask their own questions.
 When DESIGN.md already exists, say in the same question that the pick replaces it, and keep the old file unless the user confirms.
+If they decline, stop before stage 4.
 
 Write the result to DESIGN.md at the project root, in the seed format that impeccable's `reference/document.md` defines under Seed mode, SEED marker included.
 DESIGN.md takes only what holds on every screen.
@@ -76,14 +77,20 @@ From here on DESIGN.md is the authority, and the candidates and any MASTER.md ar
 
 ## 4. Motion (emil-design-eng)
 
-Invoke the emil-design-eng skill for the picked direction.
+Invoke the emil-design-eng skill for the picked direction or the current look.
 Decide what animates and what does not, the easing, and the durations.
 After stage 3, add the decisions to the Overview section of DESIGN.md, since the seed format has no motion section and omits Components.
-On a refinement, pass them to stage 5 instead, and change DESIGN.md only when the user asks for a system-wide change.
+When stages 1-3 were skipped, pass them to stage 5 instead, and change DESIGN.md only when the user asks for a system-wide change.
 
 ## 5. Build and finish (impeccable)
 
-Invoke the impeccable skill last, every time, and build to DESIGN.md.
+Invoke the impeccable skill last, every time.
+
+After stage 3, build to DESIGN.md.
 Tell it DESIGN.md is an established world the user pinned, so its new-work flow creates the surface inside that world instead of creating or replacing one.
+Pass the picked brief's layout as the chosen structure for this surface, so it runs no new composition round.
 On a redesign, also tell it the DESIGN.md world replaces the incumbent look in the code.
+
+When stages 1-3 were skipped, tell it to work inside the current look, from DESIGN.md or the incumbent code, and to extend the existing surface when the change is a refinement.
+
 Then run impeccable's `critique` and `polish` on the result.
