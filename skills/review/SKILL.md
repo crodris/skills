@@ -1,7 +1,7 @@
 ---
 name: review
 description: This skill should be used when the user asks to "review this PR", "review #107", "review these PRs the same way", "do a visual pass on this branch", "verify this against the issue", pastes a pull request URL to review, or asks for a UI change to be checked before merge. Also use when the user asks whether a reviewed PR is safe to merge, or asks to escalate or downgrade a finding's severity. Verifies a pull request against the tracker issue it claims to close, on a running build, with measured evidence, then posts one review with line-specific findings inline and general findings in the summary body.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Review
@@ -135,6 +135,13 @@ Without any environment file at all, the build can silently produce a broken app
 Typecheck, lint, unit, e2e. Report what you got, not what the PR body claims — and **reconcile the two**. Checking the author's own arithmetic is nearly free and tells you how carefully the rest of the description was written; a test count that is off by one is worth a parenthesis, not a finding.
 
 Read them off CI first (`gh pr view <n> --json statusCheckRollup`). Run locally only what CI cannot answer — see Cost discipline. If CI is red, or there is no CI, run them yourself.
+
+### 3b. Check the documented conventions
+
+Read what the repository documents about how code is written there: AGENTS.md, CLAUDE.md, CONTRIBUTING.md, and the intent behind its lint and format config.
+Check the diff against those rules separately from the issue check, because a change can do exactly what the issue asked and still break the house conventions.
+Cite the file and the rule for every breach, and skip anything a stage 3 gate already enforces.
+Each breach is a finding like any other, deduped in stage 9 and graded in stage 9b.
 
 ### 4. Serve the build — and verify the build's identity
 

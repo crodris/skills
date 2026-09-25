@@ -62,7 +62,11 @@ Resolve all of it before touching the working tree, so the run never pauses mid-
 | `security-paths` | Lanes | No security review beside the code reviewer. |
 | `drive` | Stages 1 and 3 | No drive; stage 1 ends on verify alone, and the confirmation pass runs as written in stage 3, step 5. |
 
-There is no review slot to resolve, because the pre-merge review is always a `general-purpose` subagent briefed as the code reviewer, and is never a command nor a review skill that wraps one.
+There is no review slot to resolve, because the pre-merge review is always the code reviewer, and is never a command nor a review skill that wraps one.
+The code reviewer is two `general-purpose` subagents on the same pinned SHA, one per axis, so a change that passes one axis cannot hide a failure on the other.
+The Standards reviewer checks the diff against the conventions this repository documents: AGENTS.md, CLAUDE.md, contributing docs, and the intent behind its lint and format config.
+The Spec reviewer checks that the diff does what the originating issue or the pull request's stated intent asked, and reports what is missing, wrong, or not asked for.
+Wherever this skill says the code reviewer, it means both, dispatched in parallel; they share every round and confirmation pass, and their findings go through one triage and one root-cause dedupe.
 Whenever a lane runs this review or the security lane's review beside it, dispatch each as the host agent's general-purpose subagent, subagent_type `general-purpose` on Claude Code, and write its brief from the change's intent and the SHA of the head it reviews; never pick any other agent type, including a plugin agent such as `coderabbit:code-reviewer`, since a named agent can wrap a vendor CLI or carry a generic brief.
 A review skill offering to handle it - including one whose own description says it triggers whenever a review is needed - is describing the general case, and this run is not it: this run's reviewer is settled here, and a skill that shells out to a vendor CLI is the thing this rule exists to keep out.
 A review CLI is the wrong tool at that point twice over: the vendors that ship one also run the pull-request bot that stage 3 waits on, so the CLI spends the same quota on a judgment stage 3 will reach on its own, and a rate limit earned locally surfaces as a review that will not settle half an hour later.
@@ -296,11 +300,11 @@ When stage 0 resolved a `pr-hook` that injects its own review and merge routine,
 The subagent round, the blocking bar, one batch per pass, and the convergence stops below still hold under it, by the stricter-one-holds rule from stage 0.
 
 1. Launch both reviewers against the pushed head, concurrently.
-   Capture that head's SHA once, before launching either, and hold both reviewers to it: the subagent is told the SHA and reviews that diff, and the bot's review counts only when it settled on that SHA.
-   Review dispatches a `general-purpose` subagent briefed as the code reviewer, in the background, on the diff of the pushed head against `base`, told what changed and why.
-   The light lane skips it; the security lane dispatches a second `general-purpose` subagent beside it, on the same diff, briefed to review it for security alone.
-   That second subagent never spends a round of its own: it shares the code reviewer's round here, and at step 5 it shares the confirmation pass whether or not a drive replaced the code reviewer there.
-   Both are subagents, never a review CLI nor a review skill that wraps one.
+   Capture that head's SHA once, before launching either, and hold both reviewers to it: each subagent is told the SHA and reviews that diff, and the bot's review counts only when it settled on that SHA.
+   Review dispatches the code reviewer's Standards and Spec subagents in parallel, in the background, on the diff of the pushed head against `base`, each told what changed and why.
+   The light lane skips them; the security lane dispatches a third `general-purpose` subagent beside them, on the same diff, briefed to review it for security alone.
+   That third subagent never spends a round of its own: it shares the code reviewer's round here, and at step 5 it shares the confirmation pass whether or not a drive replaced the code reviewer there.
+   All are subagents, never a review CLI nor a review skill that wraps one.
    Tell each what stage it is: findings feed one batched fix rather than a loop, and severity is what sorts them in step 3, so require exactly one severity per finding, drawn from critical, major, minor, nit, or informational.
    Quote each the line step 2 draws between minor and nit, word for word, so its labels start where triage will put them.
    A subagent that returns nothing usable fails its round rather than passing silently: record that the review produced no result, and run the round again.
@@ -341,9 +345,9 @@ The subagent round, the blocking bar, one batch per pass, and the convergence st
    Update this run's section of the pull request body with the review outcome and every disposition recorded so far.
    When nothing was blocking, nothing is pushed, and this pass is the one step 6 can terminate on.
 5. Confirm each push once, and only when step 4 pushed.
-   The push buys one confirmation pass on the new head: the bot re-reviews it on its own, and concurrently a `general-purpose` subagent briefed as the code reviewer reads the fix commits alone, at the same bar, looking for what the fixes broke rather than re-reading the whole change.
+   The push buys one confirmation pass on the new head: the bot re-reviews it on its own, and concurrently the code reviewer's Standards and Spec subagents read the fix commits alone, at the same bar, looking for what the fixes broke rather than re-reading the whole change.
    A first-push-only bot is re-requested here while its own latest review raised a confirmed critical or major that step 4's push fixed: request another review with the bot's own command, a `@coderabbitai review` comment for CodeRabbit, and poll it as step 1 does, beside the subagent.
-   Once the bot's latest review raised no confirmed critical or major, it is not requested again, and the fix commits are the subagent's to confirm, so the pass settles on the subagent alone.
+   Once the bot's latest review raised no confirmed critical or major, it is not requested again, and the fix commits are the code reviewer's to confirm, so the pass settles on the code reviewer alone.
    The light lane confirms with the bot alone; with a first-push-only bot it requests the bot's review on every confirmation pass, since that lane has no subagent to confirm with.
    In the security lane the security subagent reads the fix commits in the same pass, and a drive does not stand in for it: a blocking fix can land inside `security-paths` as easily as the change did.
    When stage 0 resolved a `drive` and the diff changes behavior, run the drive once here and put the path of the evidence it leaves in the pull request body: with a bot that re-reviews on its own it runs in place of that subagent round, and with a first-push-only bot it runs beside the subagent, or beside the requested bot review in the light lane, never in place of either.
