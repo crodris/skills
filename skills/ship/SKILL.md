@@ -57,11 +57,11 @@ Resolve all of it before touching the working tree, so the run never pauses mid-
 | `post-merge` | Stage 3 | The built-in cleanup in stage 3, step 9. |
 | `pr-hook` | Stage 3 | No injected routine; stage 3 runs its own steps. |
 | `light-paths` | Lanes | No light lane; every run gets the subagent review. |
-| `security-paths` | Lanes | No security review beside the code-review subagent. |
+| `security-paths` | Lanes | No security review beside the code reviewer. |
 | `drive` | Stages 1 and 3 | No drive; stage 1 ends on verify alone, and the confirmation pass runs as written in stage 3, step 5. |
 
 There is no review slot to resolve, because the pre-merge review is always a `general-purpose` subagent briefed as the code reviewer, and is never a command nor a review skill that wraps one.
-Always dispatch it with subagent_type `general-purpose` and write its brief from the change's intent and the SHA of the head it reviews; never pick a named review agent, including a plugin agent such as `coderabbit:code-reviewer`, since a named agent can wrap a vendor CLI or carry a generic brief.
+Whenever a lane runs this review, dispatch it as the agent's general-purpose subagent, subagent_type `general-purpose` on Claude Code, and write its brief from the change's intent and the SHA of the head it reviews; never pick any other agent type, including a plugin agent such as `coderabbit:code-reviewer`, since a named agent can wrap a vendor CLI or carry a generic brief.
 A review skill offering to handle it - including one whose own description says it triggers whenever a review is needed - is describing the general case, and this run is not it: this run's reviewer is settled here, and a skill that shells out to a vendor CLI is the thing this rule exists to keep out.
 A review CLI is the wrong tool at that point twice over: the vendors that ship one also run the pull-request bot that stage 3 waits on, so the CLI spends the same quota on a judgment stage 3 will reach on its own, and a rate limit earned locally surfaces as a review that will not settle half an hour later.
 Running a DIFFERENT reviewer beside the bot is what makes two reviewers worth having - a subagent reading this run's intent, and the bot reading the same pushed diff cold - because the two catch different classes of defect.
@@ -100,7 +100,7 @@ Resolve the lane here, from every file this run will ship: whatever differs from
 
 Security outranks light: a glob broad enough to call a security-sensitive file light is a mistake in the config, and the cheap lane is the wrong way to find that out.
 The light lane needs a configured review bot, because it trades the subagent for the bot, and a run with neither has had no review at all; without one, run the standard lane.
-A lane describes the change rather than the run, so re-check it before every push: a light run that stops being light, because its fixes reach a file outside `light-paths` or into `security-paths`, owes the subagent review it skipped, which runs as a full-diff code-review round against the new head in place of step 5's fix-only one.
+A lane describes the change rather than the run, so re-check it before every push: a light run that stops being light, because its fixes reach a file outside `light-paths` or into `security-paths`, owes the subagent review it skipped, which runs as a full-diff code reviewer round against the new head in place of step 5's fix-only one.
 A run that became a security run this way gets the security subagent on the full diff in that same round.
 No lane skips verify, the bot, or the merge conditions.
 
