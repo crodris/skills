@@ -14,7 +14,7 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship`, `review`, or `voice` on its own if that is all you want; take `execute`, `scaffold`, and `fathom-shared` together, since `fathom-shared` carries the contract files the other two read.
+Take `ship`, `review`, `voice`, or `frontend-design-pipeline` on its own if that is all you want; take `execute`, `scaffold`, and `fathom-shared` together, since `fathom-shared` carries the contract files the other two read.
 
 **Claude Code plugins** - also available, for Claude Code only:
 
@@ -26,7 +26,7 @@ Take `ship`, `review`, or `voice` on its own if that is all you want; take `exec
 
 The two plugins are independent: install either one alone.
 Fathom needs a tracker MCP. Ship needs a git repository with a remote.
-`review` and `voice` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
+`review`, `voice`, and `frontend-design-pipeline` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
 
 > Individual plugins may have additional prerequisites that run in your **terminal** (e.g., `brew install`). See each plugin's README for details.
 
@@ -219,6 +219,55 @@ recalibrate my voice
 - **Never from memory** - the voice files are read in full at the start of each conversation, because a summary of a voice is the default register with a costume on
 - **Knows when to stay out** - code, commit messages, test names, config, and text addressed to another agent are left alone
 
+---
+
+### frontend-design-pipeline (v1.0.0)
+
+Frontend design pipeline takes a UI from product idea to finished build by chaining four design skills in a fixed order, and adds one stop for you to pick a direction.
+It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with one taste-skill preset, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
+It ships no design knowledge of its own and never copies the skills it calls.
+Only impeccable is required; the rest improve the result when installed.
+
+#### Prerequisites
+
+- [impeccable](https://github.com/pbakaus/impeccable), which builds and finishes every run: `npx skills@latest add pbakaus/impeccable -s impeccable -g`
+
+#### Works best with
+
+Each of these runs one stage.
+When one is missing, the pipeline skips that stage, says so once with the install command, and carries on.
+
+| Skill | Stage | Install |
+|-------|-------|---------|
+| [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Candidate design systems (needs `python3` or `python`) | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
+| [taste-skill](https://github.com/Leonxlnx/taste-skill) presets | Direction briefs, one preset per candidate | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend redesign-existing-projects -g` |
+| [emil-design-eng](https://github.com/emilkowalski/skills) | Motion and interaction decisions | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
+
+#### Install
+
+```bash
+npx skills@latest add crodris/skills
+```
+
+#### Skills
+
+| Skill | Description |
+|-------|-------------|
+| `frontend-design-pipeline` | Runs options, direction, your pick, motion, and build in order, and writes the picked direction to DESIGN.md for impeccable to build against. |
+
+```bash
+design a landing page for my app and give me directions first
+redesign the settings screen
+run the full design flow
+```
+
+#### Features
+
+- **One preset per candidate** - taste-skill presets contradict each other, so each candidate gets exactly one
+- **One source of truth** - after your pick, DESIGN.md beats the generated candidates, any ui-ux-pro-max MASTER.md, and taste-skill hard bans
+- **Existing looks skip ahead** - a new page or a refinement inside the current look goes straight to motion or build
+- **Works outside Claude Code** - ui-ux-pro-max's search script is resolved from its own skill directory instead of the Claude Code-only `${CLAUDE_PLUGIN_ROOT}` path its SKILL.md uses
+
 ## Workflow
 
 1. **Scaffold requirements**: talk to the scaffold skill, for example "scaffold these requirements"
@@ -230,7 +279,7 @@ recalibrate my voice
 ## Repository Layout
 
 Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/marketplace.json` decides which plugin owns which skill through a per-entry `skills` array.
-A skill claimed by no entry, such as `review` or `voice`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
+A skill claimed by no entry, such as `review`, `voice`, or `frontend-design-pipeline`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the versions into this README and fails when a skill directory is claimed by no plugin, by more than one, or is claimed but missing.
 
