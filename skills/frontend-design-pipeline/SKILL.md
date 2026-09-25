@@ -21,14 +21,14 @@ Every stage except the pick invokes another skill and follows that skill's instr
 | 5 | `impeccable` | `npx skills@latest add pbakaus/impeccable -s impeccable -g` |
 
 Check for impeccable before routing, since it is required.
-When it is missing, stop and give its install command for the user to run.
+When it is missing, stop and give its install command.
 
 The others are optional.
-When one is missing, skip its stage, say so once with its install command for the user to run, and continue.
+When one is missing, skip its stage, say so once with its install command, and continue.
 Never run an install command yourself.
 Stage 2 runs with whichever presets are installed and is skipped only when none are.
 Without ui-ux-pro-max, stage 2 builds 2-3 briefs from PRODUCT.md, one installed preset each.
-Without any taste preset, condense each stage 1 candidate into the brief shape stage 2 defines, and offer those in stage 3.
+Without any taste preset, condense each stage 1 candidate into the brief shape and letter labels stage 2 defines, and offer those in stage 3.
 With neither, skip stage 3, and skip stage 4 too, since there is no direction to decide motion for yet.
 
 ## Precedence
@@ -40,7 +40,7 @@ Impeccable builds last and makes the final call on anything DESIGN.md leaves ope
 
 ## Routing
 
-Pick the entry stage before anything else.
+After the impeccable check, pick the entry stage before any stage runs.
 
 - **No visual world yet, or a redesign that replaces the current look:** start at stage 1.
 - **Work inside the current look, whether a new page or a refinement:** skip stages 1-3.
@@ -107,3 +107,4 @@ When stage 3 did not run because nothing was installed to produce briefs, let im
 
 Then run impeccable's `critique` and `polish` on the result.
 When stage 3 wrote the seed, finish with impeccable's `document` in scan mode after `polish`, so the built tokens replace the seed.
+Tell it the seed is meant to be replaced and to merge, so the stage 4 motion decisions in Overview carry over.
