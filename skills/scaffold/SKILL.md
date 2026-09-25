@@ -70,6 +70,9 @@ If any of these files cannot be found and read, stop immediately and report whic
    - When they are too thin to split sensibly, when scope is unclear, or when two incompatible readings are both plausible, do not invent a confident breakdown.
    - Ask targeted questions about exactly what is missing, one question at a time, and wait for answers before drafting.
    - Prefer the structured question mechanism named in `agents.md` for those questions.
+   - When the requirements leave the approach open, propose two or three distinct approaches, each with its trade-offs, and recommend one.
+     In ask mode, wait for the user's choice; in auto mode, take the recommended approach and say so.
+     Draft the main issue and every sub-issue from the chosen approach, and skip this when the requirements already fix the approach.
 7. Draft the scaffold from the gathered requirements and the codebase context.
    - Write a main issue title and a description in four parts: the problem from the user's side, the solution from the user's side, numbered user stories in the form "As a <actor>, I want <feature>, so that <benefit>", and the test seams, preferring the highest existing seam each behavior can be tested at.
    - Infer the main issue's type from the requirements, one of feature, bug, chore, or docs, defaulting to feature when the requirements do not indicate one.
