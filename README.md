@@ -14,7 +14,8 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship`, `review`, `voice`, or `frontend-design-pipeline` on its own if that is all you want; take `execute`, `scaffold`, and `fathom-shared` together, since `fathom-shared` carries the contract files the other two read.
+Take `ship`, `review`, `voice`, or `frontend-design-pipeline` on its own if that is all you want.
+`execute` and `scaffold` require `fathom-shared`, which carries the contract files they read, and each stops with its install command when it is missing.
 
 **Claude Code plugins** - also available, for Claude Code only:
 
@@ -32,7 +33,7 @@ Fathom needs a tracker MCP. Ship needs a git repository with a remote.
 
 ## Available Plugins
 
-### fathom (v2.2.0)
+### fathom (v2.3.0)
 
 Fathom provides two agent skills, execute and scaffold, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter.
 It works with Asana or Linear as your issue tracker, and both skills run unchanged on Claude Code and Kiro.
@@ -173,7 +174,7 @@ review #107
 
 ---
 
-### voice (v1.0.0)
+### voice (v1.1.0)
 
 Voice drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
 PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
@@ -188,6 +189,11 @@ The folder or pasted samples stay listed in the config, so when the output drift
 #### Prerequisites
 
 - A writable `$XDG_CONFIG_HOME/voice/` (or `~/.config/voice/` when that variable is unset) for the config file and, when the interview builds one, the voice file
+
+#### Works best with
+
+[unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) by Lauren Tan (poteto), from the pstack collection in cursor/plugins, an optional pre-pass that voice runs before its own pass when installed: `npx skills@latest add cursor/plugins -s unslop -g`.
+Voice works fully without it.
 
 #### Install
 
@@ -300,4 +306,4 @@ When a finding is a reviewed false positive, suppress it in the repo-root `.skil
 
 MIT
 
-Some rules adapted from mattpocock/skills (MIT).
+Some rules adapted from mattpocock/skills and obra/superpowers (MIT).

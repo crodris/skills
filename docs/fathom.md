@@ -187,6 +187,9 @@ If your requirements are too thin to split sensibly, it will not invent a breakd
 It asks targeted questions instead, one at a time.
 Asking "make the cart better" gets you questions, not five fabricated tickets.
 
+When the requirements leave the approach open, it proposes two or three approaches with their trade-offs and recommends one.
+Sub-issues are vertical slices, each demoable on its own, and each names the sub-issues that block it; blockers are created first.
+
 When the scaffold exists, it offers to hand straight off to `execute`, or does so without asking in auto mode.
 
 ## Using execute
@@ -210,7 +213,8 @@ that PR got abandoned
 ```
 
 A run does this: verifies the tracker MCP, sweeps for merged work, resolves tracker and task memory, fetches the issue, reads relevant code, creates the branch from a freshly fetched base, builds the breakdown and plan document, moves the issue to in progress, then loops one task at a time.
-Each task gets claimed, implemented, tested, committed on its own, and closed in both task memory and the tracker.
+Each task gets claimed, implemented, tested with the typecheck and its own test files, committed on its own, and closed in both task memory and the tracker.
+The last task runs the full suite instead.
 At the end it pushes, opens the review - or, in the manual tier, hands you everything needed to open it - and moves the issue to in review.
 
 Re-invoking on the same issue resumes it.
@@ -226,7 +230,7 @@ Two modes, and the difference is only how many questions you get.
 **Ask mode**, the default, stops for the issue draft, the handoff, and any genuinely ambiguous choice.
 
 **Auto mode** runs straight through.
-It skips the draft approval, the handoff question, ties that the documented precedence can settle on its own, and the two first-run answers that are genuinely determinate: exactly one available destination, or state names that match the three phases exactly.
+It skips the draft approval, the approach choice, the handoff question, ties that the documented precedence can settle on its own, and the two first-run answers that are genuinely determinate: exactly one available destination, or state names that match the three phases exactly.
 Everything else is asked even in auto mode.
 
 Auto mode removes friction, not judgment.

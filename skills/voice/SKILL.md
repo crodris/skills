@@ -1,7 +1,7 @@
 ---
 name: voice
 description: This skill should be used when the user asks to draft, write, rewrite, or polish prose they will post under their own name, such as a pull request description or review comment, a reply on a PR thread, a GitHub issue, a Slack or Discord message, an email, a README or other human-facing doc, a blog post, a LinkedIn post, a cover letter, or release notes. Also use when the user says "rewrite this so it sounds like me", "this sounds too AI", "make this sound human", "does this sound like me", "in my voice", or mentions their voice DNA, voice file, or writing style, including asking to change, loosen, or tighten a rule in one. Also use when the user says "voice setup", "set up my voice", "recalibrate my voice", "my voice is drifting", or asks where their voice file lives. Do not use for code, commit messages, test names, identifiers, config files, or text another agent will parse.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Voice
@@ -268,6 +268,10 @@ When one of these is the plainly right word, the voice file can say so.
 Until it does, find the plain word.
 
 ## Before handing text back
+
+When the unslop skill is installed, run it first: on the input text before rewriting it in rewrite mode, and on the draft before the pass below in draft mode.
+It is optional, and without it the pass below runs alone.
+Keep the text from before unslop ran, and put back anything unslop removed that a voice file allows, since the voice file wins.
 
 Run this pass on the whole draft, every time, in this order.
 

@@ -26,8 +26,9 @@ This skill never writes task-memory or checklist files; the execute skill create
 
 Before doing any tracker work, read:
 
-These paths are relative to the directory containing this SKILL.md file, not the current workspace.
-In a global Kiro install they resolve under `~/.kiro/skills/` (for example `~/.kiro/skills/fathom-shared/trackers.md`); in a Claude Code plugin install they resolve inside the plugin's `skills/` directory.
+These paths are relative to the directory containing this SKILL.md file, not the current workspace, and they all point into the fathom-shared skill installed next to this one.
+When `../fathom-shared/` does not exist there, stop before anything else and give its install command for the user to run, matching how this skill was installed; never run it yourself.
+That is `npx skills@latest add crodris/skills -s fathom-shared -g` for a global install, without `-g` for a project install, with the same `-a <agent>` flag the install used, such as `-a kiro-cli` on Kiro, and `/plugin install fathom@crodris` again for a Claude Code plugin install.
 
 - `../fathom-shared/trackers.md` for the tracker contract and the tracker profile default destination.
 - `../fathom-shared/agents.md` for the per-agent notes, including the structured question mechanism to prefer whenever this procedure asks the user anything.
@@ -59,7 +60,7 @@ If any of these files cannot be found and read, stop immediately and report whic
 4. Gather the requirements before drafting.
    - Take them from the invocation itself when the text is there.
    - When the invocation names or points at a file, such as a PRD, spec, or design doc, read that file and use it as the requirements; a path or filename in the request means read it rather than working from the filename alone.
-   - Otherwise use the requirements established earlier in this conversation.
+   - Otherwise, or when the user names the current conversation as the source, synthesize the requirements from this conversation instead of interviewing them; step 6's questions still fire when it is too thin, unclear in scope, or open to two incompatible readings.
    - Summarize what you understood in one or two sentences so the user can catch a misread before any drafting happens.
 5. Ground the breakdown in the codebase before drafting.
    - Search and read the files the requirements would touch, and note the existing patterns, module boundaries, and test style you find.
@@ -69,10 +70,14 @@ If any of these files cannot be found and read, stop immediately and report whic
    - When they are too thin to split sensibly, when scope is unclear, or when two incompatible readings are both plausible, do not invent a confident breakdown.
    - Ask targeted questions about exactly what is missing, one question at a time, and wait for answers before drafting.
    - Prefer the structured question mechanism named in `agents.md` for those questions.
+   - When the requirements leave the approach open, propose two or three distinct approaches, each with its trade-offs, and recommend one.
+     In ask mode, ask it on its own, once every targeted question is answered, with the structured question mechanism, and wait for the choice; in auto mode, take the recommended approach and say so.
+     Draft the main issue and every sub-issue from the chosen approach, and skip this when the requirements already fix the approach.
 7. Draft the scaffold from the gathered requirements and the codebase context.
-   - Write a main issue title and a description that summarizes the requirements.
+   - Write a main issue title and a description in four parts: the problem from the user's side, the solution from the user's side, numbered user stories in the form "As a <actor>, I want <feature>, so that <benefit>", and the test seams, preferring the highest existing seam each behavior can be tested at.
    - Infer the main issue's type from the requirements, one of feature, bug, chore, or docs, defaulting to feature when the requirements do not indicate one.
-   - Break the requirements into three to seven sub-issue drafts, each sized as an independently implementable unit of work.
+   - Break the requirements into three to seven sub-issue drafts, each a tracer-bullet vertical slice: a narrow path through every layer the change touches, demoable on its own, and never one layer of the whole feature.
+   - Give each draft its blocking edges, the other drafts that must land before it can start, or none, and order the drafts so every blocker comes before what it blocks.
    - In ask mode, show the full draft, main issue title, type, description, and every sub-issue, to the user and wait for approval before creating anything.
    - In auto mode, skip that approval: create the scaffold immediately and report the same draft content as what was created.
    - Draft approval must be the only open question in that turn; never show it alongside a setup question or any other unanswered question.
@@ -81,7 +86,8 @@ If any of these files cannot be found and read, stop immediately and report whic
    - In ask mode, treat only an explicit, unambiguous approval of the draft as permission to create anything; never treat an ambiguous or negative reply, such as a bare "decline", as draft approval.
 8. Create the scaffold, once approved in ask mode or immediately in auto mode.
    - Call `createIssue` for the main issue using the approved title, description, type, and resolved destination.
-   - Call `createSubIssue` once per approved sub-issue draft, linking each to the newly created main issue.
+   - Call `createSubIssue` once per approved sub-issue draft, in that order, linking each to the newly created main issue.
+   - Creating blockers first gives each later sub-issue real refs to name, so end each sub-issue description with a `Blocked by:` line listing each blocker's Linear key or full Asana task URL, or `none`.
    - Report the result as a compact block listing the tracker, the main issue ref, title and URL, then one line per sub-issue with its ref and URL, so the scaffold is scannable at a glance.
    - Report each issue's ref using that tracker's issue ref scheme, as defined in that tracker's adapter file; for Asana this is the short `asana-<last six digits of the GID>` form, never the full GID.
    - Hand off with a reference the adapter's `getIssue` can resolve in a fresh session: the key for Linear, and for Asana the full task URL alongside the short ref, since the truncated form alone cannot be resolved back to the task.
