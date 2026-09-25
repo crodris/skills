@@ -192,7 +192,7 @@ The folder or pasted samples stay listed in the config, so when the output drift
 
 #### Works best with
 
-[unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) by Lauren Tan (poteto), from the pstack collection in cursor/plugins, an optional pre-pass that voice runs before its own pass when installed: `npx skills@latest add cursor/plugins -s unslop -g`.
+[unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) by Lauren Tan (poteto), from the pstack collection in cursor/plugins, is an optional pre-pass that voice runs before its own pass when installed: `npx skills@latest add cursor/plugins -s unslop -g`.
 Voice works fully without it.
 
 #### Install
