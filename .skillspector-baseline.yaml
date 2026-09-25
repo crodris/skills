@@ -126,11 +126,16 @@ rules:
     path: "SKILL.md"
     message: "*npx skills*"
     reason: >-
-      Reviewed, intentional: frontend-design-pipeline's companion table
-      gives the user skills.sh install commands (npx skills@latest add) for
-      the skills its stages call, and tells the agent to show a missing
-      one's command rather than run it. Same reasoning as the agents.md
-      rule above: pinning the CLI goes stale and is not a security
-      boundary. Caution: path "SKILL.md" matches every skill's SKILL.md,
-      so this hides any RP1 "npx skills" hit repo-wide; re-review before
-      adding an npx skills command that a skill executes itself.
+  - id: "RP1"
+    path: "SKILL.md"
+    message: "*npx skills*"
+    reason: >-
+      Reviewed, intentional: frontend-design-pipeline prints skills.sh
+      install commands (npx skills@latest add) for the companion skills its
+      stages call, and execute and scaffold print fathom-shared's install
+      command when it is missing. Each is for the user to run, and
+      frontend-design-pipeline says never to run one itself. Same reasoning
+      as the agents.md rule above: pinning the CLI goes stale and is not a
+      security boundary. Caution: path "SKILL.md" matches every skill's
+      SKILL.md, so this hides any RP1 "npx skills" hit repo-wide; re-review
+      before adding an npx skills command that a skill executes itself.

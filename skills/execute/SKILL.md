@@ -34,8 +34,8 @@ Every run begins by reading durable state from the repository and the tracker, n
 
 Before doing any tracker or memory work, read:
 
-These paths are relative to the directory containing this SKILL.md file, not the current workspace.
-In a global Kiro install they resolve under `~/.kiro/skills/` (for example `~/.kiro/skills/fathom-shared/trackers.md`); in a Claude Code plugin install they resolve inside the plugin's `skills/` directory.
+These paths are relative to the directory containing this SKILL.md file, not the current workspace, and they all point into the fathom-shared skill installed next to this one.
+When `../fathom-shared/` does not exist there, stop before anything else and give its install command, the same way this skill was installed: `npx skills@latest add crodris/skills -s fathom-shared -g` for a global install, without `-g` for a project install.
 
 - `../fathom-shared/trackers.md` for the tracker contract, phase names, and first-run profile setup.
 - `../fathom-shared/forges.md` for the forge contract, adapter resolution, the capability tiers, and base-branch resolution.
@@ -176,7 +176,7 @@ If any of these files cannot be found and read, stop immediately and report whic
     - Move the claimed task's linked sub-issue to the `inProgress` phase, subject to the adapter's own rules for sub-issues; the Asana adapter degrades this to a no-op on subtasks, so read its subtask section rather than assuming a state change happens.
       Never redirect a sub-issue transition onto the main issue: closing a parent because one child finished would mark the whole issue done early.
     - Implement that one unit of work, following the codebase patterns found in step 6.
-    - Run the tests covering that unit.
+    - Run the typecheck, when the project has one, and the test files covering that unit, not the full suite.
       When the repository has no test framework, or the touched code has no tests, say so once and write a test for the unit using whatever the project already depends on, then treat that test as this task's verification.
       When the project genuinely cannot run tests, say so plainly in the progress line and in the review body rather than implying the work was verified.
     - On a passing run, commit the change with a message referencing the issue ref and the task, staged and worded per `conventions.md`: never stage with a blanket pattern, and never stage a file that could carry a secret.
@@ -218,6 +218,7 @@ If any of these files cannot be found and read, stop immediately and report whic
     The single-review path, for an issue that was not split into a stack:
 
     Commit any leftover uncommitted change that belongs to this issue's tasks, leaving unrelated working-tree edits alone rather than sweeping them into the review.
+    Run the full test suite once, and on a failure stop and hold exactly as step 10 does for a failure that cannot be fixed, naming the failing tests.
     Then run the commit reconciliation from `conventions.md` and stop if the task and commit counts disagree, in that order, so the range it counts already carries every commit this issue's tasks produced.
     Close the parent task in the memory backend (a no-op for the checklist adapter, whose file is the parent record).
 
@@ -235,6 +236,7 @@ If any of these files cannot be found and read, stop immediately and report whic
 
     When this issue was split into a stack, the review-opening portion above is a per-bundle routine rather than a single closing action, and step 10 invokes it once per bundle as that bundle's last task closes.
     For bundle k of N:
+    - Run the full test suite once on branch k, and on a failure stop and hold as the single-review path does.
     - Commit any leftover uncommitted change that belongs to this bundle's tasks, leaving unrelated working-tree edits alone rather than sweeping them into the review, exactly as the single-review path does before it opens its one review.
       A change left uncommitted here is absent from bundle k's review and lands in bundle k+1's instead, which is worse than the single-review case rather than merely equivalent to it.
     - Then reconcile bundle k's closed tasks against the commits on its branch, over that bundle's own range as it stands after the commit above, per the per-bundle rule in `conventions.md`; stop and do not open this bundle's review when they disagree.
