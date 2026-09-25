@@ -16,18 +16,20 @@ Every stage except the pick invokes another skill and follows that skill's instr
 | Stage | Skill | Install |
 |-------|-------|---------|
 | 1 | `ui-ux-pro-max` | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
-| 2 | one of `minimalist-ui`, `high-end-visual-design`, `industrial-brutalist-ui`, `gpt-taste`, `design-taste-frontend`, `redesign-existing-projects` | `npx skills@latest add Leonxlnx/taste-skill -s <preset> -g` |
+| 2 | one of `minimalist-ui`, `high-end-visual-design`, `industrial-brutalist-ui`, `gpt-taste`, `design-taste-frontend`, `redesign-existing-projects` | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend redesign-existing-projects -g` |
 | 4 | `emil-design-eng` | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
 | 5 | `impeccable` | `npx skills@latest add pbakaus/impeccable -s impeccable -g` |
 
-Impeccable is required.
-When it is missing, stop before any stage and give its install command.
+Check for impeccable before routing, since it is required.
+When it is missing, stop and give its install command for the user to run.
 
 The others are optional.
-When one is missing, skip its stage, say so once with its install command, and continue.
-Without ui-ux-pro-max, stage 2 builds each brief from its preset and PRODUCT.md alone.
-Without any taste preset, stage 3 offers the stage 1 candidates as the briefs.
-With neither, skip stage 3 too.
+When one is missing, skip its stage, say so once with its install command for the user to run, and continue.
+Never run an install command yourself.
+Stage 2 runs with whichever presets are installed and is skipped only when none are.
+Without ui-ux-pro-max, stage 2 builds 2-3 briefs from PRODUCT.md, one installed preset each.
+Without any taste preset, condense each stage 1 candidate into the brief shape stage 2 defines, and offer those in stage 3.
+With neither, skip stage 3, and skip stage 4 too, since there is no direction to decide motion for yet.
 
 ## Precedence
 
@@ -41,21 +43,22 @@ Impeccable builds last and makes the final call on anything DESIGN.md leaves ope
 Pick the entry stage before anything else.
 
 - **No visual world yet, or a redesign that replaces the current look:** start at stage 1.
-- **Work inside the current look, whether a new page or a refinement:** skip stages 1-3. Start at stage 4 when the change touches motion or interaction, otherwise at stage 5.
+- **Work inside the current look, whether a new page or a refinement:** skip stages 1-3.
+  Start at stage 4 when the change touches motion or interaction, otherwise at stage 5.
 
 The current look is DESIGN.md when it exists, and otherwise the incumbent code.
 When the request does not say whether the current look stays, ask once.
 
-## 1. Options (ui-ux-pro-max)
-
-When PRODUCT.md is missing, invoke the impeccable skill's `init` first, since impeccable's new-work flow requires one.
+On the stage 1 route, invoke the impeccable skill's `init` first when PRODUCT.md is missing, whether or not stage 1 itself runs, since impeccable's new-work flow requires one.
 Feed PRODUCT.md into the stage 1 queries and the stage 2 briefs.
+
+## 1. Options (ui-ux-pro-max)
 
 Invoke the ui-ux-pro-max skill and generate 2-3 candidate design systems for the product type with `--design-system`.
 Vary the query keywords or the `--variance`, `--motion`, and `--density` sliders between runs so the candidates differ.
 
 Its SKILL.md builds the script path from `${CLAUDE_PLUGIN_ROOT}`, which exists only inside Claude Code plugins.
-Run `scripts/search.py` from the directory that holds ui-ux-pro-max's own SKILL.md instead, with `python3`, or `python` where `python3` is missing.
+Resolve the script as `scripts/search.py` inside the directory that holds ui-ux-pro-max's own SKILL.md instead, and run it with `python3`, or `python` where `python3` is missing.
 Do not pass `--persist`.
 
 ## 2. Direction (taste-skill)
@@ -100,6 +103,7 @@ On a redesign, also tell it the DESIGN.md world replaces the incumbent look in t
 
 When routing skipped stages 1-3, tell it to work inside the current look, and whether the change is a refinement or a new page.
 
-When stage 3 did not run because nothing was installed to produce briefs, let impeccable's new-work flow choose the world with the user.
+When stage 3 did not run because nothing was installed to produce briefs, let impeccable's new-work flow choose the world with the user, and on a redesign tell it the current look is being replaced.
 
 Then run impeccable's `critique` and `polish` on the result.
+When stage 3 wrote the seed, finish with impeccable's `document` in scan mode after `polish`, so the built tokens replace the seed.
