@@ -26,6 +26,8 @@ Skipping them changes how much the run interrupts you, not whether it is correct
 
 - The issue draft in `scaffold`.
   Create the scaffold immediately and report what was created instead of asking first.
+- The approach choice in `scaffold`, when the requirements leave the approach open.
+  Take the recommended approach and report it with the draft.
 - The handoff question after scaffolding.
   Continue straight into `execute` on the new issue.
 - A tracker or destination tie that the documented precedence can settle on its own.

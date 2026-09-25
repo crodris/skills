@@ -35,7 +35,8 @@ Every run begins by reading durable state from the repository and the tracker, n
 Before doing any tracker or memory work, read:
 
 These paths are relative to the directory containing this SKILL.md file, not the current workspace, and they all point into the fathom-shared skill installed next to this one.
-When `../fathom-shared/` does not exist there, stop before anything else and give its install command, the same way this skill was installed: `npx skills@latest add crodris/skills -s fathom-shared -g` for a global install, without `-g` for a project install.
+When `../fathom-shared/` does not exist there, stop before anything else and give its install command for the user to run, matching how this skill was installed; never run it yourself.
+That is `npx skills@latest add crodris/skills -s fathom-shared -g` for a global install, without `-g` for a project install, with the same `-a <agent>` flag the install used, such as `-a kiro-cli` on Kiro, and `/plugin install fathom@crodris` again for a Claude Code plugin install.
 
 - `../fathom-shared/trackers.md` for the tracker contract, phase names, and first-run profile setup.
 - `../fathom-shared/forges.md` for the forge contract, adapter resolution, the capability tiers, and base-branch resolution.
@@ -126,6 +127,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    - Plan the units of work before writing anything to the tracker or the memory backend.
      When the issue has no existing children, plan three to seven units of work, each sized so it can be implemented and verified on its own, and hold that plan rather than creating anything from it yet.
      When the issue already has children, call `listSubIssues` to adopt them instead of inventing a new breakdown, which reads the tracker without writing to it.
+     Order adopted children by the `Blocked by:` line that scaffold ends each description with, read through `getIssue`, so every blocker comes before what it blocks; without those lines, use creation order, which ascending Linear keys and Asana GIDs give, never the order the list call returns.
      Either way the units are ordered, each building on the one before it, and that order is what the `deps` below and any bundle boundary follow.
    - Decide whether this issue produces one review or a stack, from those planned units and before anything is written to the tracker.
      Never consider a split when the resolved forge tier is the manual tier, whatever the breakdown looks like, since that tier cannot create a review at all.
@@ -135,7 +137,7 @@ If any of these files cannot be found and read, stop immediately and report whic
      Judge that from the plan alone, because the plan is all there is to judge from at this moment: the decision is made at breakdown time, before any of the work is written, so there is no build to run and no tests to pass at a candidate boundary.
      This is therefore a prediction about reviewability rather than a verified property of the repository, and two later steps catch a wrong prediction.
      The confirmation stop below shows the proposed boundaries to the user before anything is built, which is the cheap correction.
-     The per-bundle finish routine in step 11 then reconciles that bundle and runs its tests for real, and its stop-and-hold fires when either disagrees, which is the expensive one.
+     The bundle's last task then runs the full suite and the per-bundle finish routine in step 11 reconciles it, and a stop-and-hold fires when either disagrees, which is the expensive one.
      A boundary that looked self-contained in the plan and turns out not to be is caught before that bundle's review opens rather than after it ships.
      When no valid cut point exists, proceed as a single review and say so rather than forcing a boundary.
      Both conditions are properties of the planned units rather than of anything on the tracker: the count comes from the plan, and a cut point's validity is a property of the work itself, which is what lets this whole decision run before a single sub-issue exists.
@@ -177,6 +179,7 @@ If any of these files cannot be found and read, stop immediately and report whic
       Never redirect a sub-issue transition onto the main issue: closing a parent because one child finished would mark the whole issue done early.
     - Implement that one unit of work, following the codebase patterns found in step 6.
     - Run the typecheck, when the project has one, and the test files covering that unit, not the full suite.
+      On the last task of the issue, or of a bundle on a stack, run the full suite instead, so a failure it finds is fixed inside that task's commit or holds that task open.
       When the repository has no test framework, or the touched code has no tests, say so once and write a test for the unit using whatever the project already depends on, then treat that test as this task's verification.
       When the project genuinely cannot run tests, say so plainly in the progress line and in the review body rather than implying the work was verified.
     - On a passing run, commit the change with a message referencing the issue ref and the task, staged and worded per `conventions.md`: never stage with a blanket pattern, and never stage a file that could carry a secret.
@@ -218,7 +221,6 @@ If any of these files cannot be found and read, stop immediately and report whic
     The single-review path, for an issue that was not split into a stack:
 
     Commit any leftover uncommitted change that belongs to this issue's tasks, leaving unrelated working-tree edits alone rather than sweeping them into the review.
-    Run the full test suite once, and on a failure stop and hold exactly as step 10 does for a failure that cannot be fixed, naming the failing tests.
     Then run the commit reconciliation from `conventions.md` and stop if the task and commit counts disagree, in that order, so the range it counts already carries every commit this issue's tasks produced.
     Close the parent task in the memory backend (a no-op for the checklist adapter, whose file is the parent record).
 
@@ -236,7 +238,6 @@ If any of these files cannot be found and read, stop immediately and report whic
 
     When this issue was split into a stack, the review-opening portion above is a per-bundle routine rather than a single closing action, and step 10 invokes it once per bundle as that bundle's last task closes.
     For bundle k of N:
-    - Run the full test suite once on branch k, and on a failure stop and hold as the single-review path does.
     - Commit any leftover uncommitted change that belongs to this bundle's tasks, leaving unrelated working-tree edits alone rather than sweeping them into the review, exactly as the single-review path does before it opens its one review.
       A change left uncommitted here is absent from bundle k's review and lands in bundle k+1's instead, which is worse than the single-review case rather than merely equivalent to it.
     - Then reconcile bundle k's closed tasks against the commits on its branch, over that bundle's own range as it stands after the commit above, per the per-bundle rule in `conventions.md`; stop and do not open this bundle's review when they disagree.

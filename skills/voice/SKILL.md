@@ -269,9 +269,9 @@ Until it does, find the plain word.
 
 ## Before handing text back
 
-When the unslop skill is installed, run it on the draft first, in draft and rewrite modes.
+When the unslop skill is installed, run it first: on the input text before rewriting it in rewrite mode, and on the draft before the pass below in draft mode.
 It is optional, and without it the pass below runs alone.
-Where a voice file allows something unslop removes, the voice file wins, since this pass runs last.
+Keep the text from before unslop ran, and put back anything unslop removed that a voice file allows, since the voice file wins.
 
 Run this pass on the whole draft, every time, in this order.
 
