@@ -107,4 +107,4 @@ When stage 3 did not run because nothing was installed to produce briefs, let im
 
 Then run impeccable's `critique` and `polish` on the result.
 When stage 3 wrote the seed, finish with impeccable's `document` in scan mode after `polish`, so the built tokens replace the seed.
-Tell it to merge: the scanned tokens and sections replace the seed, the SEED marker and placeholders are dropped, and the stage 4 motion decisions in Overview carry over.
+Tell it to merge: the scanned tokens replace the seed, the SEED marker and placeholders are dropped, and the stage 4 motion decisions in Overview carry over.

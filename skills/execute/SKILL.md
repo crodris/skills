@@ -127,8 +127,9 @@ If any of these files cannot be found and read, stop immediately and report whic
    - Plan the units of work before writing anything to the tracker or the memory backend.
      When the issue has no existing children, plan three to seven units of work, each sized so it can be implemented and verified on its own, and hold that plan rather than creating anything from it yet.
      When the issue already has children, call `listSubIssues` to adopt them instead of inventing a new breakdown, which reads the tracker without writing to it.
-     Order adopted children by the `Blocked by:` line that scaffold ends each description with, read through `getIssue`, so every blocker comes before what it blocks; without those lines, use creation order, from ascending Linear keys or each Asana task's `created_at`, never the order the list call returns.
-     A child with no `Blocked by:` line, or one caught in a cycle, takes its creation-order position, and the run says so.
+     Order adopted children by the `Blocked by:` line that scaffold ends each description with, read through `getIssue`, so every blocker comes before what it blocks.
+     Break ties, and order children whose line is missing or reads `none`, by creation order: ascending Linear keys, or Asana's subtask order under the parent, which scaffold fills in creation order; never the order a Linear list call returns.
+     Children caught in a cycle also take their creation-order position, and the run says so.
      Either way the units are ordered, each building on the one before it, and that order is what the `deps` below and any bundle boundary follow.
    - Decide whether this issue produces one review or a stack, from those planned units and before anything is written to the tracker.
      Never consider a split when the resolved forge tier is the manual tier, whatever the breakdown looks like, since that tier cannot create a review at all.
@@ -138,7 +139,7 @@ If any of these files cannot be found and read, stop immediately and report whic
      Judge that from the plan alone, because the plan is all there is to judge from at this moment: the decision is made at breakdown time, before any of the work is written, so there is no build to run and no tests to pass at a candidate boundary.
      This is therefore a prediction about reviewability rather than a verified property of the repository, and two later steps catch a wrong prediction.
      The confirmation stop below shows the proposed boundaries to the user before anything is built, which is the cheap correction.
-     The bundle's last task then runs the full suite, where a failure holds that task open in step 10, and the per-bundle finish routine in step 11 stops when reconciliation disagrees, which is the expensive correction.
+     The bundle's last task then runs the typecheck and the full suite, where a failure that cannot be fixed holds that task open in step 10, and the per-bundle finish routine in step 11 stops when reconciliation disagrees, which is the expensive correction.
      A boundary that looked self-contained in the plan and turns out not to be is caught before that bundle's review opens rather than after it ships.
      When no valid cut point exists, proceed as a single review and say so rather than forcing a boundary.
      Both conditions are properties of the planned units rather than of anything on the tracker: the count comes from the plan, and a cut point's validity is a property of the work itself, which is what lets this whole decision run before a single sub-issue exists.
