@@ -48,15 +48,15 @@ Resolve all of it before touching the working tree, so the run never pauses mid-
 | `worktrees` | Preflight | Branch in place, no worktree. |
 | `release` | Stage 3 | Watch the base-branch pipeline to completion, expect no version bump. |
 | `post-merge` | Stage 3 | The built-in cleanup in stage 3, step 9. |
-| `light-paths` | Lanes and drive | No light lane; every run gets the subagent review. |
-| `security-paths` | Lanes and drive | No security review beside the code reviewer. |
+| `light-paths` | Stages 0 and 3 | No light lane; every run gets the subagent review. |
+| `security-paths` | Stages 0 and 3 | No security review beside the code reviewer. |
 | `drive` | Stages 1 and 3 | No drive; stage 1 ends on verify alone, and the confirmation pass runs as written in stage 3, step 5. |
 
 There is no review slot to resolve: the pre-merge review is always the code reviewer that stage 3 defines, never a command nor a review skill that wraps one.
 Never route a review tool into `verify`: a command this project names as a review step is not a verify gate.
 Verify is for deterministic local gates - lint, types, tests, build; review is for judgment.
 In tiers 2 to 5, drop such a command from its tier's answer and keep whatever else that tier named; when nothing survives, the tier did not answer at all, so carry on to the next one and ask under "No tier produced a verify command" if none does.
-A review tool recorded as `verify` in `.ship/config.md` is re-asked instead, under When to ask.
+A review tool recorded as `verify` in `.ship/config.md` is re-asked instead, under When to ask, and the final report names it as dropped.
 
 Resolve whether the configured review bot reviews every push or only the first, from the bot's own configuration in the repository (for CodeRabbit, `reviews.auto_review.auto_incremental_review: false` in `.coderabbit.yaml`).
 When nothing says either way, treat the bot as one that re-reviews every push, and poll: a wait that ends is the cheaper mistake.
@@ -168,7 +168,7 @@ Each round:
 1. Stage deliberately, never `git add -A`, and stage by explicit path in all three cases: the tracked files this run modified, the tracked files it deleted, and the new files it added.
    Every stage 1 fix landed in one of those, so a commit that carries only some of them ships a change whose verified fixes are missing.
    Take all three from `git status --porcelain`, stage each path that belongs to the change, and leave obvious strays alone.
-   An intent-to-add entry somebody left in the index is a new file like any other: git reports it as added and a plain `git commit` writes none of its content, so stage it again by name or reset it.
+   An intent-to-add entry somebody left in the index is a new file like any other: git reports it as added and a plain `git commit` writes none of its content, so stage it again by name when it belongs to the change, and otherwise leave it alone like any other stray.
    `.ship/config.md` already has its own commit from stage 0, so it is never part of this one.
    When a file's fate is genuinely unclear, ask the user before committing; never silently include it and never silently drop it.
 2. Follow the project's commit conventions, matching the format already in `git log`.

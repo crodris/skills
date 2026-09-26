@@ -30,7 +30,7 @@ security-paths: **/auth/**, db/migrations/**
 drive: bin/drive.sh run           # or skill:verify-<app>, a skill the repository ships
 ```
 
-Write the file once preflight confirms there is something to ship, and commit it only after preflight has settled which branch this run ships, before stage 1 begins.
+Commit the file only after preflight has settled which branch this run ships, before stage 1 begins.
 When preflight moves work to a feature branch, the file travels with the rest of the uncommitted work and is committed there.
 Give it its own commit, with a message that describes recording the pipeline and nothing else.
 Never fold it into a commit carrying the shipped change, and never add it to `.gitignore` on the user's behalf.
