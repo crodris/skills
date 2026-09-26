@@ -56,13 +56,13 @@ Use the first publisher available:
 1. The harness's own private publisher.
    In Claude Code that is the Artifact tool, and the artifact-design skill owns page mechanics (theme tokens, allowed CDNs, title) wherever it differs from the rules above.
    In Codex or any other harness, use the private publisher it designates.
-2. here.now, through the here-now skill, when `$HERENOW_API_KEY` or `~/.herenow/credentials` holds a key.
+2. here.now, through the here-now skill, when `$HERENOW_API_KEY` or `$HOME/.herenow/credentials` holds a key.
    Check before publishing, because without a key `publish.sh` creates an anonymous Site that anyone with the link can open and that cannot be made private.
    here.now publishes as anyone-with-link, so lock a new Site before the page goes up.
    Publish a one-line placeholder `index.html`, then `PATCH /api/v1/publish/{slug}/access` with `{"mode":"restricted","allowedEmails":[],"allowedDomains":[]}`, which makes the Site owner-only.
    The lock holds once a `GET` of the policy reads `restricted` and a logged-out request to the URL returns 401, so poll both for up to 2 minutes.
    Then publish the page with `--slug <slug>`.
-   Give the placeholder and the page each a directory holding only `index.html`, and run `publish.sh .` from inside it, so its `.herenow/` state file stays out of the repository.
+   Give the placeholder and the page each their own directory outside the repository, holding only `index.html`, and run `publish.sh .` from inside it, so its `.herenow/` state file stays out of the repository.
    If the lock does not hold, delete the placeholder Site and fall through to step 3, and if the delete fails, report the URL as public so the user can remove it.
    An update with `--slug` keeps whatever access the Site already has.
    When the skill is missing, tell the user to run `npx skills@latest add heredotnow/skill -s here-now -g` and continue with step 3.

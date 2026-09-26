@@ -12,18 +12,6 @@ rules:
       execute skill"). The skill defines no cron jobs, startup scripts, or
       cross-session state.
 
-  - id: "RA2"
-    path: "SKILL.md"
-    message: "*create or update, in auto mode too*"
-    reason: >-
-      False positive: the hidden-directory pattern (create|write|mkdir ...
-      ~/.name) spans lines, so it ran from html-comms' "Publish every page you
-      create or update" to the "~/.herenow/credentials" path 8 lines later,
-      which the skill only checks for an API key. html-comms creates nothing
-      under the home directory and keeps no cross-session state; here-now's
-      publish.sh writes its .herenow/state.json beside the page, outside the
-      repository.
-
   - id: "EA2"
     path: "SKILL.md"
     message: "*without asking*"
@@ -41,12 +29,13 @@ rules:
       writes without asking" limits unprompted writes to the user's own voice
       config directory, refuses symlinks out of it, and requires approval of
       each specific change for any other write. Re-reviewed for html-comms:
-      "publish every page ... without asking" sends the page only to a
+      "publish every page ... without asking" sends a new page only to a
       private target, the harness's own private publisher or a here.now Site
       locked to owner-only (restricted, empty allowlists) before the real page
       goes up, and falls back to the local path when neither is available.
-      The page leaves out secrets, private URLs, and local paths, and the
-      only deletion is of the placeholder Site that same run created.
+      An update keeps whatever access the owner set on that Site. The page
+      leaves out secrets, private URLs, and local paths, and the only
+      deletion is of the placeholder Site that same run created.
 
   # fathom-shared carries the contract files execute and scaffold read;
   # its SKILL.md exists so directory-copying installers (npx skills) bring it
@@ -145,13 +134,14 @@ rules:
     message: "*npx skills*"
     reason: >-
       Reviewed, intentional: frontend-design-pipeline prints skills.sh
-      install commands (npx skills@latest add) for the companion skills its
-      stages call, and execute and scaffold print fathom-shared's install
-      command when it is missing, and html-comms tells the user to run the
-      here-now install command and moves on to its next publisher. Each is for
-      the user to run, and frontend-design-pipeline says never to run one
-      itself. Same reasoning
-      as the agents.md rule above: pinning the CLI goes stale and is not a
-      security boundary. Caution: path "SKILL.md" matches every skill's
-      SKILL.md, so this hides any RP1 "npx skills" hit repo-wide; re-review
-      before adding an npx skills command that a skill executes itself.
+      install commands (npx skills@latest add) for the companion skills
+      its stages call, and execute and scaffold print fathom-shared's
+      install command when it is missing. html-comms tells the user to
+      run the here-now install command and moves on to its next
+      publisher. Each is for the user to run, and
+      frontend-design-pipeline says never to run one itself. Same
+      reasoning as the agents.md rule above: pinning the CLI goes stale
+      and is not a security boundary. Caution: path "SKILL.md" matches
+      every skill's SKILL.md, so this hides any RP1 "npx skills" hit
+      repo-wide; re-review before adding an npx skills command that a
+      skill executes itself.
