@@ -28,7 +28,14 @@ rules:
       only hides benign uses. Re-reviewed for voice: "the one place this skill
       writes without asking" limits unprompted writes to the user's own voice
       config directory, refuses symlinks out of it, and requires approval of
-      each specific change for any other write.
+      each specific change for any other write. Re-reviewed for html-comms:
+      "publish every page ... without asking" sends a new page only to a
+      private target, the harness's own private publisher or a here.now Site
+      locked to owner-only (restricted, empty allowlists) before the real page
+      goes up, and falls back to the local path when neither is available.
+      An update to a Site anyone beyond the owner can open asks first. The page
+      leaves out secrets, private URLs, and local paths, and the only
+      deletion is of the placeholder Site that same run created.
 
   # fathom-shared carries the contract files execute and scaffold read;
   # its SKILL.md exists so directory-copying installers (npx skills) bring it
@@ -127,11 +134,14 @@ rules:
     message: "*npx skills*"
     reason: >-
       Reviewed, intentional: frontend-design-pipeline prints skills.sh
-      install commands (npx skills@latest add) for the companion skills its
-      stages call, and execute and scaffold print fathom-shared's install
-      command when it is missing. Each is for the user to run, and
-      frontend-design-pipeline says never to run one itself. Same reasoning
-      as the agents.md rule above: pinning the CLI goes stale and is not a
-      security boundary. Caution: path "SKILL.md" matches every skill's
-      SKILL.md, so this hides any RP1 "npx skills" hit repo-wide; re-review
-      before adding an npx skills command that a skill executes itself.
+      install commands (npx skills@latest add) for the companion skills
+      its stages call, and execute and scaffold print fathom-shared's
+      install command when it is missing. html-comms tells the user to
+      run the here-now install command and moves on to its next
+      publisher. Each is for the user to run, and
+      frontend-design-pipeline says never to run one itself. Same
+      reasoning as the agents.md rule above: pinning the CLI goes stale
+      and is not a security boundary. Caution: path "SKILL.md" matches
+      every skill's SKILL.md, so this hides any RP1 "npx skills" hit
+      repo-wide; re-review before adding an npx skills command that a
+      skill executes itself.

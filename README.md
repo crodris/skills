@@ -14,7 +14,7 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship`, `review`, `voice`, or `frontend-design-pipeline` on its own if that is all you want.
+Take `ship`, `review`, `voice`, `frontend-design-pipeline`, or `html-comms` on its own if that is all you want.
 `execute` and `scaffold` require `fathom-shared`, which carries the contract files they read, and each stops with its install command when it is missing.
 
 **Claude Code plugins** - also available, for Claude Code only:
@@ -27,7 +27,7 @@ Take `ship`, `review`, `voice`, or `frontend-design-pipeline` on its own if that
 
 The two plugins are independent: install either one alone.
 Fathom needs a tracker MCP. Ship needs a git repository with a remote.
-`review`, `voice`, and `frontend-design-pipeline` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
+`review`, `voice`, `frontend-design-pipeline`, and `html-comms` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
 
 > Individual plugins may have additional prerequisites that run in your **terminal** (e.g., `brew install`). See each plugin's README for details.
 
@@ -277,6 +277,52 @@ run the full design flow
 - **Existing looks skip ahead** - a new page or a refinement inside the current look goes straight to motion or build
 - **Works outside Claude Code** - ui-ux-pro-max's search script is resolved from its own skill directory instead of the Claude Code-only `${CLAUDE_PLUGIN_ROOT}` path its SKILL.md uses
 
+---
+
+### html-comms (v1.0.0)
+
+HTML comms turns a plan, spec, write-up, findings, report, comparison, or set of UI mocks into one self-contained HTML page and publishes it to a private link.
+The page reads like a spec, works on a phone, and follows the system dark mode.
+It never writes HTML for the product itself.
+
+Adapted from Theo Browne's (t3dotgg) html-communication; chart heuristic from [ruesato/agent-skill-floreo](https://github.com/ruesato/agent-skill-floreo) (MIT).
+
+#### Prerequisites
+
+- A private publisher: the Artifact tool in Claude Code, whatever private publisher another harness designates, or here.now below; without one, the skill reports the local path and says the page is unpublished
+
+#### Works best with
+
+[here-now](https://github.com/heredotnow/skill) is the fallback publisher when the harness has none: `npx skills@latest add heredotnow/skill -s here-now -g`.
+It needs a saved here.now API key, because only a claimed Site can be made owner-only.
+
+#### Install
+
+```bash
+npx skills@latest add crodris/skills
+```
+
+#### Skills
+
+| Skill | Description |
+|-------|-------------|
+| `html-comms` | Writes one dense, mobile-readable HTML page about the work and publishes it to a private link without asking. |
+
+```bash
+write up these findings as HTML
+compare the three caching options
+give me mocks for the settings page
+HTML
+```
+
+#### Features
+
+- **Broad triggers** - a plan, report, comparison, or set of mocks all count, the word "plan" does not have to appear, and a bare "HTML" is enough
+- **Private first** - the harness's own private publisher wins; on here.now, which publishes as anyone-with-link, the skill locks a placeholder Site to owner-only and confirms the lock before the real page goes up, and an update to a Site anyone else can open asks first
+- **One stable link** - updates redeploy the same file to the same URL, and mocks labeled A, B, and C sit side by side in that one file
+- **Charts when the data has shape** - a table maps each kind of data to a chart, and every SVG carries a title and description for screen readers
+- **Safe to forward** - secrets, private URLs, and local paths stay out of the page, and nothing is called hosted before the upload succeeds
+
 ## Workflow
 
 1. **Scaffold requirements**: talk to the scaffold skill, for example "scaffold these requirements"
@@ -288,7 +334,7 @@ run the full design flow
 ## Repository Layout
 
 Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/marketplace.json` decides which plugin owns which skill through a per-entry `skills` array.
-A skill claimed by no entry, such as `review`, `voice`, or `frontend-design-pipeline`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
+A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipeline`, or `html-comms`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the versions into this README and fails when a skill directory is claimed by no plugin, by more than one, or is claimed but missing.
 
