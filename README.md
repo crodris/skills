@@ -275,6 +275,52 @@ run the full design flow
 - **Existing looks skip ahead** - a new page or a refinement inside the current look goes straight to motion or build
 - **Works outside Claude Code** - ui-ux-pro-max's search script is resolved from its own skill directory instead of the Claude Code-only `${CLAUDE_PLUGIN_ROOT}` path its SKILL.md uses
 
+---
+
+### html-comms (v1.0.0)
+
+HTML comms turns a plan, spec, write-up, findings, report, comparison, or set of UI mocks into one self-contained HTML page and publishes it to a private link.
+The page reads like a spec, works on a phone, and follows the system dark mode.
+It never writes HTML for the product itself.
+
+Adapted from Theo Browne's (t3dotgg) html-communication; chart heuristic from ruesato/agent-skill-floreo.
+
+#### Prerequisites
+
+- A private publisher: the Artifact tool in Claude Code, whatever private publisher another harness designates, or here.now below; without one, the skill reports the local path and says the page is unpublished
+
+#### Works best with
+
+[here-now](https://github.com/heredotnow/skill) is the fallback publisher when the harness has none: `npx skills@latest add heredotnow/skill -s here-now -g`.
+It needs a saved here.now API key, because only a claimed Site can be made owner-only.
+
+#### Install
+
+```bash
+npx skills@latest add crodris/skills
+```
+
+#### Skills
+
+| Skill | Description |
+|-------|-------------|
+| `html-comms` | Writes one dense, mobile-readable HTML page about the work and publishes it to a private link without asking. |
+
+```bash
+write up these findings as HTML
+compare the three caching options
+give me mocks for the settings page
+HTML
+```
+
+#### Features
+
+- **Broad triggers** - a plan, report, comparison, or set of mocks all count, the word "plan" does not have to appear, and a bare "HTML" is enough
+- **Private first** - the harness's own private publisher wins; on here.now, which publishes as anyone-with-link, the skill switches the Site to owner-only in the same step and confirms the mode before it reports the URL
+- **One stable link** - updates redeploy the same file to the same URL, and mocks labeled A, B, and C sit side by side in that one file
+- **Charts when the data has shape** - a table maps each kind of data to a chart, and every SVG carries a title and description for screen readers
+- **Safe to forward** - secrets, private URLs, and local paths stay out of the page, and nothing is called hosted before the upload succeeds
+
 ## Workflow
 
 1. **Scaffold requirements**: talk to the scaffold skill, for example "scaffold these requirements"
