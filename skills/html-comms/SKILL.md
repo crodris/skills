@@ -64,7 +64,7 @@ Use the first publisher available:
    Then publish the page with `--slug <slug>`.
    Give the placeholder and the page each their own directory outside the repository, holding only `index.html`, and run `publish.sh .` from inside it, so its `.herenow/` state file stays out of the repository.
    If the lock does not hold, delete the placeholder Site and fall through to step 3, and if the delete fails, report the URL as public so the user can remove it.
-   An update with `--slug` keeps whatever access the Site already has.
+   An update with `--slug` keeps the Site's access, so `GET` the policy first, and when anyone beyond the owner can open the Site, say who and ask before uploading.
    When the skill is missing, tell the user to run `npx skills@latest add heredotnow/skill -s here-now -g` and continue with step 3.
 3. The local path, reported as unpublished.
 

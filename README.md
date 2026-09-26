@@ -316,7 +316,7 @@ HTML
 #### Features
 
 - **Broad triggers** - a plan, report, comparison, or set of mocks all count, the word "plan" does not have to appear, and a bare "HTML" is enough
-- **Private first** - the harness's own private publisher wins; on here.now, which publishes as anyone-with-link, the skill locks a placeholder Site to owner-only and confirms the lock before the real page goes up, and an update keeps whatever access the Site already has
+- **Private first** - the harness's own private publisher wins; on here.now, which publishes as anyone-with-link, the skill locks a placeholder Site to owner-only and confirms the lock before the real page goes up, and an update to a Site anyone else can open asks first
 - **One stable link** - updates redeploy the same file to the same URL, and mocks labeled A, B, and C sit side by side in that one file
 - **Charts when the data has shape** - a table maps each kind of data to a chart, and every SVG carries a title and description for screen readers
 - **Safe to forward** - secrets, private URLs, and local paths stay out of the page, and nothing is called hosted before the upload succeeds

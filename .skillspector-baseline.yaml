@@ -33,7 +33,7 @@ rules:
       private target, the harness's own private publisher or a here.now Site
       locked to owner-only (restricted, empty allowlists) before the real page
       goes up, and falls back to the local path when neither is available.
-      An update keeps whatever access the owner set on that Site. The page
+      An update to a Site anyone beyond the owner can open asks first. The page
       leaves out secrets, private URLs, and local paths, and the only
       deletion is of the placeholder Site that same run created.
 
