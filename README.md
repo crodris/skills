@@ -308,4 +308,4 @@ When a finding is a reviewed false positive, suppress it in the repo-root `.skil
 
 MIT
 
-Some rules adapted from mattpocock/skills and obra/superpowers (MIT), and the hold mode, CI, and pull request title and body rules in ship and execute from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
+Some rules adapted from mattpocock/skills and obra/superpowers (MIT), and ship's hold mode, CI, and pull request title and body rules, and execute's title and body rules, from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.

@@ -230,7 +230,7 @@ If any of these files cannot be found and read, stop immediately and report whic
     - Confirm the resolved base with `resolveBase` first, as the contract requires, before anything is created against it.
     - Push the branch, unless the resolved adapter declares `pushesForYou`; when it does, `openReview` owns the push and pushing here would produce a wrong branch state.
     - Call `openReview` with the branch, the resolved base, a title, and a body.
-      Title it the way the squash-merge subjects in `git log origin/<base>` read, naming the outcome for the user: `perf(server): cut websocket frame size by 70%+ with gzipping` names the outcome, where `perf(server): negotiate permessage-deflate on the websocket` names only the mechanism.
+      Title it the way merged reviews are titled in the resolved base's `git log` (a squash subject, or a merge commit's title line), naming the outcome for the user: `perf(server): cut websocket frame size by 70%+ with gzipping` names the outcome, where `perf(server): negotiate permessage-deflate on the websocket` names only the mechanism.
       Open the body with the problem as the issue states it, then the fix in a sentence or two, then `Closes <ref>` for a Linear issue or the task's URL for an Asana task, the list of completed tasks, and a test plan.
     - Skip this when a review already exists for the branch, and reuse that one; resuming an issue must never open a second review.
     - Call `publishReview` with the returned id.

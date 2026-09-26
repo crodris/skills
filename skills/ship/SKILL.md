@@ -21,7 +21,7 @@ This skill is the fallback for every repository without one.
 Settle the mode before stage 0.
 Merge mode is the default, for "ship", "ship it", and every request to carry the work to a merged release.
 Hold mode is for "babysit", "watch", "monitor", "get it green", or any request for a green pull request that names no merge.
-Hold mode runs every stage up to the merge in stage 3, step 7, and stops there with the pull request reported; a merge-mode run stops at the same point when the pull request still needs an approval this run cannot give.
+Hold mode runs every stage up to the merge in stage 3, step 7, and stops there with the pull request reported; step 7 says when a merge-mode run stops at the same point.
 
 ## Authority and boundary
 
@@ -193,6 +193,7 @@ Each round:
    settled=$(git branch --show-current)
    git check-ref-format --branch "$settled" >/dev/null || { echo refuse; exit 1; }
    [ "$settled" = "$expected" ] || { echo refuse; exit 1; }
+   # never pushed and behind origin/$base: rebase here, per the next paragraph
    git push -u origin "$settled"
    ```
 
@@ -286,7 +287,7 @@ A review skill offering to handle it - including one whose own description says 
 4. Apply every blocking fix, from both reviewers, in ONE batch.
    Re-run `verify` under stage 1's rules, steps 1 to 4, until it is clean, re-check the lane, then commit and push once, behind the same branch guard stage 2 uses; the drive is step 5's to run, not this step's.
    When the pull request conflicts with `base`, or `base` requires an up-to-date branch and this one is behind, the batch also runs `git fetch origin "$base"` and merges `origin/$base` into the branch, resolving any conflict the way the change intends; the squash merge in step 7 drops that merge commit.
-   A base update buys a push on its own once per run, and a branch that needs a second one is a stop-and-report.
+   A run takes at most one base update, riding a push or buying one, and a branch that needs a second is a stop-and-report.
    Update this run's section of the pull request body with the review outcome and every disposition recorded so far.
    When nothing was blocking and no base update was due, nothing is pushed, and this pass is the one step 6 can terminate on.
 5. Confirm each push once, and only when step 4 pushed.
@@ -297,14 +298,14 @@ A review skill offering to handle it - including one whose own description says 
    Once the bot's latest review raised no confirmed critical or major, it is not requested again, and the fix commits are the code reviewer's to confirm, so the pass settles on the code reviewer alone.
    When a lane or a `drive` is configured, `lanes.md` and `drive.md` say how each changes this pass.
    Findings from this pass go through steps 2 and 3 again, at the same bar.
-   Once a pass confirms the fix for a bot finding, resolve that finding's thread when the bot has not resolved it itself.
+   Once a pass confirms the fix for a blocking bot finding, reply under it naming the fix commit, then resolve its thread when the bot has not resolved it itself.
 6. Terminate only on a settled pass that pushed NOTHING and whose actionable findings are, after triage, all dispositioned or already resolved.
    A fixed finding counts as resolved only after a pass checked its fix commit against it: Spec where it runs, and step 2's triage where it does not.
    A pass that pushed anything always re-polls, however complete the fixing felt.
    There is no cap on passes: the loop runs until a settled pass has nothing blocking under step 3, and every push gets step 5's confirmation, so no push goes unreviewed.
    Convergence bounds it instead: a confirmed critical or major, or a failed drive, whose root cause an earlier push already carried a fix for is a stop-and-report, because the fixes are going in circles and choosing between them is the user's call.
    Say what is open, and leave the pull request unmerged.
-7. Wait until `gh pr checks` on the SHA the review settled on is fully green; step 3 says what each failure means.
+7. Wait, under step 1's thirty-minute deadline, until `gh pr checks` on the SHA the review settled on is fully green; triage a failure under step 3, and a blocking one sends the run back to step 4.
    Re-read the pull request's state and confirm all three of: it is still open, it still targets `base`, and its head is still the SHA the review settled on.
    Any of the three failing is a stop-and-report, not a re-poll: the pull request changed underneath the run, and deciding what that means is the user's.
    Then read its `reviewDecision`.
@@ -350,7 +351,7 @@ Each of these means stop and correct course, not continue:
 - About to run a verify command that no tier produced and the user never confirmed.
 - About to run a review CLI as the pre-merge review, whether directly, as part of `verify`, or by invoking a review skill that wraps one; this run reviews with the code reviewer's subagents, and the bot is the vendor pass.
 - About to push a fix while either first-pass reviewer is still reading, or to push a second fix batch where one would do.
-- About to push because of a nit, an informational note, a minor judged not worth fixing or not contained, or a finding triage could not confirm; only a failed drive, a failed check the change caused, a confirmed critical or major, a worth-fixing contained minor, or a due base update buys a push, and minors and base updates each do so once per run.
+- About to push because of a nit, an informational note, a minor judged not worth fixing or not contained, or a finding triage could not confirm; only a failed drive, a failed check the change caused, a confirmed critical or major, a worth-fixing contained minor, or a due base update buys a push, and minors do so once per run and a base update once.
 - About to ask a second PIPELINE-SLOT question after stage 0 has already asked one; the safety stops are not covered by that rule and always fire.
 - About to exit stage 1 on a round that applied fixes, or to end stage 3's review loop on a pass that pushed them; both stages exit only on a pass that changed nothing.
 - About to merge with a confirmed critical or major still open from either reviewer, or to fix again a root cause an earlier push already carried a fix for instead of stopping.
