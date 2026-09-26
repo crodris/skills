@@ -33,7 +33,7 @@ Fathom needs a tracker MCP. Ship needs a git repository with a remote.
 
 ## Available Plugins
 
-### fathom (v2.3.0)
+### fathom (v2.4.0)
 
 Fathom provides two agent skills, execute and scaffold, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter.
 It works with Asana or Linear as your issue tracker, and both skills run unchanged on Claude Code and Kiro.
@@ -84,9 +84,10 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v1.6.0)
+### ship (v1.7.0)
 
 Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and the pull-request bot, batched fix pushes, each one confirmed, until nothing blocking remains, squash-merge, release watch, and post-merge cleanup.
+Ask it to babysit, watch, or get a pull request green and it runs the same review loop, then stops at a pull request that is ready for you to merge.
 Everything from the pull request onward needs an installed and authenticated GitHub CLI; without one, ship stops after pushing the branch and printing the compare URL, and the review, merge, and release are yours to drive.
 
 #### Prerequisites
@@ -124,6 +125,7 @@ ship it
 - **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagents for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive`, a command or a `skill:<name>` verification skill, runs once before the push on a behavior-changing diff, and again on each confirmation pass a fix push buys, where it replaces the subagents' confirmation round unless the bot reviews only the first push
 - **Different reviewers, not one twice** - the pre-merge review is two `general-purpose` subagents on the same SHA, one checking the repository's documented conventions and one checking the change against its issue or stated intent, and the pull-request bot is the final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway; a bot that reviews only the first push is asked for another review after each fix for a critical or major finding it raised, until its latest review raises no confirmed critical or major, and the subagents confirm every other fix
 - **Bot review mode from the repo** - ship learns that CodeRabbit reviews only the first push from `reviews.auto_review.auto_incremental_review: false` in `.coderabbit.yaml`; a setting made only in the CodeRabbit web app is invisible to ship, which then waits on a re-review that never comes, so keep it in the file with `inheritance: true` to leave the web-app settings in force
+- **Hold mode** - "babysit", "watch", or "get it green" runs everything up to the merge and reports the pull request ready; a pull request that still needs a human approval holds the same way, and ship never merges past it with `--admin`
 - **Project-local override** - a repository that ships its own `.claude/skills/ship/SKILL.md` takes precedence, carrying its specialized pipeline
 
 ---
@@ -306,4 +308,4 @@ When a finding is a reviewed false positive, suppress it in the repo-root `.skil
 
 MIT
 
-Some rules adapted from mattpocock/skills and obra/superpowers (MIT).
+Some rules adapted from mattpocock/skills and obra/superpowers (MIT), and ship's hold mode, CI, and pull request title and body rules from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
