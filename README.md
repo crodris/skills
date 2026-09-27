@@ -233,7 +233,7 @@ recalibrate my voice
 ### frontend-design-pipeline (v1.1.0)
 
 Frontend design pipeline takes a UI from product idea to finished build by chaining five design skills in a fixed order, and adds one stop for you to pick a direction from rendered mocks.
-It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with one taste-skill preset and frontend-design, builds each brief as a mock, next to your current screen when there is one, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
+It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with one taste-skill preset and frontend-design, builds each brief as a mock beside your current screen when there is one, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
 It ships no design knowledge of its own and never copies the skills it calls.
 Only impeccable is required; the rest improve the result when installed.
 

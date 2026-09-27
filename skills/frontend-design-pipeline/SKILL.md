@@ -9,7 +9,7 @@ version: 1.1.0
 Take a UI from product idea to finished build through installed design skills, in a fixed order, with one added stop where the user picks a direction from rendered mocks.
 
 This skill carries no design knowledge of its own.
-Every stage invokes another skill and follows that skill's instructions, except where this file overrides them.
+Every stage invokes another skill when one is installed and follows that skill's instructions, except where this file overrides them.
 
 ## Companion skills
 
@@ -29,7 +29,7 @@ The others are optional.
 When one is missing, skip its part, say so once with its install command, and continue.
 Never run an install command yourself.
 Stage 2 runs when any taste preset or frontend-design is installed.
-Without ui-ux-pro-max, stage 2 builds 2-3 briefs from PRODUCT.md and treats each as a candidate.
+Without ui-ux-pro-max, stage 2 starts from 2-3 distinct candidates drawn from PRODUCT.md.
 When stage 2 cannot run, condense each stage 1 candidate into the brief shape stage 2 defines.
 When neither stage 1 nor stage 2 can run, skip stage 3, and skip stage 4 too, since there is no direction to decide motion for yet.
 Without html-comms, publish the stage 3 mock page with the harness's private publisher, or report its local path when there is none.
@@ -82,7 +82,7 @@ Each brief states palette, type, layout, and motion stance in a few lines.
 Build each brief as a static styled HTML mock of the screen the request is about, in its palette, type, and layout, with the product's real content, and label the mocks with letters.
 When the screen already exists, add a Current panel beside the mocks: a screenshot of that screen from the running app, or a rebuild from its code when the app cannot run.
 Capture the screenshot without browser chrome, with demo data in place of real user data.
-Render each mock and the Current rebuild in its own `<iframe srcdoc>` at the screen's real viewport width, scaled to fit its column, so each keeps its own palette, theme, and breakpoints.
+Render each mock and the Current rebuild in its own `<iframe srcdoc>` at the screen's real viewport width, scaled with a CSS `transform` to fit its column, so each keeps its own palette, theme, and breakpoints.
 Put everything on one page through the html-comms skill, which owns the side-by-side layout and publishing.
 Its Document rules govern the page around the mocks, and the mocks and the screenshot are exempt from its 100 KB cap.
 Report the link with one line per brief.
