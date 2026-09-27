@@ -1,12 +1,12 @@
 ---
 name: frontend-design-pipeline
-description: This skill should be used when the user asks to design and build a new UI, landing page, app screen, or visual identity, or to redesign an existing one, and wants to choose between design directions before anything is built. Also use when the user says "design pipeline", "frontend design pipeline", "give me design directions", or "run the full design flow", or asks to refine a UI that already has a DESIGN.md through the same flow. It chains the ui-ux-pro-max, taste-skill, emil-design-eng, and impeccable skills in a fixed order and stops once for the user to pick a direction.
-version: 1.0.0
+description: This skill should be used when the user asks to design and build a new UI, landing page, app screen, or visual identity, or to redesign an existing one, and wants to choose between design directions before anything is built. Also use when the user says "design pipeline", "frontend design pipeline", "give me design directions", or "run the full design flow", or asks to refine a UI that already has a DESIGN.md through the same flow. It chains the ui-ux-pro-max, taste-skill, frontend-design, emil-design-eng, and impeccable skills in a fixed order and stops once for the user to pick a direction from rendered mocks.
+version: 1.1.0
 ---
 
 # Frontend design pipeline
 
-Take a UI from product idea to finished build through installed design skills, in a fixed order, with one added stop for the user to pick a direction.
+Take a UI from product idea to finished build through installed design skills, in a fixed order, with one added stop where the user picks a direction from rendered mocks.
 
 This skill carries no design knowledge of its own.
 Every stage except the pick invokes another skill and follows that skill's instructions, except where this file overrides them.
@@ -16,7 +16,9 @@ Every stage except the pick invokes another skill and follows that skill's instr
 | Stage | Skill | Install |
 |-------|-------|---------|
 | 1 | `ui-ux-pro-max` | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
+| 2 | `frontend-design` | `npx skills@latest add anthropics/skills -s frontend-design -g` |
 | 2 | one of `minimalist-ui`, `high-end-visual-design`, `industrial-brutalist-ui`, `gpt-taste`, `design-taste-frontend`, `redesign-existing-projects` | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend redesign-existing-projects -g` |
+| 3 | `html-comms` | `npx skills@latest add crodris/skills -s html-comms -g` |
 | 4 | `emil-design-eng` | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
 | 5 | `impeccable` | `npx skills@latest add pbakaus/impeccable -s impeccable -g` |
 
@@ -24,18 +26,20 @@ Check for impeccable before routing, since it is required.
 When it is missing, stop and give its install command.
 
 The others are optional.
-When one is missing, skip its stage, say so once with its install command, and continue.
+When one is missing, skip its part, say so once with its install command, and continue.
 Never run an install command yourself.
-Stage 2 runs with whichever presets are installed and is skipped only when none are.
-Without ui-ux-pro-max, stage 2 builds 2-3 briefs from PRODUCT.md, one installed preset each.
-Without any taste preset, condense each stage 1 candidate into the brief shape stage 2 defines, label the briefs with letters, and offer them in stage 3.
-With neither, skip stage 3, and skip stage 4 too, since there is no direction to decide motion for yet.
+Stage 2 runs when any taste preset or frontend-design is installed.
+Without ui-ux-pro-max, stage 2 builds 2-3 briefs from PRODUCT.md.
+When stage 2 cannot run, condense each stage 1 candidate into the brief shape stage 2 defines.
+When neither stage 1 nor stage 2 can run, skip stage 3, and skip stage 4 too, since there is no direction to decide motion for yet.
+Without html-comms, publish the stage 3 mock page with the harness's private publisher, or report its local path when there is none.
 
 ## Precedence
 
 User instructions beat DESIGN.md.
-DESIGN.md beats everything the earlier stages produced: ui-ux-pro-max candidates, any `design-system/` MASTER.md, and taste-skill rules, including their hard bans.
+DESIGN.md beats everything the earlier stages produced: ui-ux-pro-max candidates, any `design-system/` MASTER.md, taste-skill rules, including their hard bans, and frontend-design guidance.
 A preset that says "never Inter" loses to a DESIGN.md that picked Inter.
+Within a stage 2 brief, the preset's rules beat frontend-design's list of generic defaults, since the preset is the direction that brief pinned.
 Impeccable builds last and makes the final call on anything DESIGN.md leaves open.
 
 ## Routing
@@ -61,20 +65,28 @@ Its SKILL.md builds the script path from `${CLAUDE_PLUGIN_ROOT}`, which exists o
 Resolve the script as `scripts/search.py` inside the directory that holds ui-ux-pro-max's own SKILL.md instead, and run it with `python3`, or `python` where `python3` is missing.
 Do not pass `--persist`.
 
-## 2. Direction (taste-skill)
+## 2. Direction (taste-skill, frontend-design)
 
-For each candidate, invoke exactly one taste-skill preset and turn the candidate into a direction brief.
+For each candidate, invoke exactly one taste-skill preset, then the frontend-design skill, and turn the candidate into a direction brief.
 Never apply two presets to one candidate, because they contradict each other: minimalist-ui bans gradients, and gpt-taste is built on GSAP.
 Pick a different preset per candidate where the product allows it, so the briefs differ.
 On a redesign, replace one candidate's preset with redesign-existing-projects.
-Take the preset's rules only and build nothing in this stage.
+Run frontend-design's plan pass on each brief: ground it in the product's subject, then review it against the generic defaults that skill lists and revise what reads as default.
+When no preset is installed, frontend-design's plan pass alone shapes 2-3 distinct briefs.
+Take the rules only and build nothing in this stage, since stage 3 builds the mocks.
 
 Each brief states palette, type, layout, and motion stance in a few lines.
-Present the briefs to the user labelled with letters.
 
-## 3. Pick (user)
+## 3. Mock and pick (user)
 
-Wait for the user to pick one brief or combine them, as in "B's type with A's palette".
+Build each brief as a static mock of the screen the request is about, with the product's real content, and label the mocks with letters.
+Each mock is real styled HTML in its brief's palette, type, and layout, since the user picks from what they see.
+When the screen already exists, add a Current panel beside the mocks: a screenshot of that screen from the running app, or a rebuild from its code when the app cannot run.
+Put everything on one page through the html-comms skill, which owns the side-by-side layout and publishing.
+The Current screenshot is exempt from the html-comms 100 KB cap.
+Report the link with one line per brief.
+
+Then wait for the user to pick one brief or combine them, as in "B's type with A's palette".
 When a combined pick names no layout, ask in the same question which brief's layout to keep.
 This is the only stop the pipeline adds, and the skills it invokes still ask their own questions.
 When DESIGN.md already exists, say in the same question that the pick replaces it, and keep the old file unless the user confirms.
