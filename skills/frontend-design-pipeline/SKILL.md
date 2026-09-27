@@ -9,15 +9,15 @@ version: 1.1.0
 Take a UI from product idea to finished build through installed design skills, in a fixed order, with one added stop where the user picks a direction from rendered mocks.
 
 This skill carries no design knowledge of its own.
-Every stage except the pick invokes another skill and follows that skill's instructions, except where this file overrides them.
+Every stage invokes another skill and follows that skill's instructions, except where this file overrides them.
 
 ## Companion skills
 
 | Stage | Skill | Install |
 |-------|-------|---------|
 | 1 | `ui-ux-pro-max` | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
-| 2 | `frontend-design` | `npx skills@latest add anthropics/skills -s frontend-design -g` |
 | 2 | one of `minimalist-ui`, `high-end-visual-design`, `industrial-brutalist-ui`, `gpt-taste`, `design-taste-frontend`, `redesign-existing-projects` | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend redesign-existing-projects -g` |
+| 2 | `frontend-design` | `npx skills@latest add anthropics/skills -s frontend-design -g` |
 | 3 | `html-comms` | `npx skills@latest add crodris/skills -s html-comms -g` |
 | 4 | `emil-design-eng` | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
 | 5 | `impeccable` | `npx skills@latest add pbakaus/impeccable -s impeccable -g` |
@@ -29,7 +29,7 @@ The others are optional.
 When one is missing, skip its part, say so once with its install command, and continue.
 Never run an install command yourself.
 Stage 2 runs when any taste preset or frontend-design is installed.
-Without ui-ux-pro-max, stage 2 builds 2-3 briefs from PRODUCT.md.
+Without ui-ux-pro-max, stage 2 builds 2-3 briefs from PRODUCT.md and treats each as a candidate.
 When stage 2 cannot run, condense each stage 1 candidate into the brief shape stage 2 defines.
 When neither stage 1 nor stage 2 can run, skip stage 3, and skip stage 4 too, since there is no direction to decide motion for yet.
 Without html-comms, publish the stage 3 mock page with the harness's private publisher, or report its local path when there is none.
@@ -37,7 +37,7 @@ Without html-comms, publish the stage 3 mock page with the harness's private pub
 ## Precedence
 
 User instructions beat DESIGN.md.
-DESIGN.md beats everything the earlier stages produced: ui-ux-pro-max candidates, any `design-system/` MASTER.md, taste-skill rules, including their hard bans, and frontend-design guidance.
+DESIGN.md beats everything the earlier stages produced: ui-ux-pro-max candidates, any `design-system/` MASTER.md, frontend-design guidance, and taste-skill rules including their hard bans.
 A preset that says "never Inter" loses to a DESIGN.md that picked Inter.
 Within a stage 2 brief, the preset's rules beat frontend-design's list of generic defaults, since the preset is the direction that brief pinned.
 Impeccable builds last and makes the final call on anything DESIGN.md leaves open.
@@ -72,18 +72,19 @@ Never apply two presets to one candidate, because they contradict each other: mi
 Pick a different preset per candidate where the product allows it, so the briefs differ.
 On a redesign, replace one candidate's preset with redesign-existing-projects.
 Run frontend-design's plan pass on each brief: ground it in the product's subject, then review it against the generic defaults that skill lists and revise what reads as default.
-When no preset is installed, frontend-design's plan pass alone shapes 2-3 distinct briefs.
-Take the rules only and build nothing in this stage, since stage 3 builds the mocks.
+When no preset is installed, frontend-design's plan pass alone turns each candidate into a brief.
+Take only the rules in this stage, since stage 3 builds the mocks.
 
 Each brief states palette, type, layout, and motion stance in a few lines.
 
-## 3. Mock and pick (user)
+## 3. Mock and pick (html-comms, user)
 
-Build each brief as a static mock of the screen the request is about, with the product's real content, and label the mocks with letters.
-Each mock is real styled HTML in its brief's palette, type, and layout, since the user picks from what they see.
+Build each brief as a static styled HTML mock of the screen the request is about, in its palette, type, and layout, with the product's real content, and label the mocks with letters.
 When the screen already exists, add a Current panel beside the mocks: a screenshot of that screen from the running app, or a rebuild from its code when the app cannot run.
+Capture the screenshot without browser chrome, with demo data in place of real user data.
+Render each mock and the Current rebuild in its own `<iframe srcdoc>` at the screen's real viewport width, scaled to fit its column, so each keeps its own palette, theme, and breakpoints.
 Put everything on one page through the html-comms skill, which owns the side-by-side layout and publishing.
-The Current screenshot is exempt from the html-comms 100 KB cap.
+Its Document rules govern the page around the mocks, and the mocks and the screenshot are exempt from its 100 KB cap.
 Report the link with one line per brief.
 
 Then wait for the user to pick one brief or combine them, as in "B's type with A's palette".
