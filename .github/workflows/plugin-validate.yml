@@ -1,0 +1,33 @@
+name: Plugin validate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".claude-plugin/**"
+      - "skills/**"
+      - ".github/workflows/plugin-validate.yml"
+  pull_request:
+    paths:
+      - ".claude-plugin/**"
+      - "skills/**"
+      - ".github/workflows/plugin-validate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate marketplace manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned so a new CLI release cannot change what passes here with no
+      # change in this repo. Bump deliberately. Validation needs no auth.
+      - name: Install Claude Code
+        run: npm i -g @anthropic-ai/claude-code@2.1.283
+
+      - name: Validate
+        run: claude plugin validate --strict .

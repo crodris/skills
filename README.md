@@ -340,6 +340,7 @@ Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/mark
 A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipeline`, or `html-comms`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the versions into this README and fails when a skill directory is claimed by no plugin, by more than one, or is claimed but missing.
+`claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
 
 ## Security Scanning
 
@@ -347,9 +348,12 @@ Every skill in `skills/` is scanned by [NVIDIA SkillSpector](https://github.com/
 Run the same scan locally before committing:
 
 ```bash
-uv tool install git+https://github.com/NVIDIA/skillspector.git
+uv tool install git+https://github.com/NVIDIA/skillspector.git@34f60308522f45447cd343da0aad77bcea308ad4 # v2.5.0
 bin/scan-skills.sh            # all skills; or name specific ones: bin/scan-skills.sh execute
 ```
+
+The install pins the same SkillSpector commit as `.github/workflows/skillspector.yml`, so a local scan and CI run the same scanner.
+Bump both pins together.
 
 When a finding is a reviewed false positive, suppress it in the repo-root `.skillspector-baseline.yaml` with a written reason; never suppress a finding you have not understood.
 
