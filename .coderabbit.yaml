@@ -5,7 +5,7 @@
 # Incremental review is off so the bot reviews once per pull request. The ship
 # skill reads this line, confirms fix pushes with its reviewer subagents, and
 # posts `@coderabbitai review` after fixing a critical or major the bot raised, and
-# on every confirmation pass in the light lane.
+# in the light lane when it picks CodeRabbit to confirm a fix.
 inheritance: true
 reviews:
   auto_review:

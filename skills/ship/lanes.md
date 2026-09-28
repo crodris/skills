@@ -8,15 +8,15 @@ Project paths belong in that file and never in this skill.
 
 Resolve the lane in stage 0, from every file this run will ship: whatever differs from `origin/<base>`, committed or not, plus the untracked files that belong to the change.
 
-- Light: EVERY changed file matches `light-paths`. Stage 3 skips the subagent review, and the bot is the only reviewer.
+- Light: EVERY changed file matches `light-paths`. Stage 3 skips the subagent review, and the review bots are the only reviewers.
 - Security: ANY changed file matches `security-paths`. Stage 3's subagent round also runs a security review of the diff.
 - Standard: neither, which is every run in a repository with no lane slots.
 
 Security outranks light: a glob broad enough to call a security-sensitive file light is a mistake in the config, and the cheap lane is the wrong way to find that out.
-The light lane needs a configured review bot, because it trades the code reviewer for the bot, and a run with neither has had no review at all; without one, run the standard lane.
+The light lane needs at least one review bot present, because it trades the code reviewer for the bots, and a run with neither has had no review at all; without one, run the standard lane.
 A lane describes the change rather than the run, so re-check it before every push: a light run that stops being light, because its fixes reach a file outside `light-paths` or into `security-paths`, owes the subagent review it skipped, which runs as a full-diff code reviewer round against the new head in place of the fix-only round in stage 3's step 5.
 A run that became a security run this way gets the security subagent on the full diff in that same round.
-No lane skips verify, the bot, or the merge conditions.
+No lane skips verify, the bots, or the merge conditions.
 
 ## Stage 3 review
 
@@ -25,7 +25,8 @@ That third subagent never spends a round of its own: it shares the code reviewer
 
 ## Stage 3 confirmation pass
 
-The light lane confirms with the bot alone; with a first-push-only bot it requests the bot's review on every confirmation pass, since that lane has no subagent to confirm with.
+The light lane confirms with the bots alone, since that lane has no subagent to confirm with.
+When no present bot reviews every push, it requests one first-push-only bot's review on every confirmation pass: the one whose finding the push fixed, or any one when the push fixed none.
 In the security lane the security subagent reads the fix commits in the same pass, and a drive does not stand in for it: a blocking fix can land inside `security-paths` as easily as the change did.
 
 ## Red flag
