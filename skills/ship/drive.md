@@ -20,7 +20,7 @@ A drive that leaves no evidence has not run; record where the evidence landed, b
 
 ## Stage 3 confirmation pass
 
-When stage 0 resolved a `drive` and the diff changes behavior, run the drive once here and put the path of the evidence it leaves in the pull request body: when any bot re-reviews every push on its own it runs in place of the code reviewer's round, and otherwise, including a run with no bot, it runs beside the code reviewer, or beside the requested bot review in the light lane, never in place of either.
+When stage 0 resolved a `drive` and the diff changes behavior, run the drive once here and put the path of the evidence it leaves in the pull request body: when at least one bot is present and every present bot re-reviews every push on its own, it runs in place of the code reviewer's round, and otherwise, including a run with no bot or with a first-push-only bot, it runs beside the code reviewer, or beside the requested bot review in the light lane, never in place of either.
 Where the drive replaces the code reviewer's round it replaces that and nothing else: it never replaces verify, a bot, or the security lane's subagent.
 Treat a failed drive as a blocking finding under stage 3's step 3.
 

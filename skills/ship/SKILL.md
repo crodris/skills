@@ -202,7 +202,7 @@ Each round:
 
 4. Open the review, ready rather than `--draft`, because a draft-to-ready flip does not reliably trigger CI.
    Look for an open pull request from this branch into `base` first, with `gh pr list --head "$settled" --base "$base" --state open`, and reuse it when there is one; the run may well be finishing work that was pushed earlier, and `gh pr create` simply fails on a branch that already has one.
-   Reusing it means updating its body, not leaving it stale: replace this run's own delimited section with the new summary, evidence, and dispositions, and leave everything a human wrote around it untouched.
+   Reusing it means updating its body, not leaving it stale: replace this run's own delimited section with the new summary, evidence, and dispositions, and leave everything outside it untouched, including the summaries review bots write into the description.
    Otherwise create it with every value named explicitly - `gh pr create --base "$base" --head "$settled" --title "..." --body-file <path>` - so that a repository whose default branch is not this run's base cannot silently retarget the review, and so that `gh` never drops into its interactive prompt.
    When creating it, title it the way the repository titles its merged pull requests (`gh pr list --state merged --limit 10`), naming the outcome for the user:
 
@@ -240,11 +240,11 @@ A review skill offering to handle it - including one whose own description says 
    A subagent that returns nothing usable fails its round rather than passing silently: record that the review produced no result, and run that subagent again, not the ones that returned.
    Give it a timeout, generous against the size of the diff, and treat one that blows through it the same way.
    Any one subagent failing twice in a row is a stop-and-report rather than a merge without it, because its axis has not reviewed the run.
-   Poll every review bot `bots.md` found present until each one's review of the captured SHA settles as that file defines it, re-reading the pull request's head on every poll; a head that moved is step 2's restart, never a new SHA to chase.
+   Poll every review bot `bots.md` finds present, including one that first shows up on this pull request, until each one's review of the captured SHA settles as that file defines it, re-reading the pull request's head on every poll; a head that moved is step 2's restart, never a new SHA to chase.
    When the harness can wait on a command or on pull request events, wait with it and poll only without one.
    Read the pull request's checks on the captured SHA in the same pass.
    Each bot is a final bar and is never skipped: the code reviewer is a different reviewer with a different brief, and a clean code reviewer round says nothing about what a bot will find.
-   A first-push-only bot, as stage 0 resolved it, is polled on this pass, and on a later one only for a review step 5 requests.
+   A first-push-only bot, as `bots.md` resolved it, is polled on this pass, and on a later one only for a review step 5 requests.
    Give the wait a deadline of roughly thirty minutes, on every pass; past it, stop and report that the review never settled rather than polling on.
    Collect findings from every surface - inline comments, the summary comment, and full review bodies - because nitpicks hide in collapsed sections.
    Read inline threads with their resolution and outdated state (on GitHub, the GraphQL `reviewThreads` nodes with `isResolved` and `isOutdated`), and skip a thread that is resolved or outdated, so a later pass does not re-triage a finding on code that has since changed.
@@ -305,6 +305,7 @@ A review skill offering to handle it - including one whose own description says 
    Convergence bounds it instead: a confirmed critical or major, or a failed drive, whose root cause an earlier push already carried a fix for is a stop-and-report, because the fixes are going in circles and choosing between them is the user's call.
    Say what is open, and leave the pull request unmerged.
 7. Wait, under step 1's thirty-minute deadline, until `gh pr checks` on the SHA the review settled on is fully green; triage a failure under step 3, and a blocking one sends the run back to step 4.
+   Check the pull request once more for a table bot no pass waited on, and handle one that shows up as `bots.md` says before going on.
    Re-read the pull request's state and confirm all three of: it is still open, it still targets `base`, and its head is still the SHA the review settled on.
    Any of the three failing is a stop-and-report, not a re-poll: the pull request changed underneath the run, and deciding what that means is the user's.
    Then read its `reviewDecision`.

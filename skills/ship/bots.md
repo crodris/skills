@@ -1,35 +1,37 @@
 # Ship review bots
 
-Read by the ship skill in stage 0, and at every stage 3 step that polls or re-requests a review bot.
+Read by the ship skill on every run: in stage 0, and at every stage 3 step that polls or re-requests a review bot.
 
 A review bot is a forge app that reviews the pull request on its own.
-Ship waits on and re-requests only the bots in this table.
+Ship waits on and re-requests only the bots in this table, in the table's order when a rule asks for any one of them.
 Any other bot's comments are still findings for stage 3's triage, but ship never waits on one.
 
 | Bot | Login | Config file | Reviews every push when | Settled on the SHA when | Re-request |
 | --- | --- | --- | --- | --- | --- |
 | CodeRabbit | `coderabbitai[bot]` | `.coderabbit.yaml` | `reviews.auto_review.auto_incremental_review` is not `false` (default: every push) | its `CodeRabbit` commit status is `success` with "Review completed" | comment `@coderabbitai review` |
-| Greptile | `greptile-apps[bot]` | `.greptile/config.json`, else `greptile.json` | `autoReview` includes `push`, or the legacy `triggerOnUpdates` is `true` (default `["open"]`: first push only) | its status check on the SHA completes, or, in a repository with no Greptile check, it submitted a review whose `commit_id` is the SHA | comment `@greptileai` |
+| Greptile | `greptile-apps[bot]` | `.greptile/config.json`, else `greptile.json` | `autoReview` includes `push`, or the legacy `triggerOnUpdates` is `true` (default `["open"]`: first push only) | its `Greptile Review` check run on the SHA completes, or, when its config sets `statusCheck: false`, it submitted a review whose `commit_id` is the SHA | comment `@greptileai` |
 
 ## Which bots are present
 
 Resolve the set in stage 0.
-A table bot is present when its config file exists on `origin/<base>`, or when its login reviewed or commented on any of the last five merged pull requests.
-Stage 3's step 1 adds any table bot that shows up on this pull request, with a status, reaction, review, or comment from its login, before step 1's other reviewers have all returned or settled; that covers a bot installed since the last merge.
+A table bot is present when its config file exists on `origin/<base>` or on the shipped branch, or when its login submitted a review on any of the last five merged pull requests.
+A config file that turns automatic review off (`reviews.auto_review.enabled: false` for CodeRabbit, `autoReview: []` or the legacy `skipReview: "AUTOMATIC"` for Greptile) does not count.
 `gh pr view --json` prints a bot's login without the `[bot]` suffix, so match on the name before it.
+Stage 3 adds any table bot that shows up on this pull request, with a status, check, reaction, review, or comment from its login, at any point before the merge; that covers a bot installed since the last merge.
+A bot added after step 1 is waited on until its review settles, and its findings go through steps 2 and 3 before the merge.
 An empty set is a normal run: stage 3 reviews with the subagents alone, and the report says no bot was found.
 
 ## First push or every push
 
-Read each present bot's mode from its config file in the repository.
+Read each present bot's mode from its config file at the captured head SHA, the ref the bot itself reads.
 A file that does not set it, or no file at all, takes the table's default.
 A setting made only in the bot's web dashboard is invisible here, so a repository that changes the mode there should set it in the file too.
 
 ## Re-request
 
-Greptile's latest review carries a confidence score out of 5.
-Stage 3's step 5 re-requests Greptile only when that score is 3 or below; at 4 or 5 the code reviewer's subagents confirm the fix alone.
-A review with no score falls back to step 5's rule alone.
+Greptile writes a confidence score out of 5 into the summary it adds to the pull request description.
+Stage 3's step 5 re-requests Greptile only when its latest score is 3 or below; at 4 or 5 the code reviewer's subagents confirm the fix alone.
+A description with no score falls back to step 5's rule alone.
 The light lane ignores the score, because that lane has no subagent to confirm a fix.
 
 ## Settled
