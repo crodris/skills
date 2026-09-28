@@ -231,7 +231,7 @@ Whenever a lane runs this review or the security lane's review beside it, dispat
 A review skill offering to handle it - including one whose own description says it triggers whenever a review is needed - is describing the general case, and this run is not it: this run's reviewer is settled here, and a skill that shells out to a vendor CLI is the thing this rule exists to keep out.
 
 1. Launch every reviewer against the pushed head, concurrently.
-   Capture that head's SHA once, before launching any, and hold every reviewer to it: each subagent is told the SHA and reviews that diff, and a bot's review counts only when it settled on that SHA.
+   Capture that head's SHA once, before launching any, and hold every reviewer to it: each subagent is told the SHA and reviews that diff, and a bot's review counts only when it settled as `bots.md` defines it.
    Review dispatches the code reviewer's Standards and Spec subagents in parallel, in the background, on the diff of the pushed head against `base`, each told what changed and why.
    When a lane is configured, `lanes.md` says whether it skips them or adds a security subagent beside them.
    All are subagents, never a review CLI nor a review skill that wraps one.
@@ -244,7 +244,7 @@ A review skill offering to handle it - including one whose own description says 
    When the harness can wait on a command or on pull request events, wait with it and poll only without one.
    Read the pull request's checks on the captured SHA in the same pass.
    Each bot is a final bar and is never skipped: the code reviewer is a different reviewer with a different brief, and a clean code reviewer round says nothing about what a bot will find.
-   A first-push-only bot, as `bots.md` reads it, is polled on this pass, and on a later one only for a review step 5 requests.
+   A first-push-only bot, with its mode read as `bots.md` says, is polled on this pass, and on a later one only for a review step 5 requests.
    Give the wait a deadline of roughly thirty minutes, on every pass; past it, stop and report that the review never settled rather than polling on.
    Collect findings from every surface - inline comments, the summary comment, full review bodies, and the summaries bots write into the pull request description - because nitpicks hide in collapsed sections.
    Read inline threads with their resolution and outdated state (on GitHub, the GraphQL `reviewThreads` nodes with `isResolved` and `isOutdated`), and skip a thread that is resolved or outdated, so a later pass does not re-triage a finding on code that has since changed.
@@ -270,6 +270,7 @@ A review skill offering to handle it - including one whose own description says 
    A worth-fixing minor rides any push a critical or major buys, but minors buy a push on their own only once per run; after that, a minor still rides a push a critical or major buys and otherwise is dispositioned, because fixing minors found in minor fixes is how the loop stops converging.
    Everything else - nit, informational, cosmetic style, a minor judged not worth fixing or not contained, and anything triage could not confirm against the code - is non-blocking: give it a disposition and the reason, and move on.
    For a non-blocking bot finding, reply under the bot's comment and resolve its thread (on GitHub, the GraphQL `resolveReviewThread` mutation); a blocking one's thread waits for step 5.
+   A finding that came only from a bot's summary in the description has no thread, so record its disposition in this run's section of the pull request body.
    For a subagent finding, record it in this run's section of the pull request body.
    Start every reply under a bot's comment with a label line and a rule, so a reader can tell the agent's replies from the user's:
 
