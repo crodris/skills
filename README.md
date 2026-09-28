@@ -348,7 +348,7 @@ Every skill in `skills/` is scanned by [NVIDIA SkillSpector](https://github.com/
 Run the same scan locally before committing:
 
 ```bash
-uv tool install git+https://github.com/NVIDIA/skillspector.git@34f60308522f45447cd343da0aad77bcea308ad4 # v2.5.0
+uv tool install git+https://github.com/NVIDIA/skillspector.git@c7958a3268d9498644b22edb75d0f051bbc8cbfc # v2.12.0
 bin/scan-skills.sh            # all skills; or name specific ones: bin/scan-skills.sh execute
 ```
 
