@@ -1,4 +1,8 @@
 version: 2
+# Fingerprints below apply only while this matches the running scanner, so a
+# SkillSpector bump resurfaces them for review. Keep it in step with the pin in
+# .github/workflows/skillspector.yml.
+scanner_version: 2.12.0
 
 # Reviewed findings accepted as false positives.
 # Docs: https://github.com/NVIDIA/SkillSpector/blob/main/docs/SUPPRESSION.md
@@ -167,9 +171,10 @@ rules:
       repo-wide; re-review before a skill description names /branch as a
       trigger.
 
-  - id: "RA2"
-    path: "SKILL.md"
-    message: "*sounds like me*"
+fingerprints:
+  - hash: "sha256:d5995865063b76d0ab0c41d240d070f1e2fd2960b145f4c9db72b66d3300d36f"
+    rule_id: "RA2"
+    file: "SKILL.md"
     reason: >-
       Reviewed, intentional: the "Session Persistence" pattern for writes
       into a hidden home directory matched in voice, starting at the "write"
@@ -182,11 +187,7 @@ rules:
       it holds only the config's path lists, voice rules, and samples.
       Unprompted writes stay inside it, other writes need the user's approval
       of the specific change, and voice defines no cron jobs or startup
-      scripts. Caution: path "SKILL.md" matches every skill's SKILL.md, so
-      this hides any RA2 hit repo-wide whose first 200 characters contain
-      "sounds like me". The pattern's match also spans newlines up to the
-      first `|` in the file (the tells table), and the reported finding text
-      is only those first 200 characters, so any new "write/create/mkdir ...
-      ~/.<dir>" line added to voice's SKILL.md above that table is swallowed
-      into this same match and stays suppressed; re-review this rule
-      whenever voice gains a new hidden-directory path.
+      scripts. This is an exact fingerprint of skills/voice/SKILL.md's
+      content, so any edit to that file resurfaces the finding. Re-review
+      it, then regenerate the hash with
+      `skillspector baseline skills/voice --no-llm --output <tmp>`.

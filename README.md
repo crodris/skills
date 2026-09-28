@@ -353,7 +353,8 @@ bin/scan-skills.sh            # all skills; or name specific ones: bin/scan-skil
 ```
 
 The install pins the same SkillSpector commit as `.github/workflows/skillspector.yml`, so a local scan and CI run the same scanner.
-Bump both pins together.
+Bump both pins together, and set `scanner_version` in `.skillspector-baseline.yaml` to the new version, since its exact fingerprints stop suppressing when the versions differ.
+Re-review each finding that comes back, then regenerate its hash with `skillspector baseline skills/<name> --no-llm --output <tmp>`.
 
 When a finding is a reviewed false positive, suppress it in the repo-root `.skillspector-baseline.yaml` with a written reason; never suppress a finding you have not understood.
 
