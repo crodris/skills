@@ -244,7 +244,7 @@ A review skill offering to handle it - including one whose own description says 
    When the harness can wait on a command or on pull request events, wait with it and poll only without one.
    Read the pull request's checks on the captured SHA in the same pass.
    Each bot is a final bar and is never skipped: the code reviewer is a different reviewer with a different brief, and a clean code reviewer round says nothing about what a bot will find.
-   A first-push-only bot, with its mode read as `bots.md` says, is polled on this pass, and on a later one only for a review step 5 requests.
+   A first-push-only bot, with its mode read as `bots.md` says, is polled on this pass, and on a later one only for a review that step 5 or `bots.md` requests.
    Give the wait a deadline of roughly thirty minutes, on every pass; past it, stop and report that the review never settled rather than polling on.
    Collect findings from every surface - inline comments, the summary comment, full review bodies, and the summaries bots write into the pull request description - because nitpicks hide in collapsed sections.
    Read inline threads with their resolution and outdated state (on GitHub, the GraphQL `reviewThreads` nodes with `isResolved` and `isOutdated`), and skip a thread that is resolved or outdated, so a later pass does not re-triage a finding on code that has since changed.
@@ -298,7 +298,7 @@ A review skill offering to handle it - including one whose own description says 
    Once a first-push-only bot's latest review raised no confirmed critical or major, it is not requested again, and the fix commits are the code reviewer's to confirm; a pass with no bot to wait on settles on the code reviewer alone.
    When a lane or a `drive` is configured, `lanes.md` and `drive.md` say how each changes this pass.
    Findings from this pass go through steps 2 and 3 again, at the same bar.
-   Once a pass confirms the fix for a blocking bot finding, reply under it naming the fix commit, then resolve its thread when the bot has not resolved it itself.
+   Once a pass confirms the fix for a blocking bot finding, reply under it naming the fix commit, then resolve its thread when the bot has not resolved it itself; a finding with no thread gets that confirmation in this run's section of the pull request body.
 6. Terminate only on a settled pass that pushed NOTHING and whose actionable findings are, after triage, all dispositioned or already resolved.
    A fixed finding counts as resolved only after a pass checked its fix commit against it: Spec where it runs, and step 2's triage where it does not.
    A pass that pushed anything always re-polls, however complete the fixing felt.

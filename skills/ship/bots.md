@@ -13,13 +13,13 @@ Any other bot's comments are still findings for stage 3's triage, but ship never
 
 ## Which bots are present
 
-Resolve the set in stage 0, reading config files in the tree this run will push: every file on the branch, whether or not the change touches it.
+Resolve the set in stage 0, reading config files in the tree this run will push: every file the push will carry, committed or not, whether or not the change touches it.
 A table bot is present when its config file exists on `origin/<base>` or in that tree, or when its login submitted a review on any of the last five merged pull requests.
 A bot whose config in that tree turns automatic review off (`reviews.auto_review.enabled: false` for CodeRabbit, `autoReview: []` or the legacy `skipReview: "AUTOMATIC"` for Greptile) is absent in stage 0, whatever the base config or its history says.
 `gh pr view --json` prints a bot's login without the `[bot]` suffix, so match on the name before it.
 Stage 3 adds any table bot that shows up on this pull request, with a status, check, reaction, review, or comment from its login, at any point before the merge; that covers a bot installed since the last merge.
 A bot added after stage 3's step 1 is waited on until its review settles, and its findings go through stage 3's steps 2 and 3 before the merge.
-A first-push-only bot found after its review landed settles on the SHA it reviewed; triage all of its threads against the current head, outdated ones included, since no pass has read them, and stage 3's step 5 re-requests it as usual.
+A first-push-only bot found after its review landed on an earlier head is re-requested on the current head with its command, and that review is the one it settles on.
 An empty set is a normal run: stage 3 reviews with the subagents alone, and the report says no bot was found.
 
 ## First push or every push
@@ -37,7 +37,7 @@ The light lane ignores the score, because that lane has no subagent to confirm a
 
 ## Settled
 
-A bot has settled on the captured SHA when the table's signal says so for that SHA and no other, except a late first-push-only bot, which settles on the SHA it reviewed.
+A bot has settled on the captured SHA when the table's signal says so for that SHA and no other.
 A notice in place of a review settles nothing.
 A rate limit or a skipped review, including a `success` status whose description says so, is re-requested and waited on under stage 3's deadline.
 A notice that the bot will not review at all, such as an ended trial or a spent plan quota, is a stop-and-report at once, since waiting cannot change it and merging without that bot is the user's call.
