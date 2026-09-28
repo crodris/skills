@@ -145,3 +145,33 @@ rules:
       every skill's SKILL.md, so this hides any RP1 "npx skills" hit
       repo-wide; re-review before adding an npx skills command that a
       skill executes itself.
+
+  - id: "AS2"
+    path: "trackers/linear.md"
+    message: "*mcp.json*"
+    reason: >-
+      False positive: "MCP Config Access" matched the Kiro setup line, which
+      tells the USER to add a Linear MCP server entry to their own mcp.json.
+      The skills never read, write, or enumerate any MCP config file; the
+      connection is confirmed only through the Linear MCP's own tool call.
+
+  - id: "TR2"
+    path: "SKILL.md"
+    message: "*built-in command 'branch'*"
+    reason: >-
+      False positive: "Shadow Command Trigger" matched ship's description,
+      which says "the current branch", meaning the git branch being shipped.
+      No skill here claims a /branch trigger or shadows that command.
+      Caution: path "SKILL.md" matches every skill's SKILL.md, so this hides
+      any TR2 hit against the built-in 'branch' command repo-wide; re-review
+      before a skill description names /branch as a trigger.
+
+  - id: "RA2"
+    path: "SKILL.md"
+    message: "*sounds like me*"
+    reason: >-
+      False positive: the "Session Persistence" pattern matched voice's
+      description trigger phrases ("rewrite this so it sounds like me",
+      "in my voice", "voice file"). The only state voice keeps is the user's
+      own voice config directory, which the user sets up and can read; it
+      defines no cron jobs, startup scripts, or hidden cross-session state.
