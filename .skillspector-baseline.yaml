@@ -173,18 +173,20 @@ rules:
     reason: >-
       Reviewed, intentional: the "Session Persistence" pattern for writes
       into a hidden home directory matched in voice, starting at the "write"
-      inside "rewrite" in the description and running across lines to the
-      `~/.config` path in the config example under "Resolving the voice
-      files". That path is voice's config directory (`$XDG_CONFIG_HOME/voice`,
-      falling back to `~/.config/voice`), which persists across sessions by
-      design. The user
-      sets it up, can read every file in it, and it holds only voice rules
-      and samples. Unprompted writes stay inside it, other writes need the
-      user's approval of the specific change, and voice defines no cron jobs
-      or startup scripts. Caution: the pattern's match spans newlines up to
-      the first `|` in the file (the tells table), and the reported finding
-      text is only its first 200 characters, which always start "write this
-      so it sounds like me". Any new "write/create/mkdir ... ~/.<dir>" line
-      added to voice's SKILL.md above that table is swallowed into this same
-      match and stays suppressed; re-review this rule whenever voice gains a
-      new hidden-directory path.
+      inside the description's "rewrite this so it sounds like me" and
+      running across lines to the `~/.config` path in the config example
+      under "Resolving the voice files". That path is voice's config
+      directory (`$XDG_CONFIG_HOME/voice`, falling back to `~/.config/voice`),
+      which persists across sessions by design. Voice creates it with the
+      user during first-run setup, the user can read every file in it, and
+      it holds only the config's path lists, voice rules, and samples.
+      Unprompted writes stay inside it, other writes need the user's approval
+      of the specific change, and voice defines no cron jobs or startup
+      scripts. Caution: path "SKILL.md" matches every skill's SKILL.md, so
+      this hides any RA2 hit repo-wide whose first 200 characters contain
+      "sounds like me". The pattern's match also spans newlines up to the
+      first `|` in the file (the tells table), and the reported finding text
+      is only those first 200 characters, so any new "write/create/mkdir ...
+      ~/.<dir>" line added to voice's SKILL.md above that table is swallowed
+      into this same match and stays suppressed; re-review this rule
+      whenever voice gains a new hidden-directory path.
