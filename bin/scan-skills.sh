@@ -22,8 +22,8 @@ repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$repo_root"
 
 if ! command -v skillspector >/dev/null 2>&1; then
-  echo "skillspector not found. Install it with:" >&2
-  echo "  uv tool install git+https://github.com/NVIDIA/skillspector.git" >&2
+  echo "skillspector not found. Install it with the pinned command in README.md" >&2
+  echo "(Security Scanning section), so a local scan matches CI." >&2
   exit 1
 fi
 
@@ -64,12 +64,15 @@ for skill in "${skill_names[@]}"; do
   scanned=$((scanned + 1))
   json="$(mktemp)"
 
-    # skillspector is documented to always exit 0, but a crash (bad install,
-    # provider error in the LLM stage) can still exit non-zero; under set -e an
-    # unguarded call would kill the whole run with no summary and no reports.
-    if ! skillspector scan "$skill_dir" ${scan_flags[@]+"${scan_flags[@]}"} ${baseline_flags[@]+"${baseline_flags[@]}"} \
-      --format json --output "$json" >/dev/null; then
-      echo "ERROR: skillspector crashed while scanning $skill" >&2
+    # skillspector exits 1 when the risk score is over its threshold, after
+    # writing a complete report, so 0 and 1 both fall through to the
+    # active-findings gate below. Exit 2 means the scan itself failed. The
+    # `|| rc=$?` guard keeps set -e from killing the run with no summary.
+    rc=0
+    skillspector scan "$skill_dir" ${scan_flags[@]+"${scan_flags[@]}"} ${baseline_flags[@]+"${baseline_flags[@]}"} \
+      --format json --output "$json" >/dev/null || rc=$?
+    if [ "$rc" -gt 1 ] || [ ! -s "$json" ]; then
+      echo "ERROR: skillspector crashed while scanning $skill (exit $rc)" >&2
       crashes=$((crashes + 1))
       rm -f "$json"
       continue
