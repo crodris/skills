@@ -157,21 +157,34 @@ rules:
 
   - id: "TR2"
     path: "SKILL.md"
-    message: "*built-in command 'branch'*"
+    message: "*current branch*conflicts with built-in command 'branch'*"
     reason: >-
       False positive: "Shadow Command Trigger" matched ship's description,
       which says "the current branch", meaning the git branch being shipped.
       No skill here claims a /branch trigger or shadows that command.
       Caution: path "SKILL.md" matches every skill's SKILL.md, so this hides
-      any TR2 hit against the built-in 'branch' command repo-wide; re-review
-      before a skill description names /branch as a trigger.
+      any TR2 'branch' hit whose description clause says "current branch"
+      repo-wide; re-review before a skill description names /branch as a
+      trigger.
 
   - id: "RA2"
     path: "SKILL.md"
     message: "*sounds like me*"
     reason: >-
-      False positive: the "Session Persistence" pattern matched voice's
-      description trigger phrases ("rewrite this so it sounds like me",
-      "in my voice", "voice file"). The only state voice keeps is the user's
-      own voice config directory, which the user sets up and can read; it
-      defines no cron jobs, startup scripts, or hidden cross-session state.
+      Reviewed, intentional: the "Session Persistence" pattern for writes
+      into a hidden home directory matched in voice, starting at the "write"
+      inside "rewrite" in the description and running across lines to the
+      `~/.config` path in the config example under "Resolving the voice
+      files". That path is voice's config directory (`$XDG_CONFIG_HOME/voice`,
+      falling back to `~/.config/voice`), which persists across sessions by
+      design. The user
+      sets it up, can read every file in it, and it holds only voice rules
+      and samples. Unprompted writes stay inside it, other writes need the
+      user's approval of the specific change, and voice defines no cron jobs
+      or startup scripts. Caution: the pattern's match spans newlines up to
+      the first `|` in the file (the tells table), and the reported finding
+      text is only its first 200 characters, which always start "write this
+      so it sounds like me". Any new "write/create/mkdir ... ~/.<dir>" line
+      added to voice's SKILL.md above that table is swallowed into this same
+      match and stays suppressed; re-review this rule whenever voice gains a
+      new hidden-directory path.
