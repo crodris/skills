@@ -14,16 +14,17 @@ Any other bot's comments are still findings for stage 3's triage, but ship never
 ## Which bots are present
 
 Resolve the set in stage 0.
-A table bot is present when its config file exists on `origin/<base>` or on the shipped branch, or when its login submitted a review on any of the last five merged pull requests.
-A config file that turns automatic review off (`reviews.auto_review.enabled: false` for CodeRabbit, `autoReview: []` or the legacy `skipReview: "AUTOMATIC"` for Greptile) does not count.
+A table bot is present when its config file exists on `origin/<base>` or among the files this run will ship, or when its login submitted a review on any of the last five merged pull requests.
+A bot whose config among the files this run will ship turns automatic review off (`reviews.auto_review.enabled: false` for CodeRabbit, `autoReview: []` or the legacy `skipReview: "AUTOMATIC"` for Greptile) is absent in stage 0, whatever the base config or its history says.
 `gh pr view --json` prints a bot's login without the `[bot]` suffix, so match on the name before it.
 Stage 3 adds any table bot that shows up on this pull request, with a status, check, reaction, review, or comment from its login, at any point before the merge; that covers a bot installed since the last merge.
-A bot added after step 1 is waited on until its review settles, and its findings go through steps 2 and 3 before the merge.
+A bot added after step 1 is waited on until its review settles, and its findings go through stage 3's steps 2 and 3 before the merge.
+A first-push-only bot found after its review landed settles on the SHA it reviewed; triage its threads that are not outdated, and stage 3's step 5 re-requests it as usual.
 An empty set is a normal run: stage 3 reviews with the subagents alone, and the report says no bot was found.
 
 ## First push or every push
 
-Read each present bot's mode from its config file at the captured head SHA, the ref the bot itself reads.
+Read each present bot's mode from its config file among the files this run will ship, the version the bot itself reads.
 A file that does not set it, or no file at all, takes the table's default.
 A setting made only in the bot's web dashboard is invisible here, so a repository that changes the mode there should set it in the file too.
 

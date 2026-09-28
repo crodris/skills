@@ -14,8 +14,8 @@ Resolve the lane in stage 0, from every file this run will ship: whatever differ
 
 Security outranks light: a glob broad enough to call a security-sensitive file light is a mistake in the config, and the cheap lane is the wrong way to find that out.
 The light lane needs at least one review bot present, because it trades the code reviewer for the bots, and a run with neither has had no review at all; without one, run the standard lane.
-A lane describes the change rather than the run, so re-check it before every push: a light run that stops being light, because its fixes reach a file outside `light-paths` or into `security-paths`, owes the subagent review it skipped, which runs as a full-diff code reviewer round against the new head in place of the fix-only round in stage 3's step 5.
 A bot that stage 3 adds never turns a standard run light.
+A lane describes the change rather than the run, so re-check it before every push: a light run that stops being light, because its fixes reach a file outside `light-paths` or into `security-paths`, owes the subagent review it skipped, which runs as a full-diff code reviewer round against the new head in place of the fix-only round in stage 3's step 5.
 A run that became a security run this way gets the security subagent on the full diff in that same round.
 No lane skips verify, the bots, or the merge conditions.
 
@@ -27,7 +27,7 @@ That third subagent never spends a round of its own: it shares the code reviewer
 ## Stage 3 confirmation pass
 
 The light lane confirms with the bots alone, since that lane has no subagent to confirm with.
-Step 5 re-requests every first-push-only bot whose confirmed critical or major the push fixed, whatever its score.
+Stage 3's step 5 re-requests every first-push-only bot whose confirmed critical or major the push fixed, whatever its score.
 When that is none and no present bot reviews every push, request one first-push-only bot's review, in `bots.md` table order, so a bot reads every fix.
 In the security lane the security subagent reads the fix commits in the same pass, and a drive does not stand in for it: a blocking fix can land inside `security-paths` as easily as the change did.
 
