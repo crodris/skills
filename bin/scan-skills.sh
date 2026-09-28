@@ -72,7 +72,7 @@ for skill in "${skill_names[@]}"; do
     skillspector scan "$skill_dir" ${scan_flags[@]+"${scan_flags[@]}"} ${baseline_flags[@]+"${baseline_flags[@]}"} \
       --format json --output "$json" >/dev/null || rc=$?
     if [ "$rc" -gt 1 ] || [ ! -s "$json" ]; then
-      echo "ERROR: skillspector crashed while scanning $skill" >&2
+      echo "ERROR: skillspector crashed while scanning $skill (exit $rc)" >&2
       crashes=$((crashes + 1))
       rm -f "$json"
       continue
