@@ -30,5 +30,5 @@ check() {
 check "over threshold, all suppressed passes" "$(run 1 0)" "PASS: all scanned skills are clean"
 check "over threshold, active findings fail as findings" "$(run 1 1)" "have non-suppressed findings"
 check "exit 2 fails as a crash" "$(run 2 0)" "the scanner crashed on"
-check "missing report fails as a crash" "$(run 1 0 1)" "the scanner crashed on"
+check "empty report fails as a crash" "$(run 1 0 1)" "the scanner crashed on"
 exit "$fail"
