@@ -7,12 +7,14 @@ on:
       - "skills/**"
       - ".skillspector-baseline.yaml"
       - "bin/scan-skills.sh"
+      - "bin/test-scan-skills.sh"
       - ".github/workflows/skillspector.yml"
   pull_request:
     paths:
       - "skills/**"
       - ".skillspector-baseline.yaml"
       - "bin/scan-skills.sh"
+      - "bin/test-scan-skills.sh"
       - ".github/workflows/skillspector.yml"
   workflow_dispatch:
 
@@ -25,6 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      - name: Check scan-skills.sh exit-code handling
+        run: bin/test-scan-skills.sh
 
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
 
