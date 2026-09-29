@@ -190,3 +190,18 @@ rules:
       ~/.<dir>" line added to voice's SKILL.md above that table is swallowed
       into this same match and stays suppressed; re-review this rule
       whenever voice gains a new hidden-directory path.
+
+  - id: "AS1"
+    path: "setup.sh"
+    message: "*/.claude/settings*"
+    reason: >-
+      False positive: "Agent Config Directory Access" matched worktree-setup's
+      copy list, which copies the repository's own
+      `.claude/settings.local.json` from the main checkout into a linked
+      worktree of the same repository on the same machine, only when the
+      worktree lacks one. It never reads the file's contents, never touches
+      the user's ~/.claude directory, grants no permission that checkout does
+      not already have, and sends nothing off the machine. Caution: the finding text is
+      only "/.claude/settings", so this rule suppresses ANY AS1 hit on a
+      .claude/settings path in setup.sh, including settings.json; re-review it
+      if the script ever reads such a file or copies it anywhere else.

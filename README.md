@@ -14,7 +14,7 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship`, `review`, `voice`, `frontend-design-pipeline`, or `html-comms` on its own if that is all you want.
+Take `ship`, `review`, `voice`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup` on its own if that is all you want.
 `execute` and `scaffold` require `fathom-shared`, which carries the contract files they read, and each stops with its install command when it is missing.
 
 **Claude Code plugins** - also available, for Claude Code only:
@@ -27,7 +27,7 @@ Take `ship`, `review`, `voice`, `frontend-design-pipeline`, or `html-comms` on i
 
 The two plugins are independent: install either one alone.
 Fathom needs a tracker MCP. Ship needs a git repository with a remote.
-`review`, `voice`, `frontend-design-pipeline`, and `html-comms` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
+`review`, `voice`, `frontend-design-pipeline`, `html-comms`, and `worktree-setup` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
 
 > Individual plugins may have additional prerequisites that run in your **terminal** (e.g., `brew install`). See each plugin's README for details.
 
@@ -326,6 +326,61 @@ HTML
 - **One stable link** - updates redeploy the same file to the same URL, and mocks labeled A, B, and C sit side by side in that one file
 - **Charts when the data has shape** - a table maps each kind of data to a chart, and every SVG carries a title and description for screen readers
 - **Safe to forward** - secrets, private URLs, and local paths stay out of the page, and nothing is called hosted before the upload succeeds
+
+### worktree-setup (v1.0.0)
+
+Worktree setup makes a fresh git worktree runnable before the agent starts work in it.
+A new worktree gets the tracked files and nothing else, so dev servers, tests, and builds fail on the missing env files and `node_modules`.
+The skill copies the main checkout's local files into the worktree and installs dependencies, and a SessionStart hook runs it on every session so worktrees that another tool created, such as T3 Code's New worktree, are covered too.
+
+#### Prerequisites
+
+- Git 2.31 or newer
+- The package manager the worktree's lockfile names (`pnpm`, `bun`, `yarn`, or `npm`) on `PATH`
+
+#### Install
+
+```bash
+npx skills@latest add crodris/skills -s worktree-setup -g
+```
+
+Then add this SessionStart hook to `~/.claude/settings.json`, so worktrees that another tool created are ready before the first prompt.
+The script's output becomes session context, so the agent sees what was copied or why the install failed.
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$HOME/.claude/skills/worktree-setup/setup.sh\"; [ -f \"$f\" ] && bash \"$f\" 2>&1 || true",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The skill never edits your settings; add the hook yourself.
+
+#### Skills
+
+| Skill | Description |
+|-------|-------------|
+| `worktree-setup` | Copies the main checkout's env files, local HTTPS certificates, and `.claude/settings.local.json` into a linked worktree, then installs dependencies once. Not user-invocable; the agent and the hook run it. |
+
+#### Features
+
+- **Automatic** - the hook runs it at session start, and the agent runs it right after creating a worktree mid-session
+- **Never clobbers** - it copies only files the worktree is missing, so edits made inside the worktree survive
+- **Copies, not links** - each worktree owns its env files, so a change in one never leaks into the main checkout or another worktree
+- **Silent when done** - a worktree that is already set up costs a few git calls and prints nothing
+- **Retries a failed install** - a failed install leaves no marker, so the next session tries again and the agent sees the error until it is fixed
+- **Checked** - `bin/test-worktree-setup.sh` runs the script against a scratch repository and a stub package manager
 
 ## Workflow
 
