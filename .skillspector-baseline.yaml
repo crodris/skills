@@ -199,9 +199,10 @@ rules:
       copy list, which copies the repository's own
       `.claude/settings.local.json` from the main checkout into a linked
       worktree of the same repository on the same machine, only when the
-      worktree lacks one. It never reads the file's contents, never touches
-      the user's ~/.claude directory, grants no permission that checkout does
-      not already have, and sends nothing off the machine. Caution: the finding text is
-      only "/.claude/settings", so this rule suppresses ANY AS1 hit on a
-      .claude/settings path in setup.sh, including settings.json; re-review it
-      if the script ever reads such a file or copies it anywhere else.
+      worktree lacks one. It never parses or prints the file, never touches
+      the user's ~/.claude directory, grants no permission that checkout
+      does not already have, and sends nothing off the machine. Caution: the
+      finding text is only "/.claude/settings", so this rule suppresses ANY
+      AS1 hit on a .claude/settings path in setup.sh, including settings.json;
+      re-review it if the script ever reads such a file or copies it anywhere
+      else.

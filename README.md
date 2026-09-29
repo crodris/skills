@@ -327,11 +327,13 @@ HTML
 - **Charts when the data has shape** - a table maps each kind of data to a chart, and every SVG carries a title and description for screen readers
 - **Safe to forward** - secrets, private URLs, and local paths stay out of the page, and nothing is called hosted before the upload succeeds
 
+---
+
 ### worktree-setup (v1.0.0)
 
 Worktree setup makes a fresh git worktree runnable before the agent starts work in it.
 A new worktree gets the tracked files and nothing else, so dev servers, tests, and builds fail on the missing env files and `node_modules`.
-The skill copies the main checkout's local files into the worktree and installs dependencies, and a SessionStart hook runs it on every session so worktrees that another tool created, such as T3 Code's New worktree, are covered too.
+The skill copies the main checkout's gitignored local files into the worktree and installs dependencies, and a SessionStart hook runs it on every session so worktrees that another tool created, such as T3 Code's New worktree, are covered too.
 
 #### Prerequisites
 
@@ -344,6 +346,7 @@ The skill copies the main checkout's local files into the worktree and installs 
 npx skills@latest add crodris/skills -s worktree-setup -g
 ```
 
+The hook below expects this global install; a project-scoped install puts the script at `.claude/skills/worktree-setup/setup.sh`, so change the path to match.
 Then add this SessionStart hook to `~/.claude/settings.json`, so worktrees that another tool created are ready before the first prompt.
 The script's output becomes session context, so the agent sees what was copied or why the install failed.
 
@@ -371,15 +374,16 @@ The skill never edits your settings; add the hook yourself.
 
 | Skill | Description |
 |-------|-------------|
-| `worktree-setup` | Copies the main checkout's env files, local HTTPS certificates, and `.claude/settings.local.json` into a linked worktree, then installs dependencies once. Not user-invocable; the agent and the hook run it. |
+| `worktree-setup` | Copies the main checkout's env files, local HTTPS certificates, and `.claude/settings.local.json` into a linked worktree, then installs dependencies when they are missing or the lockfile changed. Not user-invocable; the agent and the hook run it. |
 
 #### Features
 
 - **Automatic** - the hook runs it at session start, and the agent runs it right after creating a worktree mid-session
-- **Never clobbers** - it copies only files the worktree is missing, so edits made inside the worktree survive
+- **Never clobbers** - it copies only files the main checkout ignores and the worktree is missing, so edits made inside the worktree survive and a tracked file the branch deleted stays deleted
 - **Copies, not links** - each worktree owns its env files, so a change in one never leaks into the main checkout or another worktree
-- **Silent when done** - a worktree that is already set up costs a few git calls and prints nothing
-- **Retries a failed install** - a failed install leaves no marker, so the next session tries again and the agent sees the error until it is fixed
+- **Skips untrusted checkouts** - a worktree on a detached HEAD, which is how a pull request gets checked out for review, gets neither secrets nor an install
+- **Silent when done** - a worktree that is already set up costs a few git calls and one scan of the main checkout, and prints nothing
+- **Keeps dependencies current** - it installs again when `node_modules` is gone or the lockfile changed since the last successful install, and a failed install is retried next session with the error shown until it is fixed
 - **Checked** - `bin/test-worktree-setup.sh` runs the script against a scratch repository and a stub package manager
 
 ## Workflow
@@ -393,7 +397,7 @@ The skill never edits your settings; add the hook yourself.
 ## Repository Layout
 
 Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/marketplace.json` decides which plugin owns which skill through a per-entry `skills` array.
-A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipeline`, or `html-comms`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
+A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the versions into this README and fails when a skill directory is claimed by no plugin, by more than one, or is claimed but missing.
 `claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
