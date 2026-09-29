@@ -7,23 +7,29 @@
 #
 # Usage: setup.sh [dir]   (default: the current directory)
 set -euo pipefail
-unset GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_INDEX_FILE
+# A caller such as a git hook can export GIT_DIR and friends, which would point
+# every git call below at its repository instead.
+# shellcheck disable=SC2046 # git prints bare variable names, one per line
+unset $(git rev-parse --local-env-vars)
 
 wt=$(git -C "${1:-$PWD}" rev-parse --show-toplevel 2>/dev/null) || exit 0
 common=$(git -C "$wt" rev-parse --path-format=absolute --git-common-dir)
 gitdir=$(git -C "$wt" rev-parse --path-format=absolute --git-dir)
 # A main checkout or a submodule owns its git dir; only linked worktrees share one.
 [ "$gitdir" != "$common" ] || exit 0
-# A pull request checked out for review sits on a detached HEAD. Its install
+# The review skill checks a pull request out on a detached HEAD. Its install
 # scripts are someone else's code, so it gets neither secrets nor an install.
+# A branch checkout, including one from gh pr checkout, is treated as the user's.
 git -C "$wt" symbolic-ref -q HEAD >/dev/null || exit 0
 
 main=$(git -C "$wt" worktree list --porcelain | sed -n '1s/^worktree //p')
 wtp=$(cd "$wt" && pwd -P)
 copied=""
-# A bare repository, or a --separate-git-dir one, has no checkout to copy from.
+# A bare repository has no checkout, and git lists a --separate-git-dir
+# repository's git dir in place of its checkout, so neither is copied from.
 if top=$(git -C "$main" rev-parse --show-toplevel 2>/dev/null); then
-  # The find below prunes common nested-worktree folders by name, which saves a
+  # The find prunes dependency and build folders, whose env files would pass
+  # both checks below, and common nested-worktree folders, which only saves a
   # git call per file there; the toplevel check catches any other nesting.
   while IFS= read -r rel; do
     dest="$wt/$rel"
@@ -31,7 +37,8 @@ if top=$(git -C "$main" rev-parse --show-toplevel 2>/dev/null); then
     # Only untracked files the main checkout itself owns: never one inside a
     # nested worktree or submodule.
     [ "$(git -C "$main/$(dirname "$rel")" rev-parse --show-toplevel 2>/dev/null)" = "$top" ] || continue
-    [ -z "$(git -C "$main" ls-files -- "$rel")" ] || continue
+    tracked=$(git -C "$main" --literal-pathspecs ls-files -- "$rel") || continue
+    [ -z "$tracked" ] || continue
     # Never write through a symlink that leads out of the worktree or nowhere.
     d=$(dirname "$dest")
     while [ ! -e "$d" ] && [ ! -L "$d" ]; do d=$(dirname "$d"); done
@@ -55,9 +62,11 @@ pick() {
   done
 }
 # The marker holds the lockfile checksum and whether dependencies exist, so a
-# lockfile change or a deleted node_modules reinstalls. Yarn Plug'n'Play keeps
-# no node_modules, only .pnp.cjs.
+# lockfile change or a deleted node_modules reinstalls. It picks the lockfile
+# again because npm writes package-lock.json on a first install. Yarn
+# Plug'n'Play keeps no node_modules, only .pnp.cjs.
 state() {
+  local lock install
   pick
   cksum < "$wt/$lock"
   if [ -d "$wt/node_modules" ] || [ -f "$wt/.pnp.cjs" ]; then echo deps; fi

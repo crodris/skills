@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 # Checks skills/worktree-setup/setup.sh against scratch repositories and stubs:
 # pnpm and npm record each install and fail when they can read stdin (a hook's
-# stdin is the session JSON, never the install's); pnpm also fails when
-# STUB_FAIL=1; cp fails partway through on any .env.partial file.
+# stdin is the session JSON, never the install's); pnpm creates node_modules
+# and also fails when STUB_FAIL=1; npm writes a package-lock.json when none
+# exists; cp fails partway through on any .env.partial file. Every path has a
+# space in it.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 setup="$repo_root/skills/worktree-setup/setup.sh"
-tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
+base="$(mktemp -d)"
+tmp="$base/a b"
+mkdir "$tmp"
+trap 'rm -rf "$base"' EXIT
 
 mkdir "$tmp/bin" "$tmp/outside"
 cat > "$tmp/bin/pnpm" <<'STUB'
@@ -29,10 +33,11 @@ STUB
 cat > "$tmp/bin/cp" <<'STUB'
 #!/usr/bin/env bash
 case "$*" in *.env.partial*) for last; do :; done; echo "PART" > "$last"; exit 1 ;; esac
-exec /bin/cp "$@"
+exec "$REAL_CP" "$@"
 STUB
 chmod +x "$tmp/bin/pnpm" "$tmp/bin/npm" "$tmp/bin/cp"
-export STUB_LOG="$tmp/installs" NPM_LOG="$tmp/npm-installs" PATH="$tmp/bin:$PATH"
+REAL_CP="$(command -v cp)"
+export REAL_CP STUB_LOG="$tmp/installs" NPM_LOG="$tmp/npm-installs" PATH="$tmp/bin:$PATH"
 : > "$STUB_LOG"
 : > "$NPM_LOG"
 git() { command git -c user.name=t -c user.email=t@t -c commit.gpgsign=false -c core.hooksPath=/dev/null "$@"; }
@@ -40,13 +45,15 @@ git() { command git -c user.name=t -c user.email=t@t -c commit.gpgsign=false -c 
 main="$tmp/main"
 mkdir -p "$main/apps/web/certificates" "$main/apps/api" "$main/apps/gone" "$main/.claude" "$main/node_modules/dep"
 git -C "$main" init -q -b main
-printf '%s\n' node_modules '.env*' '!.env.example' '!.env.test' certificates scratch-wt > "$main/.gitignore"
+printf '%s\n' node_modules '.env*' '!.env.example' '!.env.test' '!.env.a' certificates scratch-wt > "$main/.gitignore"
 echo '{}' > "$main/package.json"
 echo "v1" > "$main/pnpm-lock.yaml"
 echo "EXAMPLE=1" > "$main/.env.example"
 echo "TRACKED=1" > "$main/.env.test"
+echo "A=1" > "$main/.env.a"
 git -C "$main" add -A && git -C "$main" commit -qm init
 echo "ROOT=1" > "$main/.env.local"
+echo "Q=1" > "$main/.env.?"
 echo "API=1" > "$main/apps/api/.env.local"
 echo "GONE=1" > "$main/apps/gone/.env.local"
 echo "WEB=1" > "$main/apps/web/.env.test.local"
@@ -83,7 +90,7 @@ check "main checkout is a no-op" "$(run "$main")" "exit=0"
 out="$(STUB_FAIL=1 run "$wt")"
 check "failed install exits 1" "$(printf '%s' "$out" | tail -n 1)" "exit=1"
 check "failed install shows the tool output" "$(printf '%s' "$out" | grep -c ERR_PNPM_STUB)" "1"
-check "failed install names the rerun command" "$(printf '%s' "$out" | grep -cF "rerun: bash $setup $(cd "$wt" && pwd -P)")" "1"
+check "failed install names the rerun command, quoted" "$(printf '%s' "$out" | grep -cF "$(printf 'rerun: bash %q %q' "$setup" "$(cd "$wt" && pwd -P)")")" "1"
 
 out="$(run "$wt")"
 check "retry after a failed install succeeds" "$(printf '%s' "$out" | tail -n 1)" "exit=0"
@@ -94,6 +101,7 @@ check "a failed copy leaves no partial file" "$(has "$wt/.env.partial")" "skippe
 rm -f "$main/.env.locked" "$main/.env.partial"
 check "install runs without a prompt" "$(tail -n 1 "$STUB_LOG")" "$(cd "$wt" && pwd -P) install --config.confirm-modules-purge=false"
 check "copies a root env file" "$(cat "$wt/.env.local")" "ROOT=1"
+check "matches a file name literally, not as a glob" "$(cat "$wt/.env.?" 2>/dev/null)" "Q=1"
 check "copies a nested cert" "$(cat "$wt/apps/web/certificates/localhost.pem")" "pem"
 check "copies untracked local Claude settings" "$(cat "$wt/.claude/settings.local.json")" "{}"
 check "copies a symlinked env file as a file" "$(cat "$wt/.env.link"; [ -L "$wt/.env.link" ] && echo " (link)")" "LINK=1"

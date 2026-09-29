@@ -33,7 +33,7 @@ jobs:
       - name: Check scan-skills.sh exit-code handling
         run: bin/test-scan-skills.sh
 
-      - name: Check worktree-setup against a scratch repository
+      - name: Check worktree-setup against scratch repositories
         run: bin/test-worktree-setup.sh
 
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
