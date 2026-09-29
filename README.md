@@ -14,7 +14,7 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship`, `review`, `voice`, `frontend-design-pipeline`, or `html-comms` on its own if that is all you want.
+Take `ship`, `review`, `voice`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup` on its own if that is all you want.
 `execute` and `scaffold` require `fathom-shared`, which carries the contract files they read, and each stops with its install command when it is missing.
 
 **Claude Code plugins** - also available, for Claude Code only:
@@ -27,7 +27,7 @@ Take `ship`, `review`, `voice`, `frontend-design-pipeline`, or `html-comms` on i
 
 The two plugins are independent: install either one alone.
 Fathom needs a tracker MCP. Ship needs a git repository with a remote.
-`review`, `voice`, `frontend-design-pipeline`, and `html-comms` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
+`review`, `voice`, `frontend-design-pipeline`, `html-comms`, and `worktree-setup` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
 
 > Individual plugins may have additional prerequisites that run in your **terminal** (e.g., `brew install`). See each plugin's README for details.
 
@@ -327,6 +327,65 @@ HTML
 - **Charts when the data has shape** - a table maps each kind of data to a chart, and every SVG carries a title and description for screen readers
 - **Safe to forward** - secrets, private URLs, and local paths stay out of the page, and nothing is called hosted before the upload succeeds
 
+---
+
+### worktree-setup (v1.0.0)
+
+Worktree setup makes a fresh git worktree runnable before the agent starts work in it.
+A new worktree gets the tracked files and nothing else, so dev servers, tests, and builds fail on the missing env files and `node_modules`.
+The skill copies the main checkout's untracked local files into the worktree and installs dependencies, and a SessionStart hook runs it on every session so worktrees that another tool created, such as T3 Code's New worktree, are covered too.
+
+#### Prerequisites
+
+- Git 2.31 or newer
+- The package manager the worktree's lockfile names (`pnpm`, `bun`, `yarn`, or `npm`) on `PATH`
+
+#### Install
+
+```bash
+npx skills@latest add crodris/skills -s worktree-setup -g
+```
+
+Then add this SessionStart hook to `~/.claude/settings.json`, so worktrees that another tool created are ready before the first prompt.
+The script's output becomes session context, so the agent sees what was copied or why the install failed.
+The hook expects the global install above; a project-scoped install puts the script at `.claude/skills/worktree-setup/setup.sh`, so change the path to match.
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$HOME/.claude/skills/worktree-setup/setup.sh\"; [ -f \"$f\" ] && bash \"$f\" 2>&1 || true",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The skill never edits your settings; add the hook yourself.
+
+#### Skills
+
+| Skill | Description |
+|-------|-------------|
+| `worktree-setup` | Copies the main checkout's untracked env files, local HTTPS certificates, and `.claude/settings.local.json` into a linked worktree, then installs dependencies when they are missing or the lockfile changed. Not user-invocable; the agent and the hook run it. |
+
+#### Features
+
+- **Automatic** - the hook runs it at session start, and the agent runs it right after creating a worktree mid-session
+- **Never clobbers** - it copies only untracked files the worktree is missing, so edits made inside the worktree survive and a tracked file the branch deleted stays deleted
+- **Copies, not links** - each worktree owns its env files, so a change in one never leaks into the main checkout or another worktree
+- **Skips detached checkouts** - a worktree on a detached HEAD, which is how the review skill checks out a pull request, gets neither secrets nor an install; a branch checkout is treated as yours, including a pull request checked out onto a branch with `gh pr checkout`
+- **Silent when done** - a worktree that is already set up costs a few git calls and one scan of the main checkout, and prints nothing
+- **Keeps dependencies current** - it installs again when `node_modules` is gone or the lockfile changed since the last successful install, and a failed install is retried next session with the error shown until it is fixed
+- **Checked** - `bin/test-worktree-setup.sh` runs the script against scratch repositories and stub package managers
+
 ## Workflow
 
 1. **Scaffold requirements**: talk to the scaffold skill, for example "scaffold these requirements"
@@ -338,7 +397,7 @@ HTML
 ## Repository Layout
 
 Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/marketplace.json` decides which plugin owns which skill through a per-entry `skills` array.
-A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipeline`, or `html-comms`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
+A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup`, is still published by skills.sh and is simply unreachable through `/plugin install`; `bin/sync-versions.sh` reports it so the omission stays deliberate rather than accidental.
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the versions into this README and fails when a skill directory is claimed by no plugin, by more than one, or is claimed but missing.
 `claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
