@@ -84,7 +84,7 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v1.8.0)
+### ship (v1.9.0)
 
 Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains, squash-merge, release watch, and post-merge cleanup.
 Ask it to babysit, watch, monitor, or get a pull request green and it runs the same review loop, then stops at a pull request that is ready for you to merge.
