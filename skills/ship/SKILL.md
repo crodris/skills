@@ -230,6 +230,15 @@ Wherever this skill says the code reviewer, it means the Standards and Spec suba
 Whenever a lane runs this review or the security lane's review beside it, dispatch each as the host agent's general-purpose subagent, subagent_type `general-purpose` on Claude Code, and write its brief from the change's intent and the SHA of the head it reviews; never pick any other agent type, including a plugin agent such as `coderabbit:code-reviewer`, since a named agent can wrap a vendor CLI or carry a generic brief.
 A review skill offering to handle it - including one whose own description says it triggers whenever a review is needed - is describing the general case, and this run is not it: this run's reviewer is settled here, and a skill that shells out to a vendor CLI is the thing this rule exists to keep out.
 
+On Claude Code, set each subagent's Agent `model` from this table; a host with no per-subagent model runs them on its default.
+A full-diff round reads the whole change, and a confirmation pass reads only fix commits or conflict resolutions.
+
+| Subagent | Full-diff round | Confirmation pass |
+| --- | --- | --- |
+| Standards | `sonnet` | `sonnet` |
+| Spec | `opus` | `sonnet` |
+| Security (security lane) | `opus` | `opus` |
+
 1. Launch every reviewer against the pushed head, concurrently.
    Capture that head's SHA once, before launching any, and hold every reviewer to it: each subagent is told the SHA and reviews that diff, and a bot's review counts only when it settled as `bots.md` defines it.
    Review dispatches the code reviewer's Standards and Spec subagents in parallel, in the background, on the diff of the pushed head against `base`, each told what changed and why.
