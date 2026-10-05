@@ -94,6 +94,6 @@ If any of these files cannot be found and read, stop immediately and report whic
 9. A per-invocation destination hint applies only to the issue just created; do not overwrite the tracker profile's saved default because of it.
    Write `default-destination` into the tracker profile only when the profile currently has none, or when the user explicitly asks to change the default.
 10. Hand off, always with the resolvable reference from step 8: the key for Linear, the full task URL for Asana, keeping the short Asana ref for display only, since `getIssue` cannot resolve the truncated form in a fresh session.
-   In ask mode, ask "run execute on <ref> now?"; in auto mode, invoke the execute skill on that reference without asking and say that you are doing so.
-   - When the user says yes, invoke the execute skill on that reference.
+   In ask mode, ask "run execute on <ref> now?"; in auto mode, call the Skill tool with "execute" on that reference without asking and say that you are doing so.
+   - When the user says yes, call the Skill tool with "execute" on that reference.
    - When the user says no, stop here and leave the issue in the tracker for a later run.

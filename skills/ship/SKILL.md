@@ -214,6 +214,8 @@ Each round:
    > Inventory: Removed implicit workspace carry-over from every "new thread" entry point and deleted the v1 sidebar's seed-context machinery.
    > Problem first: My "new worktree" default was ignored when starting new threads on existing worktrees. Now your preferences always apply.
 
+   Close that opening with a merge-danger line: a two-way door when it is cheap to roll back, a one-way door when it is destructive or hard to reverse, such as deleting data, migrating a schema, or publishing something others depend on, and the blast radius, meaning who or what breaks if the change is wrong.
+
    The body carries the summary and the verification evidence, with the path of the drive's evidence when stage 1 ran one, inside a delimited section this run owns; stage 3 adds the review outcome to that section once there is one.
    Without a working `gh`, push the branch, print the compare URL the remote host expects, and hand the review off to the user; the run then ends after reporting, with no merge and no release watch.
 
