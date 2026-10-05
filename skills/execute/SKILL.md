@@ -112,7 +112,6 @@ If any of these files cannot be found and read, stop immediately and report whic
    When that branch is checked out in another worktree, as a held issue from `fan-out.md` leaves it, continue the run from inside that worktree, since git will not check one branch out twice.
    Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track` rather than from a local copy that may be behind, since branching from a stale local copy is the usual cause of conflicts at merge time.
    Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
-   Push the branch the first time with `git push -u origin <branch>`, so later plain pushes have an upstream.
    When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
    When that update conflicts, stop and hold exactly as an unfixable test failure would: keep the work, leave the task in progress, report which files conflict, and let the user decide how to resolve them; never resolve a conflict by discarding either side's changes.
    These rules describe bundle 1's branch, which is the only branch a single-review run has.
@@ -236,7 +235,7 @@ If any of these files cannot be found and read, stop immediately and report whic
 
     Then open the review through the forge contract in `../fathom-shared/forges.md`, never by invoking a forge CLI directly from this procedure.
     - Confirm the resolved base with `resolveBase` first, as the contract requires, before anything is created against it.
-    - Push the branch, unless the resolved adapter declares `pushesForYou`; when it does, `openReview` owns the push and pushing here would produce a wrong branch state.
+    - Push the branch, with `-u origin <branch>` when it has no upstream yet, unless the resolved adapter declares `pushesForYou`; when it does, `openReview` owns the push and pushing here would produce a wrong branch state.
     - Call `openReview` with the branch, the resolved base, a title, and a body.
       Title it the way merged reviews are titled in the resolved base's `git log` (a squash subject, or a merge commit's title line), naming the outcome for the user: `perf(server): cut websocket frame size by 70%+ with gzipping` names the outcome, where `perf(server): negotiate permessage-deflate on the websocket` names only the mechanism.
       Open the body with the problem as the issue states it, then the fix in a sentence or two, then `Closes <ref>` for a Linear issue or the task's URL for an Asana task, the list of completed tasks, and a test plan.
