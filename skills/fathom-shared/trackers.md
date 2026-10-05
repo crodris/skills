@@ -106,7 +106,7 @@ A listing has to be bounded, and any bound silently drops the oldest records onc
 
 Records written before review ids were recorded carry a branch name and no id.
 Read that issue's tracker state first, and skip the lookup when it is already `done`, since nothing about it is left to decide.
-For those, fall back to the optional `findReviewByBranch` operation defined in `forges.md`, which returns bounded candidate records carrying each review's id, its URL, and its base.
+For a legacy record on an issue that is not done, fall back to the optional `findReviewByBranch` operation defined in `forges.md`, which returns bounded candidate records carrying each review's id, its URL, and its base.
 Treat such a record as resolved only when exactly one candidate comes back, since a legacy record names a branch and nothing else and so carries nothing to tell two candidates apart; two or more candidates leave it unresolved rather than presenting a choice to make.
 
 Resolution is not complete at the id.
