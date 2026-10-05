@@ -3,7 +3,7 @@
 Fathom is a pair of agent skills that carry a tracker issue from requirements to an open code review.
 
 - **scaffold** turns requirements into a tracker issue plus linked sub-issues.
-- **execute** drives an existing issue through implementation to a code review, one task at a time.
+- **execute** drives an existing issue through implementation to a code review, running independent tasks in parallel.
 
 It works with **Asana** or **Linear**, and runs unchanged on **Claude Code** and **Kiro** because both follow the open Agent Skills standard.
 
@@ -199,6 +199,7 @@ execute TES-5
 work on TES-5
 work on https://app.asana.com/1/…/task/1217003545553983
 run execute on this issue
+execute TES-5 TES-6 TES-7
 ```
 
 It also handles cleanup on demand.
@@ -212,8 +213,17 @@ clean up merged issues
 that PR got abandoned
 ```
 
-A run does this: verifies the tracker MCP, sweeps for merged work, resolves tracker and task memory, fetches the issue, reads relevant code, creates the branch from a freshly fetched base, builds the breakdown and plan document, moves the issue to in progress, then loops one task at a time.
+A run does this: verifies the tracker MCP, sweeps for merged work, resolves tracker and task memory, fetches the issue, reads relevant code, creates the branch from a freshly fetched base, builds the breakdown and plan document, moves the issue to in progress, then loops through the tasks.
 Each task gets claimed, implemented, tested with the typecheck and its own test files, committed on its own, and closed in both task memory and the tracker.
+Tasks carry real dependencies from the breakdown and from scaffold's `Blocked by:` lines.
+When two or more tasks are ready at once and touch different files, each one is built by a subagent in its own worktree under `.git/fathom/`.
+The run then applies each result onto the issue branch and commits it, so the branch still gets one commit per task.
+A stacked issue stays sequential, because its tasks form one chain.
+
+Naming several issues runs each one in its own worktree on its own subagent, after one shared preflight and sweep.
+Each issue still gets its own branch and review.
+In this mode a question execute would normally ask becomes a hold, and the hold report carries the question.
+On an agent with no subagents, both kinds of fan-out fall back to running one at a time.
 The last task, or each bundle's last task on a stack, runs the typecheck and the full suite instead of its own test files.
 At the end it pushes, opens the review - or, in the manual tier, hands you everything needed to open it - and moves the issue to in review.
 

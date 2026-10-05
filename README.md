@@ -33,7 +33,7 @@ Fathom needs a tracker MCP. Ship needs a git repository with a remote.
 
 ## Available Plugins
 
-### fathom (v2.4.1)
+### fathom (v2.5.0)
 
 Fathom provides two agent skills, execute and scaffold, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter.
 It works with Asana or Linear as your issue tracker, and both skills run unchanged on Claude Code and Kiro.
@@ -71,6 +71,7 @@ scaffold these requirements
 - **Scaffold-to-execute handoff** - scaffold drafts a main issue plus sub-issues, then offers to hand straight into execute
 - **Task memory** - beads-backed when available, with a plain checklist file fallback
 - **Conventional Commits** - one commit per task, referencing the issue ref
+- **Fan-out** - independent tasks run on parallel subagents in their own worktrees, and naming several issues runs each one on its own subagent
 - **Tracker-only access** - tracker work only happens through the connected tracker MCP; when it is missing, the skill refuses and stops
 - **Forge-portable** - reviews go through a five-operation forge contract; GitHub and a generic-git fallback ship built in, and any other forge is a `.fathom/forge.md` you write without forking
 
@@ -84,7 +85,7 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v1.10.0)
+### ship (v1.11.0)
 
 Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains, squash-merge, release watch, and post-merge cleanup.
 Ask it to babysit, watch, monitor, or get a pull request green and it runs the same review loop, then stops at a pull request that is ready for you to merge.
@@ -422,5 +423,5 @@ When a finding is a reviewed false positive, suppress it in the repo-root `.skil
 
 MIT
 
-Some rules adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including ship's merge-danger line and the "Call the Skill tool" wording for loading another skill.
+Some rules adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including ship's merge-danger line, the summary visuals and before-and-after evidence in ship's pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
 Ship's hold mode, CI, and pull request title and body rules, and execute's title and body rules, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
