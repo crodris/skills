@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Makes a linked git worktree runnable: copies the main checkout's untracked
-# env files, local HTTPS certificates, and .claude/settings.local.json, then
-# installs dependencies when they are missing or the lockfile changed.
+# env files (except ones named for production credentials), local HTTPS
+# certificates, and .claude/settings.local.json, then installs dependencies
+# when they are missing or the lockfile changed.
 # Prints nothing when there is nothing to do, so a SessionStart hook can run it
 # on every session.
 #
@@ -34,6 +35,17 @@ if top=$(git -C "$main" rev-parse --show-toplevel 2>/dev/null); then
   while IFS= read -r rel; do
     dest="$wt/$rel"
     if [ -e "$dest" ] || [ -L "$dest" ]; then continue; fi
+    # Files named for production credentials stay in the main checkout: a
+    # .env.prod* file or Sentry's .env.sentry-build-plugin token. A symlink is
+    # judged by the file it finally points at, within 40 hops so a link loop
+    # cannot hang it, so a link to one of those stays out too.
+    f="$main/$rel" hops=0
+    while [ -L "$f" ] && [ "$hops" -lt 40 ]; do
+      l=$(readlink "$f")
+      case $l in /*) f=$l ;; *) f="$(dirname "$f")/$l" ;; esac
+      hops=$((hops + 1))
+    done
+    case "$(basename "$f")" in .env.prod*|.env.sentry-build-plugin) continue ;; esac
     # Only untracked files the main checkout itself owns: never one inside a
     # nested worktree or submodule.
     [ "$(git -C "$main/$(dirname "$rel")" rev-parse --show-toplevel 2>/dev/null)" = "$top" ] || continue
