@@ -216,7 +216,7 @@ that PR got abandoned
 A run does this: verifies the tracker MCP, sweeps for merged work, resolves tracker and task memory, fetches the issue, reads relevant code, creates the branch from a freshly fetched base, builds the breakdown and plan document, moves the issue to in progress, then loops through the tasks.
 Each task gets claimed, implemented, tested with the typecheck and its own test files, committed on its own, and closed in both task memory and the tracker.
 Tasks carry real dependencies from the breakdown and from scaffold's `Blocked by:` lines.
-When two or more tasks are ready at once and touch different files, each one is built by a subagent in its own worktree under `.git/fathom/`.
+When two or more tasks are ready at once and touch different files, each one is built by a subagent in its own worktree, in a sibling directory named after the main checkout with `.fathom` appended.
 The run then applies each result onto the issue branch and commits it, so the branch still gets one commit per task.
 A stacked issue stays sequential, because its tasks form one chain.
 
