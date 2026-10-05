@@ -108,13 +108,14 @@ If any of these files cannot be found and read, stop immediately and report whic
    Do not create another branch and do not go back to an earlier bundle's branch in that case; this run is finishing the stack rather than building it.
    The branch is bundle 1's whenever no plan document exists yet, which is a first run rather than a resumed one, and whenever the plan document carries no `Bundles` section, which is a single-review issue.
 
-   Name a branch that must be created from the issue type (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` by default) followed by the issue ref and a short title slug; skip creation when a matching branch already exists.
+   Name a branch that must be created from the issue type (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` by default) followed by the issue ref, cased as the tracker adapter says, and a short title slug; skip creation when a matching branch already exists.
    When that branch is checked out in another worktree, as a held issue from `fan-out.md` leaves it, continue the run from inside that worktree, since git will not check one branch out twice.
-   Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy rather than from a local copy that may be behind, since branching from a stale local copy is the usual cause of conflicts at merge time.
+   Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track` rather than from a local copy that may be behind, since branching from a stale local copy is the usual cause of conflicts at merge time.
+   Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
    When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
    When that update conflicts, stop and hold exactly as an unfixable test failure would: keep the work, leave the task in progress, report which files conflict, and let the user decide how to resolve them; never resolve a conflict by discarding either side's changes.
    These rules describe bundle 1's branch, which is the only branch a single-review run has.
-   When step 8 confirms a stack, later bundles take the same name with their index appended, so bundle 2 of `feat/ONC-5-add-webhooks` is `feat/ONC-5-add-webhooks-2`.
+   When step 8 confirms a stack, later bundles take the same name with their index appended, so bundle 2 of `feat/onc-5-add-webhooks` is `feat/onc-5-add-webhooks-2`.
    Create each of those from the previous bundle's branch at the moment that bundle starts, not up front: creating them all at breakdown time would leave empty branches behind whenever a run stops early.
    Give every one of them the same already-exists guard bundle 1 has: check out a bundle branch that already exists rather than creating it, and create it only when it is genuinely absent, since creating a branch name that already carries that bundle's commits either fails outright or resets the branch and discards them.
    Genuinely absent means absent from the local repository and from the remote both, and it also means no run has ever built that bundle, which holds only when the bundle's entry in the `Bundles` section carries no `- Review:` line of any kind, the pending marker included.
