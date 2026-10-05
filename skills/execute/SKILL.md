@@ -1,6 +1,6 @@
 ---
 name: execute
-description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5. Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
+description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5, or several at once like "execute ONC-5 ONC-6". Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
 version: 1.0.0
 ---
 
@@ -17,7 +17,7 @@ Do not call tracker HTTP APIs.
 Do not edit MCP or agent configuration.
 Treat a disabled server as a deliberate user decision, a stop condition, never an obstacle to route around.
 
-This skill drives one tracker issue through a single resumable autonomous pass, from breakdown through implementation to an open code review.
+This skill drives one tracker issue through a single resumable autonomous pass, from breakdown through implementation to an open code review; several issues named at once each get that pass on a subagent, per `fan-out.md`.
 There is no separate start step and finish step; re-invoke this same skill on the same issue to resume wherever the last run left off.
 Every run begins by reading durable state from the repository and the tracker, not from anything remembered between invocations.
 
@@ -94,7 +94,8 @@ If any of these files cannot be found and read, stop immediately and report whic
 3. Resolve which tracker owns this issue and which memory backend owns its task state, following `trackers.md` and `memory.md`.
    When the repo already contains beads state but the beads tooling is unavailable on this machine, stop and say so as memory.md directs; never substitute a different backend for a repo whose state lives in another one.
    Load the existing `.fathom/config.md` tracker profile, or run first-run setup when none exists; either way, run the tracker adapter's profile-load checks and honor any one-time offers they define.
-4. Determine the issue ref from the invocation argument, a pasted issue URL, or the current branch name, in that order of preference; when the argument and the branch name refer to different issues, stop and ask the user which one to use.
+4. When the invocation names two or more issues, read `fan-out.md` in this skill's folder and follow its several-issues section instead of the rest of this procedure.
+   Otherwise determine the issue ref from the invocation argument, a pasted issue URL, or the current branch name, in that order of preference; when the argument and the branch name refer to different issues, stop and ask the user which one to use.
 5. Call `getIssue` for that ref and save its title, description, type, URL, and existing children for the rest of this run.
    When the issue is already in the `done` phase or marked complete, do not start work: say so, report what the sweep found for it, and ask whether to reopen it or pick a different issue.
 6. Search the codebase and read the files that look relevant to this issue, noting existing patterns to follow during implementation.
@@ -107,12 +108,14 @@ If any of these files cannot be found and read, stop immediately and report whic
    Do not create another branch and do not go back to an earlier bundle's branch in that case; this run is finishing the stack rather than building it.
    The branch is bundle 1's whenever no plan document exists yet, which is a first run rather than a resumed one, and whenever the plan document carries no `Bundles` section, which is a single-review issue.
 
-   Name a branch that must be created from the issue type (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` by default) followed by the issue ref and a short title slug; skip creation when a matching branch already exists.
-   Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy rather than from a local copy that may be behind, since branching from a stale local copy is the usual cause of conflicts at merge time.
+   Name a branch that must be created from the issue type (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` by default) followed by the issue ref, cased as the tracker adapter says, and a short title slug; skip creation when a matching branch already exists.
+   When that branch is checked out in another worktree, as a held issue from `fan-out.md` leaves it, continue the run from inside that worktree, since git will not check one branch out twice.
+   Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track` rather than from a local copy that may be behind, since branching from a stale local copy is the usual cause of conflicts at merge time.
+   Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
    When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
    When that update conflicts, stop and hold exactly as an unfixable test failure would: keep the work, leave the task in progress, report which files conflict, and let the user decide how to resolve them; never resolve a conflict by discarding either side's changes.
    These rules describe bundle 1's branch, which is the only branch a single-review run has.
-   When step 8 confirms a stack, later bundles take the same name with their index appended, so bundle 2 of `feat/ONC-5-add-webhooks` is `feat/ONC-5-add-webhooks-2`.
+   When step 8 confirms a stack, later bundles take the same name with their index appended, so bundle 2 of `feat/onc-5-add-webhooks` is `feat/onc-5-add-webhooks-2`.
    Create each of those from the previous bundle's branch at the moment that bundle starts, not up front: creating them all at breakdown time would leave empty branches behind whenever a run stops early.
    Give every one of them the same already-exists guard bundle 1 has: check out a bundle branch that already exists rather than creating it, and create it only when it is genuinely absent, since creating a branch name that already carries that bundle's commits either fails outright or resets the branch and discards them.
    Genuinely absent means absent from the local repository and from the remote both, and it also means no run has ever built that bundle, which holds only when the bundle's entry in the `Bundles` section carries no `- Review:` line of any kind, the pending marker included.
@@ -130,7 +133,7 @@ If any of these files cannot be found and read, stop immediately and report whic
      Order adopted children by the `Blocked by:` line that scaffold ends each description with, read through `getIssue`, so every blocker comes before what it blocks.
      Break ties, and order children whose line is missing or reads `none`, by creation order: ascending Linear keys, or Asana's subtask order under the parent, which scaffold fills in creation order; never the order a Linear list call returns.
      Children caught in a cycle also take their creation-order position, and the run says so.
-     Either way the units are ordered, each building on the one before it, and that order is what the `deps` below and any bundle boundary follow.
+     Either way the units are ordered, and that order is the creation order below and the order any bundle boundary follows; the `deps` below name only real prerequisites, except on a stack, which chains every task.
    - Decide whether this issue produces one review or a stack, from those planned units and before anything is written to the tracker.
      Never consider a split when the resolved forge tier is the manual tier, whatever the breakdown looks like, since that tier cannot create a review at all.
      Read the profile's `stacking` field per `../fathom-shared/approval.md`; treat an absent field as `never`, and stop considering a split immediately when it reads `never`, whether it was written or absent.
@@ -153,9 +156,12 @@ If any of these files cannot be found and read, stop immediately and report whic
    - Call `init` for the issue, then call `parentTask` for it, once the split question is settled.
      These are the first writes this step makes, which is why they sit below the proposal stop rather than above it; nothing between the plan and this point reads either of them.
    - Create the sub-issues and their tasks next, passing each task's final `deps` to `createTask` itself, since that is the only operation in `../fathom-shared/memory.md` that takes `deps` and a chain cannot be added to tasks that already exist.
-     When no split was confirmed and the issue has no existing children, for each planned unit call `createSubIssue` first, then call `createTask` with the newly created sub-issue's ref as `subIssueRef`, then write the returned task id back onto that sub-issue so the link reads both ways, since the task id does not exist until `createTask` returns, setting `deps` to the id of the task it builds on so tasks chain sequentially by default whenever order matters.
-     When no split was confirmed and the issue already had children, for each adopted sub-issue still call `createTask`, passing that sub-issue's existing ref as `subIssueRef` and skipping `createSubIssue` since the sub-issue already exists, then write the returned task id back onto that sub-issue the same way, and setting `deps` the same way.
-     Those two are the single-review behavior exactly as it has always run, one sub-issue and its task at a time, so nothing watching the tracker sees a different sequence than before.
+     When no split was confirmed and the issue has no existing children, for each planned unit call `createSubIssue` first, then call `createTask` with the newly created sub-issue's ref as `subIssueRef`, then write the returned task id back onto that sub-issue so the link reads both ways, since the task id does not exist until `createTask` returns, setting `deps` to the ids of the tasks it builds on, so a unit that builds on nothing gets no deps.
+     When no split was confirmed and the issue already had children, for each adopted sub-issue still call `createTask`, passing that sub-issue's existing ref as `subIssueRef` and skipping `createSubIssue` since the sub-issue already exists, then write the returned task id back onto that sub-issue the same way, and setting `deps` to the tasks of the sibling sub-issues its `Blocked by:` line names.
+     A child whose line reads `none` gets no deps; a child with no line at all deps on the task created just before it, since nobody stated its blockers.
+     A dep can only name a task that already exists, so a blocker caught in a cycle is replaced by a dep on the task created just before.
+     Real deps rather than one chain are what let independent tasks run in parallel in step 10, while the planned order still decides which ready task `claimNext` takes first.
+     Those two still create one sub-issue and its task at a time, so nothing watching the tracker sees a different sequence than before.
      When a split was confirmed, take the same create-versus-adopt decision those two branches take: create a sub-issue for each planned unit when the issue has no existing children, and adopt the existing children when it has them, skipping `createSubIssue` for each adopted one exactly as the adopt branch above does.
      A split never changes whether the sub-issues already exist, so an issue that arrived with children gets tasks created against those children and never a duplicate set alongside them.
      Create them strictly one at a time in the planned order, from the first unit to the last, rather than in whatever order the bundle records suggest.
@@ -175,6 +181,7 @@ If any of these files cannot be found and read, stop immediately and report whic
     Claiming without this check would hand out the next bundle's first task, since an interrupted routine leaves this bundle's tasks all closed while the next bundle's are still open, and that task would then be implemented on this bundle's branch and land in the wrong review.
     A run interrupted later still, after every bundle's routine finished but before the issue's closing actions did, leaves nothing claimable at all and so makes no pass here; step 11 recovers that one.
 
+    On an issue not split into a stack, read `fan-out.md` in this skill's folder before the first pass and apply its parallel-tasks section at the start of every pass; its recovery rule applies even when the running agent cannot spawn subagents.
     Each pass through the loop does the following, in order.
     - Call `claimNext`, and record the claim in the memory backend's own format at claim time.
     - Move the claimed task's linked sub-issue to the `inProgress` phase, subject to the adapter's own rules for sub-issues; the Asana adapter degrades this to a no-op on subtasks, so read its subtask section rather than assuming a state change happens.
@@ -228,7 +235,7 @@ If any of these files cannot be found and read, stop immediately and report whic
 
     Then open the review through the forge contract in `../fathom-shared/forges.md`, never by invoking a forge CLI directly from this procedure.
     - Confirm the resolved base with `resolveBase` first, as the contract requires, before anything is created against it.
-    - Push the branch, unless the resolved adapter declares `pushesForYou`; when it does, `openReview` owns the push and pushing here would produce a wrong branch state.
+    - Push the branch, with `-u origin <branch>` when it has no upstream yet, unless the resolved adapter declares `pushesForYou`; when it does, `openReview` owns the push and pushing here would produce a wrong branch state.
     - Call `openReview` with the branch, the resolved base, a title, and a body.
       Title it the way merged reviews are titled in the resolved base's `git log` (a squash subject, or a merge commit's title line), naming the outcome for the user: `perf(server): cut websocket frame size by 70%+ with gzipping` names the outcome, where `perf(server): negotiate permessage-deflate on the websocket` names only the mechanism.
       Open the body with the problem as the issue states it, then the fix in a sentence or two, then `Closes <ref>` for a Linear issue or the task's URL for an Asana task, the list of completed tasks, and a test plan.

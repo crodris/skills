@@ -217,6 +217,8 @@ Each round:
    Close that opening with a merge-danger line: a two-way door when it is cheap to roll back, a one-way door when it is destructive or hard to reverse, such as deleting data, migrating a schema, or publishing something others depend on, and the blast radius, meaning who or what breaks if the change is wrong.
 
    The body carries the summary and the verification evidence, with the path of the drive's evidence when stage 1 ran one, inside a delimited section this run owns; stage 3 adds the review outcome to that section once there is one.
+   Lead the summary with the smallest visual that makes the change clear, next to the sentence it supports, and skip it when one sentence already does: pseudocode for logic, a call tree for control flow, a component tree for UI structure, a shallow file tree for a refactor, Mermaid for interaction between parts, or a `diff` sketch of that same shape when the point is what changed.
+   Show the evidence as before and after when a before exists: for a visual change, the drive's screenshot, paired with a before screenshot only when one was captured from the base; otherwise the test or command output that failed before and passes now; with no before, show the after result alone.
    Without a working `gh`, push the branch, print the compare URL the remote host expects, and hand the review off to the user; the run then ends after reporting, with no merge and no release watch.
 
 ## Stage 3 - Review, fix each pass in one batch, confirm, merge, release, cleanup
@@ -226,7 +228,7 @@ This stage spends every reviewer's first pass on the same pushed head at the sam
 The normal run is two pushes, the one stage 2 made and the batched fixes, and a run with nothing blocking is one.
 
 The code reviewer is two `general-purpose` subagents on the same pinned SHA, one per axis, so a change that passes one axis cannot hide a failure on the other.
-The Standards reviewer checks the diff against the conventions this repository documents: AGENTS.md, CLAUDE.md, contributing docs, and the intent behind its lint and format config, read from `origin/<base>` so a change cannot rewrite the rules it is graded against.
+The Standards reviewer checks the diff against the conventions this repository documents: AGENTS.md, CLAUDE.md, CODING_STANDARDS.md, contributing docs, and the intent behind its lint and format config, read from `origin/<base>` so a change cannot rewrite the rules it is graded against.
 The Spec reviewer checks that the diff does what the originating issue or the pull request's stated intent asked, and reports what is missing, wrong, or not asked for.
 Wherever this skill says the code reviewer, it means the Standards and Spec subagents together, dispatched in parallel; they share every round and confirmation pass, and their findings go through one triage and one root-cause dedupe.
 Whenever a lane runs this review or the security lane's review beside it, dispatch each as the host agent's general-purpose subagent, subagent_type `general-purpose` on Claude Code, and write its brief from the change's intent and the SHA of the head it reviews; never pick any other agent type, including a plugin agent such as `coderabbit:code-reviewer`, since a named agent can wrap a vendor CLI or carry a generic brief.

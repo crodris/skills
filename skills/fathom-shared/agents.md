@@ -20,6 +20,14 @@ Kiro: use its built-in todo/task tools when the workspace exposes them; when it 
 The rules governing the overlay live in `memory.md` and are not restated here, so the two files cannot drift apart.
 This file only names which tools each agent offers for it.
 
+## Subagents
+
+`execute`'s fan-out runs issues and tasks on background subagents, as `../execute/fan-out.md` describes.
+
+Claude Code: dispatch each one with the Agent tool, `subagent_type: general-purpose`, `model: sonnet`, and `run_in_background: true`.
+Leave `isolation` unset, since the parent creates every worktree itself so a task's branch starts from the issue branch and outlives the subagent for resume.
+Kiro: treat it as an agent with no subagents, and run issues and tasks one at a time.
+
 ## MCP tool naming
 
 Tool name prefixes for a connected tracker MCP server differ per agent and per MCP build.
