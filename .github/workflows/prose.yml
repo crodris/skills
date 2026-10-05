@@ -1,0 +1,23 @@
+name: Prose
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dashes:
+    name: No em or en dashes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check the dash check against scratch repositories
+        run: bin/test-check-dashes.sh
+
+      - name: Check for em and en dashes
+        run: bin/check-dashes.sh

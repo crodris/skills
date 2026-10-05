@@ -33,7 +33,7 @@ Fathom needs a tracker MCP. Ship needs a git repository with a remote.
 
 ## Available Plugins
 
-### fathom (v2.5.0)
+### fathom (v2.5.1)
 
 Fathom provides two agent skills, execute and scaffold, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter.
 It works with Asana or Linear as your issue tracker, and both skills run unchanged on Claude Code and Kiro.
@@ -85,7 +85,7 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v1.11.0)
+### ship (v1.12.0)
 
 Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains, squash-merge, release watch, and post-merge cleanup.
 Ask it to babysit, watch, monitor, or get a pull request green and it runs the same review loop, then stops at a pull request that is ready for you to merge.
@@ -124,7 +124,7 @@ ship it
 - **Exit only on an untouched pass** - the review loop ends only on a settled pass that pushed nothing, with no pass cap: it runs until a settled pass has nothing blocking, and stops to report when a root cause an earlier push carried a fix for comes back, so a green result always describes the code that actually merges
 - **A blocking bar, not a nit hunt** - ship fixes verify failures, confirmed critical or major findings, and confirmed minors (defects or code smells) worth fixing whose fix stays contained to the flagged code, replies with a disposition for everything else, lets minors buy a push on their own only once per run, and never pushes for a nit; fixing every nit hands the next pass fresh code to find fault with, which is how a review loop never converges
 - **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagents for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive`, a command or a `skill:<name>` verification skill, runs once before the push on a behavior-changing diff, and again on each confirmation pass a fix push buys, where it replaces the subagents' confirmation round when at least one bot is present and every present bot re-reviews every push
-- **Different reviewers, not one twice** - the pre-merge review is two `general-purpose` subagents on the same SHA, one checking the repository's documented conventions and one checking the change against its issue or stated intent (on Claude Code, the conventions check runs on Sonnet, the intent check runs on Opus for the full diff and on Sonnet when it confirms fixes, and a security-lane review stays on Opus), and each review bot is a final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway; a bot that reviews only the first push is asked for another review after each fix for a critical or major finding it raised (Greptile only while its confidence score is 3 or below, outside the light lane), until its latest review raises no confirmed critical or major, and the subagents confirm every other fix
+- **Different reviewers, not one twice** - the pre-merge review is two `general-purpose` subagents on the same SHA, one checking the repository's documented conventions and one checking the change against its issue or stated intent (on Claude Code, the conventions check runs on Sonnet, the intent check runs on Opus for the full diff and on Sonnet when it confirms fixes, and a security-lane review stays on Opus), and each review bot is a final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway; a bot that reviews only the first push is never asked to re-review a fix push, and the subagents confirm every fix, except in the light lane, which has no subagents and re-requests the bot instead
 - **Review bots are optional** - ship waits on CodeRabbit and Greptile when the repository runs them, found from their config file or their reviews on recent pull requests unless their config turns automatic review off, or from their first appearance on the pull request, and a repository with neither reviews with the subagents alone
 - **Bot review mode from the repo** - ship reads whether each bot reviews every push or only the first from its config file: `reviews.auto_review.auto_incremental_review` in `.coderabbit.yaml`, and `autoReview` in `.greptile/config.json` or `greptile.json`, where Greptile defaults to the first push only; a setting made only in a bot's web app is invisible to ship, which then waits on a re-review that never comes, or merges without waiting for one the bot posts on its own, so keep it in the file (for CodeRabbit, with `inheritance: true` to leave the web-app settings in force)
 - **Hold mode** - "babysit", "watch", "monitor", or "get it green" runs everything up to the merge and reports the pull request ready; a pull request that still needs a human approval holds the same way, and ship never merges past it with `--admin`
@@ -136,7 +136,7 @@ ship it
 
 Skills here that no plugin claims. They install through [skills.sh](https://www.skills.sh) (`npx skills@latest add crodris/skills`) rather than `/plugin install`.
 
-### review (v1.1.0)
+### review (v1.1.1)
 
 Review verifies a pull request against the tracker issue it claims to close, on a build it actually runs, and posts one review with line-specific findings anchored inline and general findings in the summary body.
 
@@ -178,7 +178,7 @@ review #107
 
 ---
 
-### voice (v1.1.1)
+### voice (v1.1.2)
 
 Voice drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
 PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
@@ -403,6 +403,9 @@ A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipelin
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the versions into this README and fails when a skill directory is claimed by no plugin, by more than one, or is claimed but missing.
 `claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
+`bin/check-dashes.sh` fails on any em or en dash in `skills/`, `bin/`, this README, `CODING_STANDARDS.md`, and `docs/fathom.md`, and CI runs it and its test on every pull request.
+The dated records in `docs/plans/` and `docs/superpowers/` are not checked.
+`CODING_STANDARDS.md` holds the judgment rules ship's Standards reviewer checks a change against.
 
 ## Security Scanning
 

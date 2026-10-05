@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# pre-commit hook — auto-sync plugin versions before each commit.
+# pre-commit hook - auto-sync plugin versions before each commit.
 # Always exits 0 so commits are never blocked.
 #
 # Install: git config core.hooksPath bin/hooks

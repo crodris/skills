@@ -257,7 +257,7 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    When the harness can wait on a command or on pull request events, wait with it and poll only without one.
    Read the pull request's checks on the captured SHA in the same pass.
    Each bot is a final bar and is never skipped: the code reviewer is a different reviewer with a different brief, and a clean code reviewer round says nothing about what a bot will find.
-   A first-push-only bot, with its mode read as `bots.md` says, is polled on this pass, and on a later one only for a review that step 5 or `bots.md` requests.
+   A first-push-only bot, with its mode read as `bots.md` says, is polled on this pass, and on a later one only for a review that `bots.md` or `lanes.md` requests.
    Give the wait a deadline of roughly thirty minutes, on every pass; past it, stop and report that the review never settled rather than polling on.
    Collect findings from every surface - inline comments, the summary comment, full review bodies, and the summaries bots write into the pull request description - because nitpicks hide in collapsed sections.
    Read inline threads with their resolution and outdated state (on GitHub, the GraphQL `reviewThreads` nodes with `isResolved` and `isOutdated`), and skip a thread that is resolved or outdated, so a later pass does not re-triage a finding on code that has since changed.
@@ -307,8 +307,8 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    The push buys one confirmation pass on the new head: each bot that reviews every push re-reviews it on its own, and concurrently the code reviewer's subagents read the fix commits alone, at the same bar, without re-reading the whole change.
    Standards checks the fix commits against the documented conventions, and Spec checks that each one resolves the finding it was pushed for and adds nothing else; a fix that does not resolve its finding leaves that finding open under step 6, whether or not a bot repeats it.
    A base merge is confirmed on its conflict resolutions alone (`git show --remerge-diff <merge-sha>`), and one with no conflicts needs verify and the checks, not a subagent read.
-   A first-push-only bot is re-requested here while its own latest review raised a confirmed critical or major that step 4's push fixed, and while any condition `bots.md` adds for that bot holds: request another review with its command from `bots.md`, and poll it as step 1 does, beside the code reviewer.
-   Once a first-push-only bot's latest review raised no confirmed critical or major, it is not requested again, and the fix commits are the code reviewer's to confirm; a pass with no bot to wait on settles on the code reviewer alone.
+   A first-push-only bot is never re-requested here: its first review was its pass, and the code reviewer's subagents confirm every fix, including fixes for that bot's findings.
+   A pass with no bot to wait on settles on the code reviewer alone.
    When a lane or a `drive` is configured, `lanes.md` and `drive.md` say how each changes this pass.
    Findings from this pass go through steps 2 and 3 again, at the same bar.
    Once a pass confirms the fix for a blocking bot finding, reply under it naming the fix commit, then resolve its thread when the bot has not resolved it itself; a finding with no thread gets that confirmation in this run's section of the pull request body.

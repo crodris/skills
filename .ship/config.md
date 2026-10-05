@@ -5,7 +5,7 @@ touches the working tree. Edit it directly; ship rewrites it only when one of
 these commands stops resolving.
 
 ```markdown
-verify: bin/test-worktree-setup.sh && bin/test-scan-skills.sh && bin/scan-skills.sh && bin/sync-versions.sh && claude plugin validate --strict .   # asked
+verify: bin/test-worktree-setup.sh && bin/test-scan-skills.sh && bin/scan-skills.sh && bin/sync-versions.sh && bin/test-check-dashes.sh && bin/check-dashes.sh && claude plugin validate --strict .   # asked
 base: main
 release: none
 post-merge: none
@@ -17,3 +17,5 @@ much a gate - it fails when a skill directory is claimed by no plugin entry, by
 more than one, or is claimed but missing - so it is recorded here rather than
 left to be rediscovered. `claude plugin validate --strict .` gates
 `.claude-plugin/marketplace.json`, and CI runs it in `plugin-validate.yml`.
+`bin/check-dashes.sh` bans em and en dashes, with its scope in the README, and
+`bin/test-check-dashes.sh` proves it; CI runs both in `prose.yml`.
