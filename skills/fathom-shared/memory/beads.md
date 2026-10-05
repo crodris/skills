@@ -54,7 +54,7 @@ Resolve a JSONL conflict by letting beads regenerate the export from its databas
 Commit the JSONL export with each task's commit, not only at the end of the run.
 The database itself is ignored by design, so an export left uncommitted means a task closed on this machine is invisible to any other clone, which breaks resume on a different machine.
 
-Run `bd export -o .beads/issues.jsonl` from the checkout the run is on before staging the export.
+Run `bd export -o <checkout>/.beads/issues.jsonl`, with the absolute path of the checkout the run is on, before staging the export.
 A linked git worktree reads and writes the main checkout's database, and `bd`'s automatic export writes the main checkout's JSONL rather than the worktree's (both verified on 0.49.0).
 Without the explicit export, a run in a worktree commits an export that is missing its own task changes.
 A worktree's committed export is often older than that shared database, and `bd` then refuses every call with "Database out of sync with JSONL".

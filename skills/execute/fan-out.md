@@ -8,6 +8,9 @@ Fan-out worktrees live in a sibling directory of the main checkout, so no checko
 Read the main checkout's absolute path from the first line of `git worktree list --porcelain`, and put each worktree at `<main checkout>.fathom/<name>`.
 Remove a worktree with `git worktree remove --force`, since a dependency install leaves untracked files such as a lockfile behind, and remove that directory once its last worktree is gone.
 
+Every subagent brief carries one rule for shell commands, because a session on a restricted allowlist refuses a whole chained command when any part of it is not allowed.
+The subagent runs one command per call, reaches its worktree with `git -C <worktree>` and absolute paths instead of `cd`, and reads an id a command prints from its output instead of capturing it with `$(...)`.
+
 ## Several issues
 
 Use this when the invocation names two or more issue refs or URLs.
