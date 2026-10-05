@@ -9,7 +9,7 @@ Read the main checkout's absolute path from the first line of `git worktree list
 Remove a worktree with `git worktree remove --force`, since a dependency install leaves untracked files such as a lockfile behind, and remove that directory once its last worktree is gone.
 
 Every subagent brief carries one rule for shell commands, because a session on a restricted allowlist refuses a whole chained command when any part of it is not allowed.
-The subagent runs one command per call, reaches its worktree with `git -C <worktree>` and absolute paths instead of `cd`, and reads an id a command prints from its output instead of capturing it with `$(...)`.
+The subagent runs one command per call, reaches its worktree through each tool's directory option or absolute paths instead of `cd` (`git -C <worktree>`, `npm --prefix <worktree>`), and reads an id a command prints from its output instead of capturing it with `$(...)`.
 
 ## Several issues
 
@@ -24,8 +24,8 @@ Use this when the invocation names two or more issue refs or URLs.
    Otherwise fetch the resolved base and run `git worktree add --detach <main checkout>.fathom/<ISSUE-REF> origin/<base>`, and let the run create or check out the issue's branch there at step 7.
    When `.fathom/config.md` is not on `origin/<base>`, copy the parent's file into the worktree, so the subagent loads the profile step 3 settled rather than starting first-run setup.
 3. Dispatch one background subagent per issue.
-   Its brief carries pointers, not restated rules: this skill's `SKILL.md` path, the issue ref, the worktree path, and the resolved approval mode.
-   Tell it to run this procedure for that one issue from inside its worktree, and to skip step 2's sweep and step 3's one-time offers, because the parent already ran both.
+   Its brief carries pointers, not restated rules: this skill's `SKILL.md` path, the issue ref, the worktree path, and the resolved approval mode, plus the shell-command rule above, stated in full.
+   Tell it to run this procedure for that one issue against its worktree, and to skip step 2's sweep and step 3's one-time offers, because the parent already ran both.
    Once step 7 puts it on the issue branch, it installs the worktree's dependencies as `../fathom-shared/agents.md` says.
    Any other question the procedure would ask the user becomes a hold: it stops and reports the question.
 4. Report as each subagent finishes, without waiting for the rest: the step 12 summary for a finished issue, the hold and its question for a held one.
@@ -64,7 +64,7 @@ Otherwise run the ordinary sequential pass.
 2. For each task in the wave, in the parent:
    - Call `claim(taskId)`, and move its sub-issue to `inProgress` exactly as the ordinary pass does.
    - Run `git worktree add -b <issue branch>--task-<id> <main checkout>.fathom/<ISSUE-REF>-<id> HEAD`, then install its dependencies as `../fathom-shared/agents.md` says.
-   - Dispatch a background implementer subagent with pointers: the plan document path, the task id and title, the sub-issue ref, and the worktree path.
+   - Dispatch a background implementer subagent with pointers: the plan document path, the task id and title, the sub-issue ref, and the worktree path, plus the shell-command rule above, stated in full.
      Brief it to implement only that unit, following the plan; run the typecheck and that unit's test files; make one commit on its branch; and report the commit hash, or the failure it could not fix.
      It leaves `.fathom/`, `.beads/`, the tracker, and every push to the parent.
 3. Integrate each implementer's commit as it reports, in the order they finish.
