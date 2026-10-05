@@ -105,13 +105,16 @@ Look each id up directly; never list a forge's reviews and match them locally.
 A listing has to be bounded, and any bound silently drops the oldest records once a repository has more reviews than the bound allows, which is a defect that grows quietly with the repository's age.
 
 Records written before review ids were recorded carry a branch name and no id.
-For those, fall back to the optional `findReviewByBranch` operation defined in `forges.md`, which returns bounded candidate records carrying each review's id, its URL, and its base.
+Read that issue's tracker state first, and skip the lookup when it is already `done`, since nothing about it is left to decide.
+For a legacy record on an issue that is not done, fall back to the optional `findReviewByBranch` operation defined in `forges.md`, which returns bounded candidate records carrying each review's id, its URL, and its base.
 Treat such a record as resolved only when exactly one candidate comes back, since a legacy record names a branch and nothing else and so carries nothing to tell two candidates apart; two or more candidates leave it unresolved rather than presenting a choice to make.
 
 Resolution is not complete at the id.
 Add the resolved id to that issue's set of review ids and call `getReviewState` on it, and do both before any of the ordered cases below are evaluated for that issue, so every case judges the issue on its whole set rather than on the subset that already carried ids.
 Doing this after the cases, or not at all, would let the completeness requirement and the aggregate cases run against an incomplete set: an issue whose only unresolved record is the branch-only one would read as fully recorded, and case 3 would close it on the strength of the reviews that happened to have ids.
-Then rewrite the record with the id, so the fallback path drains over time rather than becoming permanent.
+Leave the record as it is, and resolve it again on each later sweep.
+A branch-only record lives on the base branch.
+A commit made during a run goes on that run's branch, so a rewrite would appear in another issue's review.
 
 When resolution fails, and when the resolved adapter does not implement that operation at all, that record yields no id and no state: report that once, naming the record, rather than guessing or treating a branch name as a review id.
 Leave the issue incomplete in that case, exactly as a missing `- Review:` record leaves it, so case 2 below blocks closure on it instead of the aggregate cases deciding the issue on partial data.
@@ -182,9 +185,10 @@ The tracker holds this marker rather than a file for one reason: the marker has 
 Most shared repositories protect that branch, so the push fails, the marker never lands, and the report repeats forever as a stop that fires in both approval modes.
 A comment needs no branch write access and is visible from every clone.
 
-When the resolved tracker cannot list comments, fall back to recording `- Review closed unmerged: <date> <review url>` in that issue's file under `.fathom/`, committed and pushed to the base branch.
-Say plainly, when taking that fallback, that the marker depends on write access to the base branch and that the review will be re-reported on every run if the push fails.
-Keep reading legacy `- PR closed unmerged:` lines as valid markers, so records written before this change are not re-reported.
+When the resolved tracker cannot list comments, write no marker.
+A file marker would have to reach the base branch, and a commit made during a run goes on that run's branch instead.
+Report the review on every run, and say that it repeats because the tracker cannot hold the marker.
+Keep reading existing `- Review closed unmerged:` and legacy `- PR closed unmerged:` lines in `.fathom/` as valid markers, so reviews recorded before this change are not re-reported.
 
 Report it again when a different review for the same issue is later closed unmerged, since that is new information.
 A recorded abandonment does not close the issue and does not stop a later merge from closing it normally; when a fresh review for the same issue merges, apply the usual done state.

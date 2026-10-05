@@ -62,7 +62,8 @@ Skip creation when a pull request already exists for the branch, and return the 
 Otherwise write the body to a file in the sibling directory that `../../execute/fan-out.md` defines, outside the repository, and create that directory when it is missing.
 Name the file `<branch>-review-body.md`, with every `/` in the branch name replaced by `-`, and overwrite a file left there by an earlier run.
 Create the pull request with `gh pr create --base <base> --head <branch> --title <title> --body-file <that file>`.
-Then delete the file whether or not creation succeeded, and the directory once it is empty.
+Run `gh pr create` as a command of its own, and delete the file in a separate call afterwards, since a restricted session refuses the whole chain when the delete is not allowed.
+Delete the file whether or not creation succeeded, and the directory once it is empty.
 A session that is not allowed to delete files leaves the file behind, which is harmless.
 Always pass the body with `--body-file`.
 A session on a restricted allowlist refused an inline `--body` carrying Markdown headers, and refused a body file written under `.git/`.
@@ -106,7 +107,7 @@ Look up each recorded id directly.
 Do not list pull requests to find one.
 An earlier version of the sweep matched `gh pr list --state all --json headRefName,state,mergedAt` against recorded branch names, which silently skipped older branches whenever the listing hit its default cap of 30; per-id lookup removes that hazard entirely and is the reason the sweep is keyed on ids.
 
-## `findReviewByBranch(branch)` - optional, record repair only
+## `findReviewByBranch(branch)` - optional, incomplete-record lookup only
 
 Run `gh pr list --state all --head <branch> --json number,url,baseRefName --limit 10`.
 
@@ -114,6 +115,6 @@ Return one candidate record per pull request the listing returned, newest first,
 Return an empty list when the listing is empty.
 Never collapse the list to the newest entry here: a head branch can carry more than one pull request, and which of them the caller wants is the caller's question to answer from the base, per the contract in `../forges.md`.
 
-This is the one sanctioned listing call, and it exists only so an incomplete record can be repaired: the sweep repairs a record written before review ids were recorded, and `execute` recovers a bundle whose pull request opened before its `- Review:` line was committed.
+This is the one sanctioned listing call, and it exists only so an incomplete record can be resolved: the sweep resolves a record written before review ids were recorded, and `execute` recovers a bundle whose pull request opened before its `- Review:` line was committed.
 Scoping the list to one head branch keeps it bounded regardless of repository age, which is what the unscoped listing above could not guarantee.
 Never use it for records that already carry an id.

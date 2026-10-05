@@ -501,7 +501,8 @@ Two things hold for every legacy repository once you have done the rename for yo
 
 Repos set up before forge support need no extra work for the forge field itself.
 The next run asks which forge you use and adds `forge` to the profile, exactly as it repairs any other missing field.
-Existing `.fathom/` records that carry a branch and no review id keep working, since the sweep falls back to matching by branch and rewrites the record with an id when it finds one.
+Existing `.fathom/` records that carry a branch and no review id keep working.
+The sweep matches them by branch on every run and leaves the record unchanged.
 
 If the repo used beads, confirm `.beads/.gitignore` and `.gitattributes` exist, since the beads tooling writes both, and untrack any beads runtime files an earlier version committed.
 

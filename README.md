@@ -33,7 +33,7 @@ Fathom needs a tracker MCP. Ship needs a git repository with a remote.
 
 ## Available Plugins
 
-### fathom (v2.5.3)
+### fathom (v2.5.4)
 
 Fathom provides two agent skills, execute and scaffold, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter.
 It works with Asana or Linear as your issue tracker, and both skills run unchanged on Claude Code and Kiro.

@@ -35,7 +35,7 @@ A branch name is not a review id.
 An adapter that cannot create reviews (see `generic-git.md`) returns this instead of an id, and it is a typed outcome of the contract rather than a failure.
 A caller receiving it must not call `publishReview`, must not record a review id, and must say plainly that opening the review is now the user's step.
 
-One optional operation exists beyond the five, for repairing incomplete records: `findReviewByBranch(branch)`, which finds the reviews opened from a head branch where the forge can do that (`github.md` implements it with a bounded head-branch listing).
+One optional operation exists beyond the five, for resolving incomplete records: `findReviewByBranch(branch)`, which finds the reviews opened from a head branch where the forge can do that (`github.md` implements it with a bounded head-branch listing).
 Adapters that cannot implement it simply omit it.
 
 **It returns a bounded list of candidate records, newest first, and each record carries three fields: the review id, the review's URL, and the base branch that review targets.**
@@ -49,9 +49,9 @@ Adapters bound this differently and a caller cannot see how, so no caller may re
 A caller may act on a match it finds here, since a returned record is a review that demonstrably exists.
 A caller that would create something on the strength of absence must not use this result for that: it has to establish absence from evidence outside the operation, or stop and hold, and each caller below states which of those it does.
 
-It is used only where a review may exist while nothing in the repository records its id: the sweep repairs records written before review ids were recorded, and `execute` recovers a bundle whose review opened before its `- Review:` line was committed.
-When the resolved adapter omits the operation entirely, no lookup is possible at all and such a record cannot be repaired.
-Each caller says that once, names the record, and then takes the path its own procedure defines for an unrepairable record rather than guessing: the sweep leaves that issue undecided and closes nothing, per `trackers.md`, and `execute` opens a review for a bundle only where its own plan document records no attempt for that bundle at all, which is evidence of absence that owes nothing to this operation, and otherwise holds rather than risk opening a second review, per `execute/stack.md`.
+It is used only where a review may exist while nothing in the repository records its id: the sweep resolves records written before review ids were recorded, without rewriting them, and `execute` recovers a bundle whose review opened before its `- Review:` line was committed.
+When the resolved adapter omits the operation entirely, no lookup is possible at all and such a record cannot be resolved.
+Each caller says that once, names the record, and then takes the path its own procedure defines for an unresolvable record rather than guessing: the sweep leaves that issue undecided and closes nothing, per `trackers.md`, and `execute` opens a review for a bundle only where its own plan document records no attempt for that bundle at all, which is evidence of absence that owes nothing to this operation, and otherwise holds rather than risk opening a second review, per `execute/stack.md`.
 Those two differ because the costs differ, and each file states its own; neither is licensed to invent the other's.
 
 ## Declared capabilities
