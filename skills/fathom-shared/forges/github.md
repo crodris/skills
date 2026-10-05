@@ -57,12 +57,15 @@ A base branch that exists only locally is not a valid merge target, because the 
 
 Push the branch first; `pushesForYou` is false, so the push is the caller's and this operation does not perform it.
 
-Write the body to a file outside the repository, at `<main checkout>.fathom/<branch slug>-review-body.md`, the same sibling directory `execute`'s fan-out uses, creating it when missing.
-Read the main checkout's path from the first line of `git worktree list --porcelain`.
-Create the pull request with `gh pr create --base <base> --head <branch> --title <title> --body-file <that file>`, then delete the file, and the directory once it is empty.
-Always pass the body with `--body-file`: an inline `--body` carrying Markdown headers or quotes breaks shell quoting, and a session on a restricted allowlist refuses it as shell operators.
-A file under `.git/` or the system temp directory fails the same way in such a session, since both sit outside its working directories.
 Skip creation when a pull request already exists for the branch, and return the existing one; re-running the skill on the same issue must not open a second pull request.
+
+Otherwise write the body to a file in the sibling directory that `../../execute/fan-out.md` defines, outside the repository, and create that directory when it is missing.
+Name the file `<branch>-review-body.md`, with every `/` in the branch name replaced by `-`, and overwrite a file left there by an earlier run.
+Create the pull request with `gh pr create --base <base> --head <branch> --title <title> --body-file <that file>`.
+Then delete the file whether or not creation succeeded, and the directory once it is empty.
+A session that is not allowed to delete files leaves the file behind, which is harmless.
+Always pass the body with `--body-file`.
+A session on a restricted allowlist refused an inline `--body` carrying Markdown headers, and refused a body file written under `.git/`.
 
 Return the pull request number as the review id, and the pull request URL.
 The number is what `getReviewState` looks up, and it resolves from any clone without a listing call.

@@ -32,6 +32,8 @@ To install a fan-out worktree's dependencies, Claude Code calls the Skill tool w
 Kiro, or Claude Code without that skill, runs the install command the lockfile names.
 Kiro: treat it as an agent with no subagents, and run issues and tasks one at a time.
 
+A headless Claude Code run with a restricted tool allowlist also needs `--add-dir <main checkout>.fathom`, since fan-out worktrees and the GitHub review body file live in that sibling directory.
+
 ## MCP tool naming
 
 Tool name prefixes for a connected tracker MCP server differ per agent and per MCP build.
