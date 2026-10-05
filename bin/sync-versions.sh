@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sync-versions.sh — marketplace.json is the source of truth for plugin
+# sync-versions.sh - marketplace.json is the source of truth for plugin
 # versions; this syncs those versions into README.md and checks that every
 # skill directory is claimed by exactly one plugin entry.
 #
@@ -49,7 +49,7 @@ while IFS='	' read -r name version; do
     sed -i '' "s/^### $name (v[^)]*)/### $name (v$version)/" "$README"
     changed=1
   else
-    echo "  WARNING: README.md has no section header for '$name' — add it manually"
+    echo "  WARNING: README.md has no section header for '$name' - add it manually"
     problems=$((problems + 1))
   fi
 done < <(python3 -c "
@@ -107,7 +107,7 @@ PY
 if [ -n "$claim_report" ]; then
   while IFS='	' read -r kind path owners; do
     case "$kind" in
-      unclaimed) echo "  WARNING: $path is in no plugin entry's \"skills\" list — it installs for nobody" ;;
+      unclaimed) echo "  WARNING: $path is in no plugin entry's \"skills\" list - it installs for nobody" ;;
       missing)   echo "  WARNING: $path is claimed by $owners but has no SKILL.md on disk" ;;
       shared)    echo "  WARNING: $path is claimed by more than one plugin ($owners)" ;;
     esac

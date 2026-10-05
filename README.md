@@ -136,7 +136,7 @@ ship it
 
 Skills here that no plugin claims. They install through [skills.sh](https://www.skills.sh) (`npx skills@latest add crodris/skills`) rather than `/plugin install`.
 
-### review (v1.1.0)
+### review (v1.1.1)
 
 Review verifies a pull request against the tracker issue it claims to close, on a build it actually runs, and posts one review with line-specific findings anchored inline and general findings in the summary body.
 
