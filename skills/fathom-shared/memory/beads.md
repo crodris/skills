@@ -57,4 +57,7 @@ The database itself is ignored by design, so an export left uncommitted means a 
 Run `bd export -o .beads/issues.jsonl` from the checkout the run is on before staging the export.
 A linked git worktree reads and writes the main checkout's database, and `bd`'s automatic export writes the main checkout's JSONL rather than the worktree's (both verified on 0.49.0).
 Without the explicit export, a run in a worktree commits an export that is missing its own task changes.
+A worktree's committed export is often older than that shared database, and `bd` then refuses every call with "Database out of sync with JSONL".
+In a linked worktree, pass `--allow-stale --no-auto-import` on every `bd` call: the shared database is the truth, and importing the worktree's older export would overwrite other runs' rows.
+Never run the `bd sync --import-only` the error suggests there, for the same reason.
 The shared database is also what lets several issues run in parallel worktrees: every call here is scoped to one issue's label, so their tasks never mix.

@@ -9,7 +9,7 @@ A subagent writes only inside the worktree the parent made for it.
 
 Fan-out worktrees live in a sibling directory of the main checkout, so no checkout sees them as untracked files and no tool scanning the main checkout walks into them.
 Read the main checkout's absolute path from the first line of `git worktree list --porcelain`, and put each worktree at `<main checkout>.fathom/<name>`.
-Remove that directory once its last worktree is gone.
+Remove a worktree with `git worktree remove --force`, since a dependency install leaves untracked files such as a lockfile behind, and remove that directory once its last worktree is gone.
 
 ## Several issues
 
