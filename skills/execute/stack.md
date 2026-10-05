@@ -1,7 +1,7 @@
 # Stacks
 
 A stack is one issue delivered as several dependent reviews, one per bundle, on chained branches.
-Read this file when step 8 reads `stacking: propose`, or when step 7 finds a `Bundles` section in the plan document.
+Read the section that a step in `SKILL.md` points to.
 Step numbers refer to the procedure in `SKILL.md`.
 The `Bundles` section, the pending marker, the `none confirmed` line, the `Merge-closer` line, per-bundle reconciliation, and stacked review bodies are defined in `../fathom-shared/conventions.md`.
 

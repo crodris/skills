@@ -23,7 +23,7 @@ Use this when the invocation names two or more issue refs or URLs.
 3. Dispatch one background subagent per issue.
    Its brief carries pointers, not restated rules: this skill's `SKILL.md` path, the issue ref, the worktree path, and the resolved approval mode.
    Tell it to run this procedure for that one issue from inside its worktree, and to skip step 2's sweep and step 3's one-time offers, because the parent already ran both.
-   Once step 7 puts it on the issue branch, it installs dependencies: it calls the Skill tool with `worktree-setup` when that is installed, and otherwise runs the install command the lockfile names.
+   Once step 7 puts it on the issue branch, it installs the worktree's dependencies as `../fathom-shared/agents.md` says.
    Any other question the procedure would ask the user becomes a hold: it stops and reports the question.
 4. Report as each subagent finishes, without waiting for the rest: the step 12 summary for a finished issue, the hold and its question for a held one.
    Remove the worktree of every issue whose run finished without a hold, which keeps its branch.
@@ -60,7 +60,7 @@ Otherwise run the ordinary sequential pass.
    Leave the rest for a later pass.
 2. For each task in the wave, in the parent:
    - Call `claim(taskId)`, and move its sub-issue to `inProgress` exactly as the ordinary pass does.
-   - Run `git worktree add -b <issue branch>--task-<id> <main checkout>.fathom/<ISSUE-REF>-<id> HEAD`, then install its dependencies with `worktree-setup` or the lockfile's install command.
+   - Run `git worktree add -b <issue branch>--task-<id> <main checkout>.fathom/<ISSUE-REF>-<id> HEAD`, then install its dependencies as `../fathom-shared/agents.md` says.
    - Dispatch a background implementer subagent with pointers: the plan document path, the task id and title, the sub-issue ref, and the worktree path.
      Brief it to implement only that unit, following the plan; run the typecheck and that unit's test files; make one commit on its branch; and report the commit hash, or the failure it could not fix.
      It leaves `.fathom/`, `.beads/`, the tracker, and every push to the parent.

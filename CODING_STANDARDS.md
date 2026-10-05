@@ -29,7 +29,7 @@ Write one sentence per line in Markdown, in plain declarative sentences, with on
 
 Update `README.md` and `docs/fathom.md` wherever they describe the changed behavior.
 
-Bump the version in the same pull request.
+Update the version in the same pull request.
 Plugin skills take theirs from `.claude-plugin/marketplace.json`, which `bin/sync-versions.sh` copies into the README.
 Standalone skills carry theirs in the `SKILL.md` frontmatter and the README heading.
 

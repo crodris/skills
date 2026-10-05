@@ -16,5 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Check the dash check against scratch repositories
+        run: bin/test-check-dashes.sh
+
       - name: Check for em and en dashes
         run: bin/check-dashes.sh

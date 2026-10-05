@@ -51,11 +51,11 @@ If any of these files cannot be found and read, stop immediately and report whic
    When a resumed run resolves the manual tier on an issue whose earlier bundles already have open reviews, leave those reviews alone and hand the remaining bundles off manually, saying that the tier changed between runs so the stack is now half automated and half manual.
    Say with it that no later run will move this issue to `done` on its own, because the manual tier cannot observe what happened to a review, so closing the issue is now a manual step.
 2. Run the done-on-merge sweep per `../fathom-shared/trackers.md`, including its collection of a stack's records from every bundle branch and its ordered cases.
-   When the invocation itself was a cleanup phrase, run only this sweep, report what it found, then stop; do not continue into the rest of this procedure.
+   When the sweep's partial-progress case decides a stacked issue, run the restack check in `stack.md` in this skill's folder, on a cleanup-phrase run too.
+   When the invocation itself was a cleanup phrase, run only this sweep and that restack check, report what they found, then stop; do not continue into the rest of this procedure.
    Treat any claim about a review's fate as a cleanup phrase, whether it says merged, closed, abandoned, landed, or shipped, and whether it names an issue or asks to clean up whatever is outstanding.
    Never act on the claim itself: confirm each referenced review's real state through `getReviewState` first, then apply the merged path or the closed-without-merging path accordingly, and say plainly when the confirmed state differs from what the user described.
    When the resolved forge declares `reviewLookup: none`, neither the claim nor the sweep can be checked: say so once and act on nothing, closing no issue on the strength of an unverifiable claim.
-   When the sweep's partial-progress case decides a stacked issue, run the restack check in `stack.md` in this skill's folder.
 3. Resolve which tracker owns this issue and which memory backend owns its task state, following `trackers.md` and `memory.md`, including `memory.md`'s stop when the repo holds beads state but beads is unavailable.
    Load the existing `.fathom/config.md` tracker profile, or run first-run setup when none exists; either way, run the tracker adapter's profile-load checks and honor any one-time offers they define.
 4. When the invocation names two or more issues, read `fan-out.md` in this skill's folder and follow its several-issues section instead of the rest of this procedure.

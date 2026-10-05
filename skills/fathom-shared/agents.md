@@ -26,7 +26,10 @@ This file only names which tools each agent offers for it.
 
 Claude Code: dispatch each one with the Agent tool, `subagent_type: general-purpose`, `model: sonnet`, and `run_in_background: true`.
 Leave `isolation` unset, since the parent creates every worktree itself so a task's branch starts from the issue branch and outlives the subagent for resume.
-A Claude Code subagent cannot spawn subagents of its own, so in several-issues mode each issue subagent runs its tasks one at a time.
+An issue subagent can fan out its own tasks only when `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` allows nested subagents; otherwise it runs them one at a time.
+
+To install a fan-out worktree's dependencies, Claude Code calls the Skill tool with `worktree-setup` when it is installed.
+Kiro, or Claude Code without that skill, runs the install command the lockfile names.
 Kiro: treat it as an agent with no subagents, and run issues and tasks one at a time.
 
 ## MCP tool naming
