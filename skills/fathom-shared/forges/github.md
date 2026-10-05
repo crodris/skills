@@ -57,7 +57,11 @@ A base branch that exists only locally is not a valid merge target, because the 
 
 Push the branch first; `pushesForYou` is false, so the push is the caller's and this operation does not perform it.
 
-Create the pull request with `gh pr create --base <base> --head <branch> --title <title> --body <body>`.
+Write the body to a file outside the repository, at `<main checkout>.fathom/<branch slug>-review-body.md`, the same sibling directory `execute`'s fan-out uses, creating it when missing.
+Read the main checkout's path from the first line of `git worktree list --porcelain`.
+Create the pull request with `gh pr create --base <base> --head <branch> --title <title> --body-file <that file>`, then delete the file, and the directory once it is empty.
+Always pass the body with `--body-file`: an inline `--body` carrying Markdown headers or quotes breaks shell quoting, and a session on a restricted allowlist refuses it as shell operators.
+A file under `.git/` or the system temp directory fails the same way in such a session, since both sit outside its working directories.
 Skip creation when a pull request already exists for the branch, and return the existing one; re-running the skill on the same issue must not open a second pull request.
 
 Return the pull request number as the review id, and the pull request URL.
