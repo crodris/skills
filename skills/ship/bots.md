@@ -28,16 +28,10 @@ Read each present bot's mode from its config file in the tree this run will push
 A file that does not set it, or no file at all, takes the table's default.
 A setting made only in the bot's web dashboard is invisible here, so a repository that changes the mode there should set it in the file too.
 
-## Re-request
-
-Greptile writes a confidence score out of 5 into the summary it adds to the pull request description.
-Stage 3's step 5 re-requests Greptile only when its latest score is 3 or below; at 4 or 5 the code reviewer's subagents confirm the fix alone.
-A description with no score falls back to step 5's rule alone.
-The light lane ignores the score, because that lane has no subagent to confirm a fix.
-
 ## Settled
 
 A bot has settled on the captured SHA when the table's signal says so for that SHA and no other.
+On every poll, also read each bot's newest review and comment on the pull request, since a notice arrives there and never as the table's signal.
 A notice in place of a review settles nothing.
 A rate limit or a skipped review, including a `success` status whose description says so, is re-requested and waited on under stage 3's deadline.
 A notice that the bot will not review at all, such as an ended trial or a spent plan quota, is a stop-and-report at once, since waiting cannot change it and merging without that bot is the user's call.
