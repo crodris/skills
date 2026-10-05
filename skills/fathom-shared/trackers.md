@@ -111,7 +111,8 @@ Treat such a record as resolved only when exactly one candidate comes back, sinc
 Resolution is not complete at the id.
 Add the resolved id to that issue's set of review ids and call `getReviewState` on it, and do both before any of the ordered cases below are evaluated for that issue, so every case judges the issue on its whole set rather than on the subset that already carried ids.
 Doing this after the cases, or not at all, would let the completeness requirement and the aggregate cases run against an incomplete set: an issue whose only unresolved record is the branch-only one would read as fully recorded, and case 3 would close it on the strength of the reviews that happened to have ids.
-Then rewrite the record with the id, so the fallback path drains over time rather than becoming permanent.
+Leave the record as it is, and resolve it again on each later sweep.
+A branch-only record lives on the base branch, and a commit made during a run lands on whatever branch that run is on, so a rewrite would ride another issue's review.
 
 When resolution fails, and when the resolved adapter does not implement that operation at all, that record yields no id and no state: report that once, naming the record, rather than guessing or treating a branch name as a review id.
 Leave the issue incomplete in that case, exactly as a missing `- Review:` record leaves it, so case 2 below blocks closure on it instead of the aggregate cases deciding the issue on partial data.
