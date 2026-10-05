@@ -26,6 +26,7 @@ This file only names which tools each agent offers for it.
 
 Claude Code: dispatch each one with the Agent tool, `subagent_type: general-purpose`, `model: sonnet`, and `run_in_background: true`.
 Leave `isolation` unset, since the parent creates every worktree itself so a task's branch starts from the issue branch and outlives the subagent for resume.
+A Claude Code subagent cannot spawn subagents of its own, so in several-issues mode each issue subagent runs its tasks one at a time.
 Kiro: treat it as an agent with no subagents, and run issues and tasks one at a time.
 
 ## MCP tool naming
