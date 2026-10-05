@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Makes a linked git worktree runnable: copies the main checkout's untracked
-# env files, local HTTPS certificates, and .claude/settings.local.json, then
-# installs dependencies when they are missing or the lockfile changed.
+# env files (never production ones), local HTTPS certificates, and
+# .claude/settings.local.json, then installs dependencies when they are missing
+# or the lockfile changed.
 # Prints nothing when there is nothing to do, so a SessionStart hook can run it
 # on every session.
 #
@@ -31,6 +32,9 @@ if top=$(git -C "$main" rev-parse --show-toplevel 2>/dev/null); then
   # The find prunes dependency and build folders, whose env files would pass
   # both checks below, and common nested-worktree folders, which only saves a
   # git call per file there; the toplevel check catches any other nesting.
+  # Production credentials stay out: a .env.prod* file and Sentry's
+  # .env.sentry-build-plugin token are never copied, so a worktree build or test
+  # run cannot reach production or upload source maps.
   while IFS= read -r rel; do
     dest="$wt/$rel"
     if [ -e "$dest" ] || [ -L "$dest" ]; then continue; fi
@@ -47,7 +51,7 @@ if top=$(git -C "$main" rev-parse --show-toplevel 2>/dev/null); then
     else rm -f "$dest"; echo "worktree-setup: could not copy $rel from $main"; fi
   done < <(cd "$main" && find . \
     \( -name .git -o -name node_modules -o -name worktrees -o -name .worktrees -o -name .next -o -name .turbo \) -prune -o \
-    \( -type f -o -type l \) \( -name '.env*' -o -path '*/certificates/*.pem' -o -path './.claude/settings.local.json' \) \
+    \( -type f -o -type l \) \( \( -name '.env*' ! -name '.env.prod*' ! -name .env.sentry-build-plugin \) -o -path '*/certificates/*.pem' -o -path './.claude/settings.local.json' \) \
     -print | sed 's|^\./||')
 fi
 
