@@ -1,7 +1,7 @@
 ---
 name: html-comms
 description: Readable HTML documents about the work, published to a private link. Use when the user wants a plan, spec, write-up, findings, summary, report, comparison, or set of UI mocks to read outside the terminal, even when the word "plan" never comes up, or says "HTML" with no other context. Not for HTML that ships in the product.
-version: 1.0.0
+version: 1.0.1
 ---
 
 # HTML comms

@@ -1,7 +1,7 @@
 ---
 name: frontend-design-pipeline
 description: This skill should be used when the user asks to design and build a new UI, landing page, app screen, or visual identity, or to redesign an existing one, and wants to choose between design directions before anything is built. Also use when the user says "design pipeline", "frontend design pipeline", "give me design directions", or "run the full design flow", or asks to refine a UI that already has a DESIGN.md through the same flow. It chains the ui-ux-pro-max, taste-skill, frontend-design, emil-design-eng, and impeccable skills in a fixed order and stops once for the user to pick a direction from rendered mocks.
-version: 1.1.0
+version: 1.1.1
 ---
 
 # Frontend design pipeline

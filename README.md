@@ -177,7 +177,7 @@ review #107
 
 ---
 
-### voice (v1.1.0)
+### voice (v1.1.1)
 
 Voice drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
 PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
@@ -231,7 +231,7 @@ recalibrate my voice
 
 ---
 
-### frontend-design-pipeline (v1.1.0)
+### frontend-design-pipeline (v1.1.1)
 
 Frontend design pipeline takes a UI from product idea to finished build by chaining five design skills in a fixed order, and adds one stop for you to pick a direction from rendered mocks.
 It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with one taste-skill preset and frontend-design, builds each brief as a mock beside your current screen when there is one, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
@@ -283,7 +283,7 @@ run the full design flow
 
 ---
 
-### html-comms (v1.0.0)
+### html-comms (v1.0.1)
 
 HTML comms turns a plan, spec, write-up, findings, report, comparison, or set of UI mocks into one self-contained HTML page and publishes it to a private link.
 The page reads like a spec, works on a phone, and follows the system dark mode.
