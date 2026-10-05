@@ -62,7 +62,8 @@ Skip creation when a pull request already exists for the branch, and return the 
 Otherwise write the body to a file in the sibling directory that `../../execute/fan-out.md` defines, outside the repository, and create that directory when it is missing.
 Name the file `<branch>-review-body.md`, with every `/` in the branch name replaced by `-`, and overwrite a file left there by an earlier run.
 Create the pull request with `gh pr create --base <base> --head <branch> --title <title> --body-file <that file>`.
-Then delete the file whether or not creation succeeded, and the directory once it is empty.
+Run `gh pr create` as a command of its own, and delete the file in a separate call afterwards, since a restricted session refuses the whole chain when the delete is not allowed.
+Delete the file whether or not creation succeeded, and the directory once it is empty.
 A session that is not allowed to delete files leaves the file behind, which is harmless.
 Always pass the body with `--body-file`.
 A session on a restricted allowlist refused an inline `--body` carrying Markdown headers, and refused a body file written under `.git/`.
