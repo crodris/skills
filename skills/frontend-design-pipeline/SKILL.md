@@ -53,12 +53,12 @@ After the impeccable check, pick the entry stage before any stage runs.
 The current look is DESIGN.md when it exists, and otherwise the incumbent code.
 When the request does not say whether the current look stays, ask once.
 
-On the stage 1 route, invoke the impeccable skill's `init` first when PRODUCT.md is missing, whether or not stage 1 itself runs, since impeccable's new-work flow requires one.
+On the stage 1 route, call the Skill tool with "impeccable" and run its `init` first when PRODUCT.md is missing, whether or not stage 1 itself runs, since impeccable's new-work flow requires one.
 Feed PRODUCT.md into the stage 1 queries and the stage 2 briefs.
 
 ## 1. Options (ui-ux-pro-max)
 
-Invoke the ui-ux-pro-max skill and generate 2-3 candidate design systems for the product type with `--design-system`.
+Call the Skill tool with "ui-ux-pro-max" and generate 2-3 candidate design systems for the product type with `--design-system`.
 Vary the query keywords or the `--variance`, `--motion`, and `--density` sliders between runs so the candidates differ.
 
 Its SKILL.md builds the script path from `${CLAUDE_PLUGIN_ROOT}`, which exists only inside Claude Code plugins.
@@ -67,7 +67,7 @@ Do not pass `--persist`.
 
 ## 2. Direction (taste-skill, frontend-design)
 
-For each candidate, invoke exactly one taste-skill preset, then the frontend-design skill, and turn the candidate into a direction brief.
+For each candidate, call the Skill tool twice, first with exactly one taste-skill preset and then with "frontend-design", and turn the candidate into a direction brief.
 Never apply two presets to one candidate, because they contradict each other: minimalist-ui bans gradients, and gpt-taste is built on GSAP.
 Pick a different preset per candidate where the product allows it, so the briefs differ.
 On a redesign, replace one candidate's preset with redesign-existing-projects.
@@ -83,7 +83,7 @@ Build each brief as a static styled HTML mock of the screen the request is about
 When the screen already exists, add a Current panel beside the mocks: a screenshot of that screen from the running app, or a rebuild from its code when the app cannot run.
 Capture the screenshot without browser chrome, with demo data in place of real user data.
 Render each mock and the Current rebuild in its own `<iframe srcdoc>` at the screen's real viewport width, scaled with a CSS `transform` to fit its column, so each keeps its own palette, theme, and breakpoints.
-Put everything on one page through the html-comms skill, which owns the side-by-side layout and publishing.
+Call the Skill tool with "html-comms" and put everything on one page through it, since it owns the side-by-side layout and publishing.
 Its Document rules govern the page around the mocks, and the mocks and the screenshot are exempt from its 100 KB cap.
 Report the link with one line per brief.
 
@@ -100,14 +100,14 @@ From here on DESIGN.md is the authority, and the candidates and any MASTER.md ar
 
 ## 4. Motion (emil-design-eng)
 
-Invoke the emil-design-eng skill for the picked direction or the current look.
+Call the Skill tool with "emil-design-eng" for the picked direction or the current look.
 Decide what animates and what does not, the easing, and the durations.
 After stage 3, add the decisions to the Overview section of DESIGN.md, since the seed format has no motion section and omits Components.
 When stage 3 did not run, pass them to stage 5 instead, and change DESIGN.md only when the user asks for a system-wide change.
 
 ## 5. Build and finish (impeccable)
 
-Invoke the impeccable skill last, every time.
+Call the Skill tool with "impeccable" last, every time.
 
 After stage 3, build to DESIGN.md.
 Tell it DESIGN.md is an established world the user pinned, so its new-work flow creates the surface inside that world instead of creating or replacing one.

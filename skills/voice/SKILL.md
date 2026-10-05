@@ -269,7 +269,7 @@ Until it does, find the plain word.
 
 ## Before handing text back
 
-When the unslop skill is installed, run it first: on the input text before rewriting it in rewrite mode, and on the draft before the pass below in draft mode.
+When the unslop skill is installed, call the Skill tool with "unslop" (or its plugin name, such as "pstack:unslop") first: on the input text before rewriting it in rewrite mode, and on the draft before the pass below in draft mode.
 It is optional, and without it the pass below runs alone.
 Keep the text from before unslop ran, and put back anything unslop removed that a voice file allows, since the voice file wins.
 

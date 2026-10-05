@@ -54,9 +54,9 @@ Write the file outside the repository, in the scratchpad directory or a temp dir
 Use the first publisher available:
 
 1. The harness's own private publisher.
-   In Claude Code that is the Artifact tool, and the artifact-design skill owns page mechanics (theme tokens, allowed CDNs, title) wherever it differs from the rules above.
+   In Claude Code that is the Artifact tool; call the Skill tool with "artifact-design" first, since it owns page mechanics (theme tokens, allowed CDNs, title) wherever it differs from the rules above.
    In Codex or any other harness, use the private publisher it designates.
-2. here.now, through the here-now skill, when `$HERENOW_API_KEY` or `$HOME/.herenow/credentials` holds a key.
+2. here.now, by calling the Skill tool with "here-now", when `$HERENOW_API_KEY` or `$HOME/.herenow/credentials` holds a key.
    Check before publishing, because without a key `publish.sh` creates an anonymous Site that anyone with the link can open and that cannot be made private.
    here.now publishes as anyone-with-link, so lock a new Site before the page goes up.
    Publish a one-line placeholder `index.html`, then `PATCH /api/v1/publish/{slug}/access` with `{"mode":"restricted","allowedEmails":[],"allowedDomains":[]}`, which makes the Site owner-only.
