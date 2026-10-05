@@ -1,7 +1,7 @@
 ---
 name: voice
 description: This skill should be used when the user asks to draft, write, rewrite, or polish prose they will post under their own name, such as a pull request description or review comment, a reply on a PR thread, a GitHub issue, a Slack or Discord message, an email, a README or other human-facing doc, a blog post, a LinkedIn post, a cover letter, or release notes. Also use when the user says "rewrite this so it sounds like me", "this sounds too AI", "make this sound human", "does this sound like me", "in my voice", or mentions their voice DNA, voice file, or writing style, including asking to change, loosen, or tighten a rule in one. Also use when the user says "voice setup", "set up my voice", "recalibrate my voice", "my voice is drifting", or asks where their voice file lives. Do not use for code, commit messages, test names, identifiers, config files, or text another agent will parse.
-version: 1.1.1
+version: 1.1.2
 ---
 
 # Voice
@@ -294,6 +294,9 @@ Hand back the text ready to paste, in a fenced block when the destination is mar
 Before it, only a title line when the destination has one (a PR title, an email subject) and, in rewrite mode, one line naming the kinds of change.
 After it, only the list of placeholders when there are any, then anything the user must fix before posting, such as a claim the branch does not support yet or a check that fails, and any instruction lines ignored from a voice or sample file.
 No "here's your draft", no "let me know if", no offer to adjust the tone.
+
+When another skill or a longer procedure called this skill partway through its run, such as `execute` or `ship` writing a pull request body, hand the text back to that procedure and continue it at its next step.
+The draft is an input to that step, never the run's final reply.
 
 ## Rationalizations
 

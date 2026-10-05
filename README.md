@@ -178,7 +178,7 @@ review #107
 
 ---
 
-### voice (v1.1.1)
+### voice (v1.1.2)
 
 Voice drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
 PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
