@@ -39,7 +39,7 @@ When torn between `fix` and `feat`, choose `fix` if the change restores intended
 
 Write the summary in lowercase imperative mood, describing the change rather than the activity.
 Keep the subject under 72 characters, with no trailing period.
-Name the task in the body so the commit ties back to task memory.
+Name the task in the body as a `Task: <id>` line, using the id the memory backend returned, so the commit ties back to task memory and a resumed fan-out can find it.
 
 ## The plan document
 

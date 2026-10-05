@@ -17,7 +17,7 @@ Do not call tracker HTTP APIs.
 Do not edit MCP or agent configuration.
 Treat a disabled server as a deliberate user decision, a stop condition, never an obstacle to route around.
 
-This skill drives one tracker issue through a single resumable autonomous pass, from breakdown through implementation to an open code review.
+This skill drives one tracker issue through a single resumable autonomous pass, from breakdown through implementation to an open code review; several issues named at once each get that pass on a subagent, per `fan-out.md`.
 There is no separate start step and finish step; re-invoke this same skill on the same issue to resume wherever the last run left off.
 Every run begins by reading durable state from the repository and the tracker, not from anything remembered between invocations.
 
@@ -112,6 +112,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    When that branch is checked out in another worktree, as a held issue from `fan-out.md` leaves it, continue the run from inside that worktree, since git will not check one branch out twice.
    Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track` rather than from a local copy that may be behind, since branching from a stale local copy is the usual cause of conflicts at merge time.
    Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
+   Push the branch the first time with `git push -u origin <branch>`, so later plain pushes have an upstream.
    When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
    When that update conflicts, stop and hold exactly as an unfixable test failure would: keep the work, leave the task in progress, report which files conflict, and let the user decide how to resolve them; never resolve a conflict by discarding either side's changes.
    These rules describe bundle 1's branch, which is the only branch a single-review run has.

@@ -218,7 +218,7 @@ Each round:
 
    The body carries the summary and the verification evidence, with the path of the drive's evidence when stage 1 ran one, inside a delimited section this run owns; stage 3 adds the review outcome to that section once there is one.
    Lead the summary with the smallest visual that makes the change clear, next to the sentence it supports, and skip it when one sentence already does: pseudocode for logic, a call tree for control flow, a component tree for UI structure, a shallow file tree for a refactor, Mermaid for interaction between parts, or a `diff` sketch of that same shape when the point is what changed.
-   Show the evidence as before and after when a before exists: a screenshot pair for a visual change when the drive captured one, otherwise the test or command output that failed before and passes now; with no before, show the after result alone.
+   Show the evidence as before and after when a before exists: for a visual change, the drive's screenshot, paired with a before screenshot only when one was captured from the base; otherwise the test or command output that failed before and passes now; with no before, show the after result alone.
    Without a working `gh`, push the branch, print the compare URL the remote host expects, and hand the review off to the user; the run then ends after reporting, with no merge and no release watch.
 
 ## Stage 3 - Review, fix each pass in one batch, confirm, merge, release, cleanup

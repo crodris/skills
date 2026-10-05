@@ -4,9 +4,6 @@ Two ways `execute` runs work on subagents in parallel: several issues at once, a
 Both need an agent that can spawn background subagents; `../fathom-shared/agents.md` names the tool per agent.
 Without one, run several issues one after another and every task through the ordinary loop, but still apply the recovery rule under Parallel tasks.
 
-Both keep one rule: the parent run is the only writer of the tracker, the memory backend, `.fathom/`, and every branch it pushes.
-A subagent writes only inside the worktree the parent made for it.
-
 Fan-out worktrees live in a sibling directory of the main checkout, so no checkout sees them as untracked files and no tool scanning the main checkout walks into them.
 Read the main checkout's absolute path from the first line of `git worktree list --porcelain`, and put each worktree at `<main checkout>.fathom/<name>`.
 Remove a worktree with `git worktree remove --force`, since a dependency install leaves untracked files such as a lockfile behind, and remove that directory once its last worktree is gone.
@@ -17,6 +14,8 @@ Use this when the invocation names two or more issue refs or URLs.
 
 1. Run steps 1 to 3 of the procedure once, in the parent: approval mode, preflight, the done-on-merge sweep, and the tracker profile.
    Every ref must belong to the tracker preflight verified; name any that do not and leave them for a separate invocation.
+   Drop a ref that `getIssue` shows is a sub-issue of another named ref, and say that its parent's run covers it.
+   When step 3 resolves beads but `.beads/` does not exist yet, run the issues one after another instead, since parallel runs cannot share a database that does not exist yet.
 2. Give each issue its own worktree.
    When the issue's branch already exists and is checked out in another worktree, use that worktree.
    Otherwise fetch the resolved base and run `git worktree add --detach <main checkout>.fathom/<ISSUE-REF> origin/<base>`, and let the run create or check out the issue's branch there at step 7.
@@ -30,21 +29,28 @@ Use this when the invocation names two or more issue refs or URLs.
    Remove the worktree of every issue whose run finished without a hold, which keeps its branch.
    Keep a held issue's worktree, since the held work lives there, and tell the user to answer by running `execute <ISSUE-REF>` from inside that worktree, where the question is asked rather than held.
 
-Each issue already owns its branch, its plan document, its checklist file, and its tracker issue, so nothing else needs coordinating.
-On beads, every worktree shares one database and every call is scoped to its issue's label, as `../fathom-shared/memory/beads.md` describes.
+Each issue subagent is that issue's whole run, and it writes that issue's tracker records, plan document, tasks, and branch.
+Issues share nothing else, so nothing else needs coordinating.
+On beads, follow the worktree rules in `../fathom-shared/memory/beads.md`.
 
 ## Parallel tasks
 
 Use this at the start of every pass through step 10's loop on an issue that was not split into a stack.
 A stack chains every task onto its predecessor, so its frontier never holds more than one task and this section never applies to it.
 
-Each task dispatched here gets a task branch named `<issue branch>--task-<id>`, and the parent's commit that integrates it carries a `Task: <id>` line in its body.
+The parent run is the only writer of the tracker, the memory backend, `.fathom/`, and the issue branch.
+An implementer subagent writes only inside the task worktree the parent made for it.
+
+Each task dispatched here gets a task branch named `<issue branch>--task-<id>`.
+The parent's commit that integrates it carries the `Task: <id>` line that `../fathom-shared/conventions.md` puts in every task commit.
 
 Recover first, on every pass, before anything is claimed.
 - For each task branch whose task is already closed, remove its worktree and delete the branch.
 - For each in-progress task whose integration commit already exists on the issue branch, found with `git log --grep "^Task: <id>$"` over the base-to-head range, only close the task and its sub-issue, then clean up as above.
 - For each other in-progress task whose task branch carries a commit beyond the issue branch, integrate that commit as in step 3 below.
-- Any other in-progress task is dispatched again in a parallel pass, reusing its worktree when one is left; in a sequential pass `claimNext` resumes it.
+- Any other in-progress task is dispatched again in a parallel pass, as step 2 does but without `claim`, and counts as in flight for the overlap check.
+  Reuse its worktree when one is left, and add the worktree without `-b` when only its branch is.
+  In a sequential pass `claimNext` resumes it.
 
 The frontier is what `ready()` returns: this issue's open tasks whose deps are all closed.
 Run the pass in parallel when the frontier holds two or more tasks whose files do not overlap, judged from the plan document's codebase context and each sub-issue's description.
@@ -60,9 +66,9 @@ Otherwise run the ordinary sequential pass.
      It leaves `.fathom/`, `.beads/`, the tracker, and every push to the parent.
 3. Integrate each implementer's commit as it reports, in the order they finish.
    - Run `git cherry-pick --no-commit <hash>` in the parent's checkout.
-     When it conflicts, run `git reset --merge`, which restores the tree and keeps the checklist's unstaged markers, then delete the task branch and dispatch the task again from the new HEAD.
+     When it conflicts, run `git reset --merge`, which restores the tree and keeps the checklist's unstaged markers, then remove its worktree, delete the task branch, and dispatch the task again from the new HEAD, as step 2 does but without `claim`.
      A task that conflicts a second time holds, naming the conflicting files, as a base-branch conflict does.
-   - Continue with the ordinary pass from its verification step: run the typecheck and tests, commit per `../fathom-shared/conventions.md` with the `Task: <id>` line in the body, record the hash, close the task and its sub-issue, and print the progress line.
+   - Continue with the ordinary pass from its verification step: run the typecheck and tests, commit per `../fathom-shared/conventions.md`, record the hash, close the task and its sub-issue, and print the progress line.
      The last task is the one whose close leaves no other task open or in flight, whatever its planned position, and it runs the full suite.
      The commit on the issue branch is the parent's own, so one commit per task and the reconciliation in `conventions.md` hold unchanged.
    - Remove that task's worktree and delete its task branch.

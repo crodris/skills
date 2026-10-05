@@ -170,7 +170,7 @@ review #107
 - **Never concludes from the diff** - the branch and its merge-base are built and served side by side, so every claim comes from a running app rather than from reading a change
 - **A/B before blame** - a finding measured on the base build too is reported as pre-existing, which is the difference between telling an author they broke something and telling them they inherited it
 - **Pixels over computed styles** - for any claim that something is or is not visible, the screenshot is decoded and the painted colours compared; `border: 0` plus a 1.1:1 background step reads as conclusive and is routinely wrong
-- **Checks the house rules too** - the diff is read against the conventions the repository documents, such as AGENTS.md, CLAUDE.md, and contributing docs, separately from the issue check
+- **Checks the house rules too** - the diff is read against the conventions the repository documents, such as AGENTS.md, CLAUDE.md, CODING_STANDARDS.md, and contributing docs, separately from the issue check
 - **Tests the tests** - reverts the changed source to confirm the new assertions fail without it, then adversarially checks the ones that pass either way by making the exact change they claim to catch
 - **Fails closed on a moved head** - the fetched ref is verified against the pull request's reported head before anything is measured, so a re-review never silently describes yesterday's commit
 - **Severity that means something** - 🔴 is reserved for a regression the pull request introduces with a cheap fix, and findings are deduped to root causes first, so a good pull request does not read as riddled with defects
