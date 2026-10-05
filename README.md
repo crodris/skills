@@ -403,6 +403,8 @@ A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipelin
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the versions into this README and fails when a skill directory is claimed by no plugin, by more than one, or is claimed but missing.
 `claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
+`bin/check-dashes.sh` fails on any em or en dash in the skills, scripts, README, and current docs, and CI runs it on every pull request.
+`CODING_STANDARDS.md` holds the judgment rules ship's Standards reviewer checks a change against.
 
 ## Security Scanning
 
