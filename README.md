@@ -329,7 +329,7 @@ HTML
 
 ---
 
-### worktree-setup (v1.0.0)
+### worktree-setup (v1.0.1)
 
 Worktree setup makes a fresh git worktree runnable before the agent starts work in it.
 A new worktree gets the tracked files and nothing else, so dev servers, tests, and builds fail on the missing env files and `node_modules`.
@@ -374,13 +374,14 @@ The skill never edits your settings; add the hook yourself.
 
 | Skill | Description |
 |-------|-------------|
-| `worktree-setup` | Copies the main checkout's untracked env files, local HTTPS certificates, and `.claude/settings.local.json` into a linked worktree, then installs dependencies when they are missing or the lockfile changed. Not user-invocable; the agent and the hook run it. |
+| `worktree-setup` | Copies the main checkout's untracked env files (except `.env.prod*` files and Sentry's `.env.sentry-build-plugin`), local HTTPS certificates, and `.claude/settings.local.json` into a linked worktree, then installs dependencies when they are missing or the lockfile changed. Not user-invocable; the agent and the hook run it. |
 
 #### Features
 
 - **Automatic** - the hook runs it at session start, and the agent runs it right after creating a worktree mid-session
 - **Never clobbers** - it copies only untracked files the worktree is missing, so edits made inside the worktree survive and a tracked file the branch deleted stays deleted
 - **Copies, not links** - each worktree owns its env files, so a change in one never leaks into the main checkout or another worktree
+- **Leaves production files behind** - a `.env.prod*` file or Sentry's `.env.sentry-build-plugin` token, or a symlink to one, is never copied; secrets inside other env files still are
 - **Skips detached checkouts** - a worktree on a detached HEAD, which is how the review skill checks out a pull request, gets neither secrets nor an install; a branch checkout is treated as yours, including a pull request checked out onto a branch with `gh pr checkout`
 - **Silent when done** - a worktree that is already set up costs a few git calls and one scan of the main checkout, and prints nothing
 - **Keeps dependencies current** - it installs again when `node_modules` is gone or the lockfile changed since the last successful install, and a failed install is retried next session with the error shown until it is fixed

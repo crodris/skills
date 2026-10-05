@@ -14,7 +14,8 @@ bash <this skill's directory>/setup.sh <worktree path>
 ```
 
 It copies only untracked files the worktree is missing, never overwrites one the worktree has, and installs when dependencies are missing or the lockfile changed.
-It never copies production credentials: a `.env.prod*` file or Sentry's `.env.sentry-build-plugin` stays in the main checkout.
+It never copies a file named for production credentials, a `.env.prod*` file or Sentry's `.env.sentry-build-plugin`, or a symlink that points at one.
+Secrets inside other env files, such as `.env.local`, still copy.
 It skips a worktree on a detached HEAD, which is how a pull request gets checked out for review, and treats any branch checkout as yours.
 It prints nothing when there is nothing to do.
 When it reports a failed install, fix the cause it shows and run the command it prints.
