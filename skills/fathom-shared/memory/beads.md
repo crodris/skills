@@ -24,9 +24,9 @@ The `.gitignore` beads creates already excludes `*.db?*`, so these files never r
 A database that does not exist yet is created, and the export imported into it, by the first `bd` call that names it, which is how a run resumed on another machine recovers its tasks.
 
 Treat the working tree's `.beads/issues.jsonl` as output only, since a daemon can rewrite it with every issue's rows at any time.
-Restore the committed export with `git checkout HEAD -- .beads/issues.jsonl` at these points, whenever `git cat-file -e HEAD:.beads/issues.jsonl` shows that HEAD tracks it:
+Outside the conflict recipe below, whose own checkouts take the restore's place, restore the committed export with `git checkout HEAD -- .beads/issues.jsonl` at these points, whenever `git cat-file -e HEAD:.beads/issues.jsonl` shows that HEAD tracks it:
 - Before the first `bd` call that names this issue's database, since that call imports the file on its own.
-- Before every `bd import`, except inside the conflict recipe below, whose own checkouts take the restore's place.
+- Before every `bd import`.
 - Before any git command that switches or updates the branch, such as step 7's base update in `../../execute/SKILL.md` or a stack restack, since git refuses to overwrite a working copy a daemon changed.
 
 The issue's database already holds every change this run made, so a restore loses nothing.
@@ -100,4 +100,4 @@ A conflict in any other file still holds, as execute's step 7 says.
 
 Commit the JSONL export with each task's commit, not only at the end of the run.
 The database itself is ignored by design, so an export left uncommitted means a task closed on this machine is invisible to any other clone, which breaks resume on a different machine.
-Stage the export with one command, `bd export -o <checkout>/.beads/issues.jsonl && git add .beads/issues.jsonl`, so the staged file holds this issue's database and a daemon has no gap to rewrite it in.
+Stage the export with one command, `bd export -o <checkout>/.beads/issues.jsonl && git add .beads/issues.jsonl`, so the staged file holds this issue's database, and a daemon can only rewrite it in the moment between the two commands.
