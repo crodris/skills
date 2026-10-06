@@ -336,7 +336,7 @@ In the manual tier the "review merged" line never fires, because nothing can obs
 | `.fathom/forge.md` | Only if you wrote an adapter for a forge Fathom does not ship. See [Forges](#forges). |
 | `.fathom/plans/<ref>.md` | The per-issue plan: issue link, branch, codebase context, approach, tasks, testing strategy. Written for people, never carries status. The branch sits on its own `- Branch:` line, which the merge-closer matches to find this issue. |
 | `.fathom/tasks/<ref>.md` | Task statuses as checkboxes. Only when the checklist backend is active. |
-| `.beads/` | Beads task state, when beads is the backend: one ignored database per issue, `<ref>.db`, and the committed JSONL export, which carries only the base's rows plus this issue's. |
+| `.beads/` | Beads task state, when beads is the backend: one ignored database per issue, `<ref>.db-fathom`, and the committed JSONL export, which carries only the base's rows plus this issue's. |
 | `.github/workflows/fathom-close.yml` | Only if you accepted the optional merge-closer Action. GitHub only; never offered on a forge without CI hooks. |
 
 Plans and task files stay after the review merges; they are the record of how the work was broken down.

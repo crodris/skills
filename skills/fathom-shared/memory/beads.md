@@ -7,7 +7,7 @@ When a later `bd` upgrade renames or removes a flag used here, re-run those same
 
 ## One database per issue
 
-Run every `bd` command for an issue as `bd --no-daemon --db <checkout>/.beads/<issueRef>.db <subcommand>`.
+Run every `bd` command for an issue as `bd --no-daemon --db <checkout>/.beads/<issueRef>.db-fathom <subcommand>`.
 `<checkout>` is the absolute path of the checkout the run is on, a fan-out worktree included.
 Every command in this file takes these two flags, though the commands below omit them for brevity.
 
@@ -16,14 +16,16 @@ After each change, `bd` writes it to the export beside it, `<checkout>/.beads/is
 The default database is shared by every branch and every linked worktree of the repository, and its automatic export always writes the main checkout's JSONL (verified on 0.49.0).
 That export carries every issue the database has seen, including ones whose reviews are still open.
 
+The `.db-fathom` suffix keeps these files out of the user's own `bd` use.
+Plain `bd` and `bd daemon start` look for `.beads/*.db`, and a second `.db` file there makes the daemon refuse to start with "Multiple database files found" (verified on 0.49.0).
+The `.gitignore` beads creates already excludes `*.db?*`, so these files never reach a commit.
 `--no-daemon` is required alongside `--db`, since a daemon serving the default database answers a call for another database with a "database mismatch" error.
+A database that does not exist yet is created, and the export imported into it, by the first `bd` call that names it, which is how a run resumed on another machine recovers its tasks.
 
 A beads daemon already running for the repository keeps running beside the run and acts on the main checkout on its own: it runs `git pull` on the checked-out branch and exports the default database into `.beads/issues.jsonl` (verified on 0.49.0).
 Leave it running, since it may serve the user's own beads work.
 Once per run, run `bd daemon status --json`, which takes neither per-issue flag.
 When it reports `"status": "running"`, say in the run summary that a beads daemon is running for this repository, and that `bd daemon start --local` keeps it without its git sync.
-The `.gitignore` beads creates already excludes `*.db`, so these files never reach a commit.
-A database that does not exist yet is created, and the export imported into it, by the first `bd` call that names it, which is how a run resumed on another machine recovers its tasks.
 
 When a `bd` call refuses with "Database out of sync with JSONL", run `bd import -i <checkout>/.beads/issues.jsonl` and retry the call.
 This happens after the branch is updated from its base, and after an explicit `bd export`.
@@ -34,7 +36,7 @@ Run that import in place of the `bd sync --import-only` the error suggests, whic
 
 | Contract operation | beads CLI mapping |
 | --- | --- |
-| `init(issueRef)` | Do nothing when this issue's database already exists. When `.beads/` is absent from the checkout, run `bd init`, passing a short prefix of three or four characters abbreviated from the repository name and the flag that skips git hook installation. Take the repository name from the main checkout's directory, since a fan-out worktree's directory is named after the issue. The short prefix keeps task ids readable, and skipping hooks avoids installing pre-commit and post-merge hooks that block branch switching and interfere with unrelated commits. When `.beads/issues.jsonl` exists, run `bd import -i <checkout>/.beads/issues.jsonl`, which creates this issue's database from the committed export. When `.beads/` exists without that export, run `bd config set issue_prefix <prefix>` with the `issue-prefix` that `.beads/config.yaml` sets, or the abbreviation above when it sets none, since a database created without an export has no prefix and refuses every `bd create`. Never run `bd init` when `.beads/` already exists: with `--db` naming a new file, it renames another issue's database to this issue's name and carries that issue's rows across. |
+| `init(issueRef)` | Do nothing when this issue's database already exists. When `.beads/` is absent from the checkout, run `bd init`, passing a short prefix of three or four characters abbreviated from the repository name and the flag that skips git hook installation. Take the repository name from the main checkout's directory, since a fan-out worktree's directory is named after the issue. The short prefix keeps task ids readable, and skipping hooks avoids installing pre-commit and post-merge hooks that block branch switching and interfere with unrelated commits. When `.beads/issues.jsonl` exists, run `bd import -i <checkout>/.beads/issues.jsonl`, which creates this issue's database from the committed export. When `.beads/` exists without that export, run `bd config set issue_prefix <prefix>` with the `issue-prefix` that `.beads/config.yaml` sets, or the abbreviation above when it sets none, since a database created without an export has no prefix and refuses every `bd create`. Never run `bd init` when `.beads/` already exists, since it aborts there and creates no database. |
 | `createTask(title, description, subIssueRef, deps)` | Run one `bd create "<title>" -d "<description>" -l "<issueRef>" --external-ref "<subIssueRef>" --deps "<comma-separated blocker ids>" --silent` and capture the single line of output as the new task id. Do it in that one call rather than as a create followed by separate writes, for the durability reason in the notes below. Tagging the task with the issue ref lets every task for one issue be listed directly with `bd list -l "<issueRef>"` instead of matching on titles, and `--silent` makes `bd create` print only the issue id, which this adapter always needs for its return value. Omit `--external-ref` entirely when no `subIssueRef` was passed, and omit `--deps` entirely when `deps` is empty, rather than passing an empty value to either. Each id in `--deps` makes the new task depend on that blocker, so it stays excluded from `claimNext` until the blocker closes. Use the title and description exactly as passed in; embedding the issue ref into the title (the `<issueRef>: <task title>` naming convention) is the caller's responsibility, not this adapter's. |
 | `claimNext()` | Run `bd ready -l "<issueRef>" --type task --limit 50 --json` to get this issue's tasks that have no open blockers. The label filter is not optional: `bd ready` without it returns ready work from the whole repository, so an unscoped call will hand back another issue's task and the loop will implement it on this issue's branch and close the wrong sub-issue. The explicit limit matters too, since `bd ready` defaults to showing only ten. Note that `bd ready` includes tasks already `in_progress`, so inspect status before claiming: when a returned task is already `in_progress` from an interrupted run, resume that task and do not call `--claim` on it, because `bd update --claim` fails when the task is already claimed. Otherwise take the oldest still-open task and run `bd update <id> --claim` to set it to `in_progress` atomically, then return that id. Return null only when the scoped result contains no open and no in-progress task. |
 | `ready()` | Run the same scoped `bd ready` call as `claimNext` and return the tasks whose status is `open`, oldest first. Claim nothing. |
