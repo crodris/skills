@@ -24,7 +24,7 @@ The `.gitignore` beads creates already excludes `*.db?*`, so these files never r
 A database that does not exist yet is created, and the export imported into it, by the first `bd` call that names it, which is how a run resumed on another machine recovers its tasks.
 
 Treat the working tree's `.beads/issues.jsonl` as output only, since a daemon can rewrite it with every issue's rows at any time.
-Outside the conflict recipe below, whose own checkouts take the restore's place, restore the committed export with `git checkout HEAD -- .beads/issues.jsonl` at these points, whenever `git cat-file -e HEAD:.beads/issues.jsonl` shows that HEAD tracks it:
+Outside the conflict recipe below, whose own checkouts take the restore's place, and outside a branch update paused on a conflict, whose working copy holds the update's own export, restore the committed export with `git checkout HEAD -- .beads/issues.jsonl` at these points, whenever `git cat-file -e HEAD:.beads/issues.jsonl` shows that HEAD tracks it:
 - Before the first `bd` call that names this issue's database, since that call imports the file on its own.
 - Before every `bd import`.
 - Before any git command that switches or updates the branch, such as step 7's base update in `../../execute/SKILL.md` or a stack restack, since git refuses to overwrite a working copy a daemon changed.

@@ -75,7 +75,10 @@ If any of these files cannot be found and read, stop immediately and report whic
    Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
    When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
    A conflict in the beads export alone is resolved as `../fathom-shared/memory/beads.md` says.
-   When that update conflicts in any other file, stop and hold exactly as an unfixable test failure would: keep the work, leave the task in progress, report which files conflict, and let the user decide how to resolve them; never resolve a conflict by discarding either side's changes.
+   When that update conflicts in any other file, stop and hold exactly as an unfixable test failure would, and leave the update paused where git stopped it, mid-merge or mid-rebase, rather than aborting it, so the user resolves it in place.
+   Keep the work, leave the task in progress, and report each conflicting file with what each side changed in it.
+   Leave the choice of resolution to the user and recommend neither side over the other; never resolve a conflict by discarding either side's changes.
+   When a later run finds the update still paused, hold again while `git ls-files -u` lists a conflicted file; once it lists none, finish the update with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`, then carry on.
    On a stack these rules describe bundle 1's branch, and `stack.md` names and creates the later bundles' branches.
 8. Ensure the breakdown exists.
    - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.
