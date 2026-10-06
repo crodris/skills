@@ -72,9 +72,12 @@ The merge driver registered by `.gitattributes` is what resolves those conflicts
 A fresh clone has no merge driver configured, so the export can still conflict when the branch is updated from its base.
 A conflict in `.beads/issues.jsonl` alone is the one branch-update conflict a run resolves itself, since the file is generated from task state.
 Never hand-merge the JSON lines; run these in order:
-1. `git checkout --ours -- .beads/issues.jsonl`, then `bd import -i <checkout>/.beads/issues.jsonl`, which puts this issue's rows in its database even when the database did not exist yet.
-2. `git checkout origin/<base> -- .beads/issues.jsonl`, then `bd import -i <checkout>/.beads/issues.jsonl`, which adds the base's rows.
+1. `git checkout --ours -- .beads/issues.jsonl`, then `bd import -i <checkout>/.beads/issues.jsonl`.
+2. `git checkout --theirs -- .beads/issues.jsonl`, then `bd import -i <checkout>/.beads/issues.jsonl`.
 3. `bd export -o <checkout>/.beads/issues.jsonl`, then `git add .beads/issues.jsonl`, and finish the update.
+
+Importing both sides gives the database this issue's rows and the base's, in a merge or a rebase alike, even when the database did not exist yet.
+A rebase swaps which side `--ours` names, so the recipe never depends on it.
 
 The next `bd` call reports the database out of sync, which the import rule above resolves.
 A conflict in any other file still holds, as execute's step 7 says.
