@@ -1,7 +1,7 @@
 ---
 name: review
-description: This skill should be used when the user asks to "review this PR", "review #107", "review these PRs the same way", "do a visual pass on this branch", "verify this against the issue", pastes a pull request URL to review, or asks for a UI change to be checked before merge. Also use when the user asks whether a reviewed PR is safe to merge, or asks to escalate or downgrade a finding's severity. Verifies a pull request against the tracker issue it claims to close, on a running build, with measured evidence, then posts one review with line-specific findings inline and general findings in the summary body.
-version: 1.1.1
+description: This skill should be used when the user asks to "review this PR", "review PR 107", "review these PRs the same way", "do a visual pass on this branch", "verify this against the issue", pastes a pull request URL to review, or asks for a UI change to be checked before merge. Also use when the user asks whether a reviewed PR is safe to merge, or asks to escalate or downgrade a finding's severity. Verifies a pull request against the tracker issue it claims to close, on a running build, with measured evidence, then posts one review with line-specific findings inline and general findings in the summary body.
+version: 1.1.2
 ---
 
 # Review
