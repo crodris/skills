@@ -31,7 +31,7 @@ Outside the conflict recipe below, whose own checkouts take the restore's place,
 
 The issue's database already holds every change this run made, so a restore loses nothing.
 
-When a `bd` call refuses with "Database out of sync with JSONL", restore the committed export, run `bd import -i <checkout>/.beads/issues.jsonl`, and retry the call.
+When a `bd` call refuses with "Database out of sync with JSONL", restore the committed export where the list above allows it, run `bd import -i <checkout>/.beads/issues.jsonl`, and retry the call.
 This happens after the branch is updated from its base, after an explicit `bd export`, and after a daemon rewrites the working copy.
 The import keeps whichever copy of a row is newer, so it never rolls back this issue's tasks.
 Run that import in place of the `bd sync --import-only` the error suggests, which was verified only against the default database.
