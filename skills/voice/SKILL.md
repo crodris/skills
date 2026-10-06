@@ -1,7 +1,7 @@
 ---
 name: voice
 description: This skill should be used when the user asks to draft, write, rewrite, or polish prose they will post under their own name, such as a pull request description or review comment, a reply on a PR thread, a GitHub issue, a Slack or Discord message, an email, a README or other human-facing doc, a blog post, a LinkedIn post, a cover letter, or release notes. Also use when the user says "rewrite this so it sounds like me", "this sounds too AI", "make this sound human", "does this sound like me", "in my voice", or mentions their voice DNA, voice file, or writing style, including asking to change, loosen, or tighten a rule in one. Also use when the user says "voice setup", "set up my voice", "recalibrate my voice", "my voice is drifting", or asks where their voice file lives. Do not use for code, commit messages, test names, identifiers, config files, or text another agent will parse.
-version: 1.1.2
+version: 1.2.0
 ---
 
 # Voice
@@ -246,7 +246,10 @@ If the sentence has nothing left after the cut, the sentence had nothing to say.
 | Puffery | "pivotal", "a significant shift", "sets the stage for" | State the fact, let the reader judge |
 | Participle tails | "..., highlighting the importance of", "..., underscoring" | Cut the tail; a real point gets its own sentence |
 | Copulative avoidance | "serves as", "stands as", "represents", "boasts" | "is", "has" |
-| Meta commentary | "In this post I will", "Let me walk you through" | Say the thing |
+| Meta commentary | "In this post I will", "Let me walk you through", "This section covers", "The table below compares" | Say the thing; describe a layout only when the reader cannot see it |
+| Arguing with no one | "To be clear", "I'm not saying", "Don't get me wrong" before an objection nobody raised | Cut the defense and state any real claim it carried; keep an objection someone actually raised |
+| Re-explained context | A reply that restates the problem, the diagnosis, and the evidence the reader already has, with the decision in the last line | Lead with the decision; in draft mode keep only the reasoning that would change whether the reader agrees and the link they need to act, in rewrite mode keep every fact, moved after the decision |
+| Dramatic closers | A line after an example naming what it showed, a row of 2 or more fragments ("No prior. No nostalgia.") | Cut a line that adds nothing the example did not show; merge a fragment row into one sentence with a claim |
 | Chat leakage | "Happy to help!", "Great question", "Hope this helps", "Let me know if" | Delete; it belongs in chat |
 | Metronome rhythm | Every sentence medium length, every paragraph 3 sentences | Vary it: a fragment, then a long one |
 | Warm-up laps | "Nice work on this!" before the point, a summary paragraph after it | Start at the point, stop when it is made |
