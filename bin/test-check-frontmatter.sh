@@ -18,9 +18,10 @@ scratch() {
 }
 
 expect() {
-  name=$1 want=$2 dir=$3
-  if "$dir/bin/check-frontmatter.sh" >/dev/null 2>&1; then got=0; else got=1; fi
-  if [ "$got" = "$want" ]; then echo "ok: $name"; else echo "FAIL: $name (exit $got, want $want)"; failures=$((failures + 1)); fi
+  name=$1 want=$2 dir=$3 says=${4:-}
+  got=0
+  out=$("$dir/bin/check-frontmatter.sh" 2>&1) || got=$?
+  if [ "$got" = "$want" ] && [[ $out == *"$says"* ]]; then echo "ok: $name"; else echo "FAIL: $name (exit $got, want $want)"; failures=$((failures + 1)); fi
   rm -rf "$dir"
 }
 
@@ -28,9 +29,7 @@ dir=$(scratch 'Use when the user says "demo it".')
 expect "clean frontmatter passes" 0 "$dir"
 
 dir=$(scratch 'Merge needs `merge: yes` in the config.')
-out=$("$dir/bin/check-frontmatter.sh" 2>&1 || true)
-if [[ $out == *"Nested mappings"* ]]; then echo "ok: an unquoted colon fails as a parse error"; else echo "FAIL: an unquoted colon fails as a parse error"; failures=$((failures + 1)); fi
-rm -rf "$dir"
+expect "an unquoted colon fails as a parse error" 1 "$dir" "Nested mappings"
 
 dir=$(scratch 'Use when the user says "review #107" or "review this".')
 expect "a description cut short by a comment fails" 1 "$dir"
@@ -50,6 +49,20 @@ expect "a wrapped description cut short by a comment line fails" 1 "$dir"
 dir=$(scratch 'Use when the user says "demo it".')
 printf -- '---\r\nname: demo\r\ndescription: Use when the user says "demo it".\r\n---' > "$dir/skills/demo/SKILL.md"
 expect "CRLF frontmatter with no final newline passes" 0 "$dir"
+
+dir=$(scratch 'Use when the user says\n\n  "demo it" #or "show it".')
+expect "a comment after a blank line in a wrapped description fails" 1 "$dir"
+
+dir=$(scratch 'Use when\xc2\xa0#1 is asked.')
+expect "a hash after a non-breaking space passes" 0 "$dir"
+
+dir=$(scratch 'Use when the user says "demo it".')
+printf '\xef\xbb\xbf%s' "$(cat "$dir/skills/demo/SKILL.md")" > "$dir/skills/demo/SKILL.md"
+expect "a byte order mark fails, since the skills CLI cannot read it" 1 "$dir" "no frontmatter"
+
+dir=$(scratch 'Use when the user says "demo it".')
+mkdir -p "$dir/stub" && printf '#!/usr/bin/env bash\nexit 1\n' > "$dir/stub/npm" && chmod +x "$dir/stub/npm"
+PATH="$dir/stub:$PATH" expect "a failed yaml install exits 2 and says so" 2 "$dir" "could not install yaml"
 
 dir=$(scratch 'Use when the user says "demo it".')
 mkdir -p "$dir/skills/gone" && printf -- '---\nname: gone\ndescription: Gone.\n---\n' > "$dir/skills/gone/SKILL.md"
