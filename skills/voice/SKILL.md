@@ -287,7 +287,7 @@ Run this pass on the whole draft, every time, in this order.
 4. Read it once against the voice file's rules.
 5. Read it aloud in your head for rhythm. Three sentences the same length in a row is a hit.
 6. Cut the first paragraph if the second paragraph is where it starts.
-7. In rewrite mode, read it once against the user's original text, from before unslop ran, for the facts rule under Rewrite. A fact the draft lost is a hit unless a floor fix above cut it.
+7. In rewrite mode, read it once against the user's original text, from before unslop ran, for the facts rule under Rewrite. A fact the draft lost is a hit, including one from a merged fragment row, unless it was the negated half of a negation-then-correction.
 
 One hit means rewrite the sentence.
 A patched word in a machine-shaped sentence is still a machine-shaped sentence.
