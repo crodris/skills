@@ -178,11 +178,11 @@ review #107
 
 ---
 
-### voice (v1.1.2)
+### voice (v1.2.0)
 
 Voice drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
 PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
-It reads your voice file at the start of each conversation and applies a built-in floor of AI writing patterns on top: the negation-then-correction construction ("it's not X, it's Y"), the rule of three, puffery, participle tails, chat leakage, dead vocabulary.
+It reads your voice file at the start of each conversation and applies a built-in floor of AI writing patterns on top: the negation-then-correction construction ("it's not X, it's Y"), the rule of three, puffery, participle tails, chat leakage, replies that re-explain what the reader already knows, dead vocabulary.
 Your voice file wins over the floor, so anything it re-allows comes back.
 
 Nothing personal ships in this repository.
@@ -432,3 +432,4 @@ MIT
 
 Some rules adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including ship's merge-danger line, the summary visuals and before-and-after evidence in ship's pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
 Ship's hold mode, CI, and pull request title and body rules, and execute's title and body rules, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
+Voice's floor rows for arguing with no one, re-explained context, dramatic closers, and the document-describing half of meta commentary are adapted from Siqi Chen's (blader) humanizer (MIT).
