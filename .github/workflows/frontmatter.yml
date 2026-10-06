@@ -1,0 +1,23 @@
+name: Frontmatter
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontmatter:
+    name: Skill frontmatter parses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check the frontmatter check against scratch repositories
+        run: bin/test-check-frontmatter.sh
+
+      - name: Check every skill's frontmatter
+        run: bin/check-frontmatter.sh

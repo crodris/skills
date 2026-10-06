@@ -5,7 +5,7 @@ touches the working tree. Edit it directly; ship rewrites it only when one of
 these commands stops resolving.
 
 ```markdown
-verify: bin/test-worktree-setup.sh && bin/test-scan-skills.sh && bin/scan-skills.sh && bin/sync-versions.sh && bin/test-check-dashes.sh && bin/check-dashes.sh && claude plugin validate --strict .   # asked
+verify: bin/test-worktree-setup.sh && bin/test-scan-skills.sh && bin/scan-skills.sh && bin/sync-versions.sh && bin/test-check-dashes.sh && bin/check-dashes.sh && bin/test-check-frontmatter.sh && bin/check-frontmatter.sh && claude plugin validate --strict .   # asked
 base: main
 release: none
 post-merge: none
@@ -19,3 +19,6 @@ left to be rediscovered. `claude plugin validate --strict .` gates
 `.claude-plugin/marketplace.json`, and CI runs it in `plugin-validate.yml`.
 `bin/check-dashes.sh` bans em and en dashes, with its scope in the README, and
 `bin/test-check-dashes.sh` proves it; CI runs both in `prose.yml`.
+`bin/check-frontmatter.sh` fails when a skill's frontmatter does not parse as
+YAML or its description is cut short, and `bin/test-check-frontmatter.sh`
+proves it; CI runs both in `frontmatter.yml`.

@@ -85,7 +85,7 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v2.0.0)
+### ship (v2.0.1)
 
 Ship takes the current branch from working tree to a ready pull request, or to a merged release when asked, in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains.
 It stops there with a pull request that is ready for you to merge, unless the request says to merge, or the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request; then it adds the squash-merge, release watch, and post-merge cleanup.
@@ -136,7 +136,7 @@ ship it
 
 Skills here that no plugin claims. They install through [skills.sh](https://www.skills.sh) (`npx skills@latest add crodris/skills`) rather than `/plugin install`.
 
-### review (v1.1.1)
+### review (v1.1.2)
 
 Review verifies a pull request against the tracker issue it claims to close, on a build it actually runs, and posts one review with line-specific findings anchored inline and general findings in the summary body.
 
@@ -405,6 +405,10 @@ Both plugins therefore share one marketplace root (`source: "./"`), and there is
 `claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
 `bin/check-dashes.sh` fails on any em or en dash in `skills/`, `bin/`, this README, `CODING_STANDARDS.md`, and `docs/fathom.md`, and CI runs it and its test on every pull request.
 The dated records in `docs/plans/` and `docs/superpowers/` are not checked.
+`bin/check-frontmatter.sh` parses the frontmatter of every `skills/*/SKILL.md` with a pinned `yaml` package, the parser the skills CLI uses.
+It fails on a parse error, or when an unquoted ` #` cuts a description short.
+It installs `yaml` from npm on each run, so it needs network access.
+CI runs it and its test on every pull request.
 `CODING_STANDARDS.md` holds the judgment rules ship's Standards reviewer checks a change against.
 
 ## Security Scanning
