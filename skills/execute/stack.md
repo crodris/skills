@@ -16,7 +16,9 @@ Use ancestry rather than the adapter's `stackedReviews` value, because a squash-
 Rebase the remaining branches bottom-up, so each one lands on a base that is already correct.
 Push a rebased branch with `--force-with-lease` and never with a bare force push.
 When the lease is rejected, stop and hold: another commit reached that branch, and overwriting it discards someone's work.
-When the rebase conflicts, stop and hold naming the conflicting files, exactly as a base-branch update conflict does in step 7.
+When the rebase conflicts, note the conflicting files from `git ls-files -u`, run `git rebase --abort`, then stop and hold naming them.
+A restack runs inside the sweep, before this issue's own work, so it leaves no rebase paused in the checkout; step 7's paused hold covers only the branch a run is about to implement on.
+Skip the restack, and say so, while this checkout already holds an update paused by an earlier hold, as `SKILL.md` step 4 detects it.
 
 ## Step 7: recovering the stack
 

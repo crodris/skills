@@ -24,14 +24,14 @@ The `.gitignore` beads creates already excludes `*.db?*`, so these files never r
 A database that does not exist yet is created, and the export imported into it, by the first `bd` call that names it, which is how a run resumed on another machine recovers its tasks.
 
 Treat the working tree's `.beads/issues.jsonl` as output only, since a daemon can rewrite it with every issue's rows at any time.
-Outside the conflict recipe below, whose own checkouts take the restore's place, restore the committed export with `git checkout HEAD -- .beads/issues.jsonl` at these points, whenever `git cat-file -e HEAD:.beads/issues.jsonl` shows that HEAD tracks it:
+Outside the conflict recipe below, whose own checkouts take the restore's place, and outside a branch update paused on a conflict, whose working copy holds the update's own export, restore the committed export with `git checkout HEAD -- .beads/issues.jsonl` at these points, whenever `git cat-file -e HEAD:.beads/issues.jsonl` shows that HEAD tracks it:
 - Before the first `bd` call that names this issue's database, since that call imports the file on its own.
 - Before every `bd import`.
 - Before any git command that switches or updates the branch, such as step 7's base update in `../../execute/SKILL.md` or a stack restack, since git refuses to overwrite a working copy a daemon changed.
 
 The issue's database already holds every change this run made, so a restore loses nothing.
 
-When a `bd` call refuses with "Database out of sync with JSONL", restore the committed export, run `bd import -i <checkout>/.beads/issues.jsonl`, and retry the call.
+When a `bd` call refuses with "Database out of sync with JSONL", restore the committed export unless a branch update is paused, run `bd import -i <checkout>/.beads/issues.jsonl`, and retry the call.
 This happens after the branch is updated from its base, after an explicit `bd export`, and after a daemon rewrites the working copy.
 The import keeps whichever copy of a row is newer, so it never rolls back this issue's tasks.
 Run that import in place of the `bd sync --import-only` the error suggests, which was verified only against the default database.
@@ -87,11 +87,11 @@ When runtime files are already tracked in a repository, stop staging them and un
 Long-lived parallel branches that both write task state will conflict on the JSONL export.
 The merge driver registered by `.gitattributes` is what resolves those conflicts, so keep that file when beads creates it.
 A fresh clone has no merge driver configured, so the export can still conflict when the branch is updated from its base.
-A conflict in `.beads/issues.jsonl` alone is the one branch-update conflict a run resolves itself, since the file is generated from task state.
+The export is the one conflicted file a run resolves itself during a branch update, since it is generated from task state, and it does so even when other files conflict too.
 Never hand-merge the JSON lines; run these in order:
 1. `git checkout --ours -- .beads/issues.jsonl`, then `bd import -i <checkout>/.beads/issues.jsonl`.
 2. `git checkout --theirs -- .beads/issues.jsonl`, then `bd import -i <checkout>/.beads/issues.jsonl`.
-3. Stage the export as the commit rules below describe, and finish the update.
+3. Stage the export as the commit rules below describe, then finish the update unless another file is still conflicted, in which case execute's step 7 holds.
 
 Importing both sides gives the database this issue's rows and the base's, in a merge or a rebase alike, even when the database did not exist yet.
 A rebase swaps which side `--ours` names, so the recipe never depends on it.

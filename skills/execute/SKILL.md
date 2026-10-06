@@ -59,7 +59,10 @@ If any of these files cannot be found and read, stop immediately and report whic
 3. Resolve which tracker owns this issue and which memory backend owns its task state, following `trackers.md` and `memory.md`, including `memory.md`'s stop when the repo holds beads state but beads is unavailable.
    Load the existing `.fathom/config.md` tracker profile, or run first-run setup when none exists; either way, run the tracker adapter's profile-load checks and honor any one-time offers they define.
 4. When the invocation names two or more issues, read `fan-out.md` in this skill's folder and follow its several-issues section instead of the rest of this procedure.
-   Otherwise determine the issue ref from the invocation argument, a pasted issue URL, or the current branch name, in that order of preference; when the argument and the branch name refer to different issues, stop and ask the user which one to use.
+   Before reading the branch name, check whether this checkout holds a base update paused by an earlier hold: `git rev-parse -q --verify MERGE_HEAD` succeeds mid-merge, and the directory `git rev-parse --git-path rebase-merge` or `git rev-parse --git-path rebase-apply` names exists mid-rebase.
+   When one is paused, read the branch from `git branch --show-current` mid-merge, or from the `head-name` file in that rebase directory mid-rebase, since a paused rebase detaches HEAD.
+   Then run no switch, no fetch-and-update, and never `git merge --quit` until step 7's resume rule finishes or holds the update, since quitting drops the merge's second parent.
+   Then determine the issue ref from the invocation argument, a pasted issue URL, or the current branch name, which for a paused update is the branch read above, in that order of preference; when the argument and the branch name refer to different issues, stop and ask the user which one to use.
 5. Call `getIssue` for that ref and save its title, description, type, URL, and existing children for the rest of this run.
    Make this call even when this session just created the issue, as a scaffold handoff does, since the run works from what the tracker stored, which can differ from the draft that created it.
    When the issue is already in the `done` phase or marked complete, do not start work: say so, report what the sweep found for it, and ask whether to reopen it or pick a different issue.
@@ -74,8 +77,14 @@ If any of these files cannot be found and read, stop immediately and report whic
    Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track`, not from a local copy that may be behind.
    Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
    When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
-   A conflict in the beads export alone is resolved as `../fathom-shared/memory/beads.md` says.
-   When that update conflicts in any other file, stop and hold exactly as an unfixable test failure would: keep the work, leave the task in progress, report which files conflict, and let the user decide how to resolve them; never resolve a conflict by discarding either side's changes.
+   When the update conflicts in the beads export, resolve that file first as `../fathom-shared/memory/beads.md` says, even when other files conflict too.
+   When any other file is still conflicted, stop and hold exactly as an unfixable test failure would, and leave the update paused where git stopped it, mid-merge or mid-rebase, so the user resolves it in place.
+   Keep the work, leave the task in progress, and report each conflicting file with what this branch and the base each changed in it.
+   Name the sides "this branch" and "the base", since a rebase swaps which one git calls ours.
+   Ask the user to `git add` each file once it is resolved, and leave the choice of resolution to them, recommending neither side.
+   Never resolve a conflict by discarding either side's changes.
+   When step 4 finds an update paused, hold again while `git ls-files -u` lists a conflicted file or `git diff --cached --check` reports a leftover conflict marker.
+   Otherwise finish it with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`, and hold the same way when the rebase stops on its next commit.
    On a stack these rules describe bundle 1's branch, and `stack.md` names and creates the later bundles' branches.
 8. Ensure the breakdown exists.
    - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.
