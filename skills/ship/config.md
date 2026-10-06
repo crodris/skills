@@ -28,7 +28,7 @@ post-merge: /post-merge
 light-paths: docs/**, **/*.md      # optional, hand-written
 security-paths: **/auth/**, db/migrations/**
 drive: bin/drive.sh run           # or skill:verify-<app>, a skill the repository ships
-merge: yes                        # optional, hand-written; absent means hold mode
+merge: yes                        # optional, hand-written; absent leaves the mode to the request
 ```
 
 Commit the file only after preflight has settled which branch this run ships, before stage 1 begins.

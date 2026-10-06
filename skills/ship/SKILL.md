@@ -21,10 +21,11 @@ This skill is the fallback for every repository without one.
 Settle the mode in stage 0, as soon as `base` is resolved, and before touching the working tree.
 Take the first rule that matches:
 
-1. A request for a green pull request without a merge, such as "babysit", "watch", "monitor", "get it green", or "don't merge", is hold mode.
-2. A request that explicitly says to merge, such as "merge it", "ship and merge", "get this merged", or "take this all the way", is merge mode.
-3. `merge: yes` in `.ship/config.md` on `origin/<base>`, read with `git show "origin/$base:.ship/config.md"`, is merge mode.
-   Only the exact value `yes` counts; any other value is hold mode, and the report names it.
+1. A request that explicitly says to merge, such as "merge it", "ship and merge", "get it green and merge it", or "get this merged", is merge mode.
+2. A request for a green pull request, such as "babysit", "watch", "monitor", "get it green", or "don't merge", is hold mode.
+3. `merge: yes` in `.ship/config.md` on `origin/<base>` is merge mode.
+   Run `git fetch origin "$base"` first, then read it with `git show "origin/$base:.ship/config.md"`; a missing file or a missing `merge` line falls through to rule 4.
+   Only the exact value `yes` counts, ignoring a trailing `# comment`; any other value is hold mode, and the report names the value.
 4. Everything else, including plain "ship" and "ship it", is hold mode.
 
 Hold mode runs every stage up to the merge in stage 3, step 7, and stops there with the pull request reported; step 7 says when a merge-mode run stops at the same point.
