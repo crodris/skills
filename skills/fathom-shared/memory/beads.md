@@ -17,6 +17,11 @@ The default database is shared by every branch and every linked worktree of the 
 That export carries every issue the database has seen, including ones whose reviews are still open.
 
 `--no-daemon` is required alongside `--db`, since a daemon serving the default database answers a call for another database with a "database mismatch" error.
+
+A beads daemon already running for the repository keeps running beside the run and acts on the main checkout on its own: it runs `git pull` on the checked-out branch and exports the default database into `.beads/issues.jsonl` (verified on 0.49.0).
+Leave it running, since it may serve the user's own beads work.
+Once per run, run `bd daemon status --json`, which takes neither per-issue flag.
+When it reports `"status": "running"`, say in the run summary that a beads daemon is running for this repository, and that `bd daemon start --local` keeps it without its git sync.
 The `.gitignore` beads creates already excludes `*.db`, so these files never reach a commit.
 A database that does not exist yet is created, and the export imported into it, by the first `bd` call that names it, which is how a run resumed on another machine recovers its tasks.
 
@@ -84,3 +89,5 @@ A conflict in any other file still holds, as execute's step 7 says.
 
 Commit the JSONL export with each task's commit, not only at the end of the run.
 The database itself is ignored by design, so an export left uncommitted means a task closed on this machine is invisible to any other clone, which breaks resume on a different machine.
+Run `bd export -o <checkout>/.beads/issues.jsonl` right before every `git add` of the export, so the staged file holds this issue's database even when a daemon rewrote it with the default database's rows.
+The next `bd` call then reports the database out of sync, which the import rule above resolves.
