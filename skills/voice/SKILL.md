@@ -196,8 +196,10 @@ Where the piece needs one the user did not give, leave a bracketed placeholder (
 A colourful detail you made up reads well and is a lie with the user's name on it.
 
 **Rewrite.** The user gives existing text and wants it in their voice, or says it sounds like a machine.
-Keep every fact, decision, and link, and add none: every claim, number, and cause in the rewrite is one the input states.
-When a sentence reads better with a detail the input lacks, write the plainer sentence instead.
+Keep every fact, decision, and link, and add none: every factual claim in the rewrite is one the input states.
+A factual claim includes a name, number, date, ranking, or outcome, and a cause or link between two facts ("which is why", "so", "because").
+An opinion or reaction the voice file calls for is not a factual claim.
+When a sentence needs a detail the input lacks, write the plainer sentence instead.
 Change register, rhythm, and vocabulary.
 Say in one line what kinds of change you made; never list every edit.
 
@@ -285,7 +287,7 @@ Run this pass on the whole draft, every time, in this order.
 4. Read it once against the voice file's rules.
 5. Read it aloud in your head for rhythm. Three sentences the same length in a row is a hit.
 6. Cut the first paragraph if the second paragraph is where it starts.
-7. In rewrite mode, read it once against the input for the facts rule under Rewrite. A claim the input does not state is a hit, and so is a fact the input states that the draft lost.
+7. In rewrite mode, read it once against the user's original text, from before unslop ran, for the facts rule under Rewrite. A fact the draft lost is a hit unless a floor fix above cut it.
 
 One hit means rewrite the sentence.
 A patched word in a machine-shaped sentence is still a machine-shaped sentence.

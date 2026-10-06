@@ -432,4 +432,4 @@ MIT
 
 Some rules adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including ship's merge-danger line, the summary visuals and before-and-after evidence in ship's pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
 Ship's hold mode, CI, and pull request title and body rules, and execute's title and body rules, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
-Voice's floor rows for arguing with no one, re-explained context, dramatic closers, and the document-describing half of meta commentary are adapted from Siqi Chen's (blader) humanizer (MIT).
+Voice's floor rows for arguing with no one, re-explained context, dramatic closers, and the document-describing half of meta commentary, and rewrite mode's no-new-facts rule, are adapted from Siqi Chen's (blader) humanizer (MIT).
