@@ -19,13 +19,13 @@ This skill is the fallback for every repository without one.
 ## Mode
 
 Settle the mode before stage 0.
-Merge mode is the default, for "ship", "ship it", and every request to carry the work to a merged release.
-Hold mode is for "babysit", "watch", "monitor", "get it green", or any request for a green pull request that names no merge.
+Hold mode is the default, for "ship", "ship it", "babysit", "watch", "monitor", "get it green", and every request that does not say to merge.
+Merge mode runs only when the request explicitly says to merge, such as "merge it", "ship and merge", or "get this merged", or when `.ship/config.md` on `origin/<base>` sets `merge: yes`.
 Hold mode runs every stage up to the merge in stage 3, step 7, and stops there with the pull request reported; step 7 says when a merge-mode run stops at the same point.
 
 ## Authority and boundary
 
-Invoking this skill is explicit approval to commit, push, open a pull request, and merge THAT pull request once its gates are green; in hold mode the approval covers everything but the merge.
+Invoking this skill is explicit approval to commit, push, and open a pull request; in merge mode it is also approval to merge THAT pull request once its gates are green.
 That approval overrides an ask-before-commit project rule for this branch only, and for no other branch.
 Never push, merge, or reset any branch other than the one being shipped and its own pull request.
 There are exactly two exceptions, both local and both on the base branch: preflight's reset of the local `base` to its upstream, and cleanup's fast-forward of it, each run exactly as its stage describes and refused, never improvised, when its preconditions do not hold.
@@ -58,6 +58,7 @@ Resolve all of it before touching the working tree, so the run never pauses mid-
 | `light-paths` | Stages 0-3 | No light lane; every run gets the subagent review. |
 | `security-paths` | Stages 0-3 | No security review beside the code reviewer. |
 | `drive` | Stages 1 and 3 | No drive; stage 1 ends on verify alone, and the confirmation pass runs as written in stage 3, step 5. |
+| `merge` | Mode | Hold mode unless the request says to merge. |
 
 There is no review slot to resolve: the pre-merge review is always the code reviewer that stage 3 defines, never a command nor a review skill that wraps one.
 Never route a review tool into `verify`: a command this project names as a review step is not a verify gate.
@@ -74,7 +75,7 @@ A `base` carried in from `.ship/config.md` is a deliberate answer that may well 
 
 ### Lanes and drive
 
-`light-paths`, `security-paths`, and `drive` are read from `.ship/config.md` as it stands on `origin/<base>`, and from nowhere else: no other tier answers them, this run never asks about them, and an absent one takes its default from the table.
+`light-paths`, `security-paths`, `drive`, and `merge` are read from `.ship/config.md` as it stands on `origin/<base>`, and from nowhere else: no other tier answers them, this run never asks about them, and an absent one takes its default from the table.
 When `light-paths` or `security-paths` is set, read `lanes.md` in this skill's folder before resolving the lane, and apply it at every step it names.
 When `drive` is set, read `drive.md` in this skill's folder during stage 0, and run the drive where it says.
 Without any of them, every run is the standard lane with no drive.
