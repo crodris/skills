@@ -405,7 +405,10 @@ Both plugins therefore share one marketplace root (`source: "./"`), and there is
 `claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
 `bin/check-dashes.sh` fails on any em or en dash in `skills/`, `bin/`, this README, `CODING_STANDARDS.md`, and `docs/fathom.md`, and CI runs it and its test on every pull request.
 The dated records in `docs/plans/` and `docs/superpowers/` are not checked.
-`bin/check-frontmatter.sh` parses every `skills/*/SKILL.md` frontmatter with the `yaml` package the skills CLI uses, and fails on a parse error or a description cut short by an unquoted ` #`; CI runs it and its test on every pull request.
+`bin/check-frontmatter.sh` parses the frontmatter of every `skills/*/SKILL.md` with a pinned `yaml` package, the parser the skills CLI uses.
+It fails on a parse error, or when an unquoted ` #` cuts a description short.
+It installs `yaml` from npm on each run, so it needs network access.
+CI runs it and its test on every pull request.
 `CODING_STANDARDS.md` holds the judgment rules ship's Standards reviewer checks a change against.
 
 ## Security Scanning
