@@ -61,6 +61,7 @@ If any of these files cannot be found and read, stop immediately and report whic
 4. When the invocation names two or more issues, read `fan-out.md` in this skill's folder and follow its several-issues section instead of the rest of this procedure.
    Otherwise determine the issue ref from the invocation argument, a pasted issue URL, or the current branch name, in that order of preference; when the argument and the branch name refer to different issues, stop and ask the user which one to use.
 5. Call `getIssue` for that ref and save its title, description, type, URL, and existing children for the rest of this run.
+   Make this call, and step 8's `listSubIssues` and `getIssue` calls, even when this session just created the issue, as a scaffold handoff does: the run works from what the tracker stored, which can differ from the draft that created it.
    When the issue is already in the `done` phase or marked complete, do not start work: say so, report what the sweep found for it, and ask whether to reopen it or pick a different issue.
 6. Search the codebase and read the files that look relevant to this issue, noting existing patterns to follow during implementation.
 7. Ensure the branch this run implements on exists, and continue on that one branch until step 10 moves a stack to its next bundle.
@@ -81,7 +82,8 @@ If any of these files cannot be found and read, stop immediately and report whic
    - Plan the units of work before writing anything to the tracker or the memory backend.
      When the issue has no existing children, plan three to seven units of work, each sized so it can be implemented and verified on its own, and hold that plan rather than creating anything from it yet.
      When the issue already has children, call `listSubIssues` to adopt them instead of inventing a new breakdown, which reads the tracker without writing to it.
-     Order adopted children by the `Blocked by:` line that scaffold ends each description with, read through `getIssue`, so every blocker comes before what it blocks.
+     Call `getIssue` on each adopted child and read the `Blocked by:` line that scaffold ends its description with from that response, since `listSubIssues` returns no description and a list tool that does can cut one short.
+     Order the children by those lines, so every blocker comes before what it blocks.
      Break ties, and order children whose line is missing or reads `none`, by creation order: ascending Linear keys, or Asana's subtask order under the parent, which scaffold fills in creation order; never the order a Linear list call returns.
      Children caught in a cycle also take their creation-order position, and the run says so.
      Either way the units are ordered, and that order is the creation order below and the order any bundle boundary follows; the `deps` below name only real prerequisites, except on a stack, which chains every task.
