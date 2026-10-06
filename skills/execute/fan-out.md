@@ -18,7 +18,7 @@ Use this when the invocation names two or more issue refs or URLs.
 1. Run steps 1 to 3 of the procedure once, in the parent: approval mode, preflight, the done-on-merge sweep, and the tracker profile.
    Every ref must belong to the tracker preflight verified; name any that do not and leave them for a separate invocation.
    Drop a ref that `getIssue` shows is a sub-issue of another named ref, and say that its parent's run covers it.
-   When step 3 resolves beads but `.beads/` does not exist yet, run the issues one after another instead, since parallel runs would each create `.beads/` on their own branch with its own configuration.
+   When step 3 resolves beads but `origin/<base>` has no `.beads/` yet, which `git cat-file -e origin/<base>:.beads` shows, run the issues one after another instead, since parallel runs would each create `.beads/` on their own branch with its own configuration.
 2. Give each issue its own worktree.
    When the issue's branch already exists and is checked out in another worktree, use that worktree.
    Otherwise fetch the resolved base and run `git worktree add --detach <main checkout>.fathom/<ISSUE-REF> origin/<base>`, and let the run create or check out the issue's branch there at step 7.
