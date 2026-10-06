@@ -191,6 +191,7 @@ When the requirements leave the approach open, it proposes two or three approach
 Sub-issues are vertical slices, each demoable on its own, and each names the sub-issues that block it; blockers are created first.
 
 When the scaffold exists, it offers to hand straight off to `execute`, or does so without asking in auto mode.
+Execute then reads the issue and each sub-issue back from the tracker, so it works from what the tracker stored.
 
 ## Using execute
 
@@ -335,7 +336,7 @@ In the manual tier the "review merged" line never fires, because nothing can obs
 | `.fathom/forge.md` | Only if you wrote an adapter for a forge Fathom does not ship. See [Forges](#forges). |
 | `.fathom/plans/<ref>.md` | The per-issue plan: issue link, branch, codebase context, approach, tasks, testing strategy. Written for people, never carries status. The branch sits on its own `- Branch:` line, which the merge-closer matches to find this issue. |
 | `.fathom/tasks/<ref>.md` | Task statuses as checkboxes. Only when the checklist backend is active. |
-| `.beads/` | Beads task database and its JSONL export, when beads is the backend. |
+| `.beads/` | Beads task state, when beads is the backend: one ignored database per issue, `<ref>.db`, and the committed JSONL export, which carries only the base's rows plus this issue's. |
 | `.github/workflows/fathom-close.yml` | Only if you accepted the optional merge-closer Action. GitHub only; never offered on a forge without CI hooks. |
 
 Plans and task files stay after the review merges; they are the record of how the work was broken down.
