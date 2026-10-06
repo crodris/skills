@@ -2,7 +2,7 @@
 
 Ship's Standards reviewer reads this file during review.
 It holds the judgment calls only.
-The mechanical rules are checks in the verify pipeline in `.ship/config.md`: `bin/check-dashes.sh` bans em and en dashes, `bin/sync-versions.sh` keeps versions in step and every skill claimed, and `bin/scan-skills.sh` scans each skill with SkillSpector.
+The mechanical rules are checks in the verify pipeline in `.ship/config.md`: `bin/check-dashes.sh` bans em and en dashes, `bin/check-frontmatter.sh` fails when a skill's frontmatter does not parse as YAML or its description is cut short, `bin/sync-versions.sh` keeps versions in step and every skill claimed, and `bin/scan-skills.sh` scans each skill with SkillSpector.
 
 ## Skill prose
 
