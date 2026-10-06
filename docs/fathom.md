@@ -249,7 +249,7 @@ Auto mode removes friction, not judgment.
 
 - An unverified or disabled tracker MCP still refuses and prints setup instructions.
 - A test failure that cannot be fixed still stops and holds, with the work kept and nothing pushed.
-- A conflict while updating from the base branch still stops, naming the conflicting files.
+- A conflict while updating from the base branch still stops, naming the conflicting files and leaving the merge or rebase paused for you to resolve.
 - A review closed without merging still gets reported and asked about.
 - Accepting a forge CLI found on your `PATH` still asks; auto mode never drives an unfamiliar CLI unattended.
 - A phase with no matching tracker state still asks, rather than mapping review onto something that means something else.

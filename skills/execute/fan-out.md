@@ -20,7 +20,7 @@ Use this when the invocation names two or more issue refs or URLs.
    Drop a ref that `getIssue` shows is a sub-issue of another named ref, and say that its parent's run covers it.
    When step 3 resolves beads but `origin/<base>` has no `.beads/` yet, which `git cat-file -e origin/<base>:.beads` shows, run the issues one after another instead, since parallel runs would each create `.beads/` on their own branch with its own configuration.
 2. Give each issue its own worktree.
-   When the issue's branch already exists and is checked out in another worktree, use that worktree.
+   When the issue's branch already exists and is checked out in another worktree, or a worktree already exists at `<main checkout>.fathom/<ISSUE-REF>`, use that worktree; a held issue paused mid-rebase leaves its worktree detached, so the path finds it when the branch name does not.
    Otherwise fetch the resolved base and run `git worktree add --detach <main checkout>.fathom/<ISSUE-REF> origin/<base>`, and let the run create or check out the issue's branch there at step 7.
    When `.fathom/config.md` is not on `origin/<base>`, copy the parent's file into the worktree, so the subagent loads the profile step 3 settled rather than starting first-run setup.
 3. Dispatch one background subagent per issue.
