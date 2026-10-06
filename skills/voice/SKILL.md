@@ -246,10 +246,10 @@ If the sentence has nothing left after the cut, the sentence had nothing to say.
 | Puffery | "pivotal", "a significant shift", "sets the stage for" | State the fact, let the reader judge |
 | Participle tails | "..., highlighting the importance of", "..., underscoring" | Cut the tail; a real point gets its own sentence |
 | Copulative avoidance | "serves as", "stands as", "represents", "boasts" | "is", "has" |
-| Meta commentary | "In this post I will", "Let me walk you through", "The table below compares", "anything unconfirmed is flagged rather than guessed" | Say the thing; describe a layout only when the reader cannot see it |
-| Arguing with no one | "To be clear", "I'm not saying", "Don't get me wrong", "A tempting approach would be X, but" when nobody raised X | Delete the defense; keep an alternative only when the reader would weigh it |
-| Re-explained context | A reply that restates the problem, the diagnosis, and the evidence the reader already has, with the decision in the last line | Lead with the decision; keep the one fact the reader lacks and the link they need to act |
-| Dramatic closers | A one-line paragraph restating the one before, a line after an example naming what it showed, a row of fragments ("No prior. No nostalgia.") | Cut a closer that repeats; merge a fragment row into one sentence with a claim |
+| Meta commentary | "In this post I will", "Let me walk you through", "This section covers", "The table below compares" | Say the thing; describe a layout only when the reader cannot see it |
+| Arguing with no one | "To be clear", "I'm not saying", "Don't get me wrong" before an objection nobody raised | Cut the defense and state any real claim it carried; keep an objection the reader raised |
+| Re-explained context | A reply that restates the problem, the diagnosis, and the evidence the reader already has, with the decision in the last line | Lead with the decision; in draft mode keep only the reasoning that would change whether the reader agrees, in rewrite mode keep every fact after the decision |
+| Dramatic closers | A line after an example naming what it showed, a row of 2 or more fragments ("No prior. No nostalgia.") | Cut a line that adds nothing the example did not show; merge a fragment row into one sentence with a claim |
 | Chat leakage | "Happy to help!", "Great question", "Hope this helps", "Let me know if" | Delete; it belongs in chat |
 | Metronome rhythm | Every sentence medium length, every paragraph 3 sentences | Vary it: a fragment, then a long one |
 | Warm-up laps | "Nice work on this!" before the point, a summary paragraph after it | Start at the point, stop when it is made |
