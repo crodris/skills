@@ -85,10 +85,10 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v1.12.0)
+### ship (v2.0.0)
 
-Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains, squash-merge, release watch, and post-merge cleanup.
-Ask it to babysit, watch, monitor, or get a pull request green and it runs the same review loop, then stops at a pull request that is ready for you to merge.
+Ship takes the current branch from working tree to a ready pull request, or to a merged release when asked, in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains.
+It stops there with a pull request that is ready for you to merge, unless the request says to merge, or the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request; then it adds the squash-merge, release watch, and post-merge cleanup.
 Everything from the pull request onward needs an installed and authenticated GitHub CLI; without one, ship stops after pushing the branch and printing the compare URL, and the review, merge, and release are yours to drive.
 
 #### Prerequisites
@@ -108,7 +108,7 @@ Pick `ship` in the installer. On Claude Code, `/plugin install ship@crodris` als
 
 | Skill | Description |
 |-------|-------------|
-| `ship` | Resolves the project's own verification pipeline, then drives the branch through review, CI, pull request, merge, release, and cleanup without stopping between stages. |
+| `ship` | Resolves the project's own verification pipeline, then drives the branch through review, CI, and pull request, and through merge, release, and cleanup only when asked to merge. |
 
 ```bash
 ship
@@ -127,7 +127,7 @@ ship it
 - **Different reviewers, not one twice** - the pre-merge review is two `general-purpose` subagents on the same SHA, one checking the repository's documented conventions and one checking the change against its issue or stated intent (on Claude Code, the conventions check runs on Sonnet, the intent check runs on Opus for the full diff and on Sonnet when it confirms fixes, and a security-lane review stays on Opus), and each review bot is a final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway; a bot that reviews only the first push is never asked to re-review a fix push, and the subagents confirm every fix, except in the light lane, which has no subagents and re-requests the bot instead
 - **Review bots are optional** - ship waits on CodeRabbit and Greptile when the repository runs them, found from their config file or their reviews on recent pull requests unless their config turns automatic review off, or from their first appearance on the pull request, and a repository with neither reviews with the subagents alone
 - **Bot review mode from the repo** - ship reads whether each bot reviews every push or only the first from its config file: `reviews.auto_review.auto_incremental_review` in `.coderabbit.yaml`, and `autoReview` in `.greptile/config.json` or `greptile.json`, where Greptile defaults to the first push only; a setting made only in a bot's web app is invisible to ship, which then waits on a re-review that never comes, or merges without waiting for one the bot posts on its own, so keep it in the file (for CodeRabbit, with `inheritance: true` to leave the web-app settings in force)
-- **Hold mode** - "babysit", "watch", "monitor", or "get it green" runs everything up to the merge and reports the pull request ready; a pull request that still needs a human approval holds the same way, and ship never merges past it with `--admin`
+- **Hold mode by default** - "ship", "babysit", "watch", "monitor", or "get it green" runs everything up to the merge and reports the pull request ready; ship merges only when the request says to merge, or when `.ship/config.md` on the base branch sets `merge: yes` and the request does not ask only to babysit or get it green; a pull request that still needs a human approval holds either way, and ship never merges past it with `--admin`
 - **Project-local override** - a repository that ships its own `.claude/skills/ship/SKILL.md` takes precedence, carrying its specialized pipeline
 
 ---
@@ -394,7 +394,7 @@ The skill never edits your settings; add the hook yourself.
 2. **Execute the issue**: talk to the execute skill, for example "execute ONC-5"
 3. **Resume if interrupted**: re-invoke execute on the same issue; it picks up where the last run left off
 4. **Review the pull request**: talk to the review skill, for example "review #107", to verify it against its issue on a running build
-5. **Ship the branch**: talk to the ship skill, for example "ship it", to carry the reviewed branch through merge and release
+5. **Ship the branch**: talk to the ship skill, for example "ship and merge", to carry the reviewed branch through merge and release; plain "ship it" stops at a green pull request
 
 ## Repository Layout
 
