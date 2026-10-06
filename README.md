@@ -87,8 +87,8 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ### ship (v2.0.0)
 
-Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains. It stops there unless told to merge, which adds the squash-merge, release watch, and post-merge cleanup.
-Ask it to babysit, watch, monitor, or get a pull request green and it runs the same review loop, then stops at a pull request that is ready for you to merge.
+Ship takes the current branch from working tree to merged release in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains.
+It stops there with a pull request that is ready for you to merge, unless the request says to merge or the repository's `.ship/config.md` sets `merge: yes`; then it adds the squash-merge, release watch, and post-merge cleanup.
 Everything from the pull request onward needs an installed and authenticated GitHub CLI; without one, ship stops after pushing the branch and printing the compare URL, and the review, merge, and release are yours to drive.
 
 #### Prerequisites
@@ -108,7 +108,7 @@ Pick `ship` in the installer. On Claude Code, `/plugin install ship@crodris` als
 
 | Skill | Description |
 |-------|-------------|
-| `ship` | Resolves the project's own verification pipeline, then drives the branch through review, CI, pull request, merge, release, and cleanup without stopping between stages. |
+| `ship` | Resolves the project's own verification pipeline, then drives the branch through review, CI, and pull request, and through merge, release, and cleanup only when asked to merge. |
 
 ```bash
 ship
