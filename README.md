@@ -178,7 +178,7 @@ review #107
 
 ---
 
-### voice (v1.2.0)
+### voice (v1.2.1)
 
 Voice drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
 PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
@@ -226,7 +226,7 @@ recalibrate my voice
 - **Recalibrate from the source** - the folder or samples the voice was built from stay in the config, so "recalibrate my voice" re-reads your real writing and fixes the excerpts and rules that drifted
 - **Samples beat rules** - the template keeps your real writing verbatim, and the skill matches rhythm and register against those before it reads any rule
 - **A floor everyone gets** - the built-in checklist covers the patterns research and readers both flag as machine-written, with the negation-then-correction construction treated as fatal; your voice file can re-allow any of it
-- **Four modes** - draft from facts, rewrite existing text keeping every fact and link, check-only, which quotes each failing line and names the tell without touching the text, and recalibrate
+- **Four modes** - draft from facts, rewrite existing text keeping every fact and link and adding none, check-only, which quotes each failing line and names the tell without touching the text, and recalibrate
 - **Never from memory** - the voice files are read in full at the start of each conversation, because a summary of a voice is the default register with a costume on
 - **Knows when to stay out** - code, commit messages, test names, config, and text addressed to another agent are left alone
 
