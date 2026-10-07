@@ -222,6 +222,7 @@ Trigger setup when the repository has no `.fathom/config.md`.
 Before prompting the user, check other local branches for a newer `.fathom/config.md` and offer to reuse it instead of starting over.
 
 When no existing profile is found anywhere, the agent must run these six steps in order and must not skip any of them.
+Auto mode may record the destination in step 1 and the state mapping in step 2 without asking, only as `approval.md` allows; every other step is asked.
 Each step must get the user's answer before the next step starts, and the profile must not be written until every step has an answer.
 Ask one question at a time; never present a later step's question, or any other pending question such as the issue draft, alongside an unanswered step from this sequence.
 Prefer the agent's structured question mechanism named in `agents.md` over free prose for each of these questions, since a list of concrete choices is harder to answer ambiguously.

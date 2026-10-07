@@ -61,7 +61,7 @@ Auto mode exists to remove friction, not judgment, so every one of them still fi
   Auto mode must never drive an unfamiliar CLI against the user's server unattended; anything executed against a forge is authorized by a written adapter, or by the user's explicit one-run acceptance of a named candidate at this stop, never by an inference made in the moment.
 - **A phase with no matching tracker state.** Still ask.
   The alternative is silently mapping review onto a state that means something else.
-- **The other first-run setup questions.** Still ask the forge, base branch, and approval mode questions, and the merge-closer question whenever `trackers.md` step 4 asks it, however obvious the answer looks.
+- **The other first-run setup questions.** Still ask the forge, base branch, and approval mode questions, and the merge-closer question whenever the first-run tracker profile in `trackers.md` offers it, however obvious the answer looks.
   `forges.md` never lets detection answer the forge question, and a detected or current default is only the suggestion each question offers.
 - **An ambiguous first-run setup answer.** Still ask that specific question.
   A wrong destination sends every future issue in the repository to the wrong place, and a wrong state mapping misreports every issue's progress.
