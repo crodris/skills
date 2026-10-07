@@ -274,7 +274,8 @@ Never commit it on the base branch directly, since the issue branch is created f
 A run that ends before an issue branch exists leaves the file uncommitted, and the next run that reaches an issue branch commits it there.
 A profile reused from another branch is committed the same way.
 Before switching to the issue branch or creating it, when `.fathom/config.md` is untracked or only staged and the target ref already tracks it, compare the two with `git show <ref>:.fathom/config.md`.
-Remove the uncommitted copy from the index and the working tree when they match, since git refuses to switch over an untracked file the target tracks; when they differ, stop and ask the user which profile to keep.
+Remove the uncommitted copy when they match, with `git clean -f -- .fathom/config.md` for an untracked copy or `git rm -f -- .fathom/config.md` for a staged one, since git refuses to switch over an untracked file the target tracks; never use `git checkout -f`, which also discards tracked changes.
+When they differ, stop and ask the user which profile to keep.
 Never announce that setup will happen and then write a profile without having asked each of these questions.
 A profile written without confirmed answers for every step is a defect, not a shortcut.
 A per-invocation destination hint applies only to that invocation; change the profile's `default-destination` only when it is absent or when the user explicitly asks to change it.
