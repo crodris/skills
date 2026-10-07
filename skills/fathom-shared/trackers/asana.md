@@ -87,7 +87,7 @@ Asking anyway is worse than skipping, because a yes writes a workflow file that 
 
 When that line is absent and the forge declares `ciHooks`, ask the user once whether to install the merge-closer GitHub Action for instant Asana closure on review merge, then record the answer in the profile right away.
 Ask whenever no `merge-closer:` line is on record; once one is recorded, never ask again for this repository.
-When the answer is yes, write `.github/workflows/fathom-close.yml` from the template below, record `merge-closer: installed` in the tracker profile, and commit both together.
+When the answer is yes, write `.github/workflows/fathom-close.yml` from the template below, record `merge-closer: installed` in the tracker profile, and commit both together on the issue branch, as `../trackers.md` says.
 Tell the user to add an `ASANA_TOKEN` repository secret, an Asana personal access token, since the workflow cannot post to the Asana API without it.
 When the answer is no, record `merge-closer: declined` in the tracker profile.
 The passive sweep and the on-demand cleanup trigger described in the execute skill keep working either way; this Action is an additive fast path, not a replacement.

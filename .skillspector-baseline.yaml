@@ -50,6 +50,17 @@ rules:
       which task-memory backend to read is a read-only precedence decision;
       every consequential action still runs through approval.md's stops.
 
+  - id: "TM1"
+    path: "trackers.md"
+    message: "*rm -f -- .fathom/config.md*"
+    reason: >-
+      False positive: first-run setup names `git clean -f -- .fathom/config.md`
+      and `git rm -f -- .fathom/config.md` to remove an uncommitted profile
+      copy only after comparing it with the issue branch's tracked copy and
+      finding them identical, so git can switch branches. Both are scoped to
+      that one path, and the same line forbids `git checkout -f`, which would
+      discard tracked changes.
+
   - id: "EA2"
     path: "trackers.md"
     message: "*without asking*"

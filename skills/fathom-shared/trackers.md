@@ -219,6 +219,7 @@ The connected tracker MCP is the only permitted channel for tracker operations a
 Run this setup procedure once per repository, then reuse its output on every later run.
 
 Trigger setup when the repository has no `.fathom/config.md`.
+When a local branch for this issue already exists, which `git branch --list --ignore-case '*/<issue-ref>-*'` finds from the issue ref the run was given, and it tracks `.fathom/config.md`, load the profile from it with `git show <branch>:.fathom/config.md` and skip setup and the reuse offer, since the run switches to that branch.
 Before prompting the user, check other local branches for a newer `.fathom/config.md` and offer to reuse it instead of starting over.
 Find candidate branches with `git log --branches --not HEAD --diff-filter=AM --format='%h %cI %s' -- .fathom/config.md`, which lists each commit on another local branch that added or changed the profile, newest first, and prints nothing when no other branch has one.
 Name the branches that carry a listed commit with `git branch --contains <commit>`.
@@ -267,7 +268,14 @@ When a user's reply could answer more than one pending question, or its target i
    Ask whether future runs should stop for approval at the usual points, or run straight through without asking.
    Record the answer as `approval: ask` or `approval: auto` per `approval.md`, and say that the safety stops listed there fire either way, so choosing auto does not mean unattended risk.
 
-Save the confirmed profile to `.fathom/config.md` and commit that file only once all six steps above have an answer; include the confirmed default destination.
+Save the confirmed profile to `.fathom/config.md` only once all six steps above have an answer; include the confirmed default destination.
+Commit it on the issue branch, as the first commit the run makes on that branch, so the profile reaches the base branch through review.
+Never commit it on the base branch directly, since the issue branch is created from `origin/<base>` and would leave that commit behind.
+A run that ends before an issue branch exists leaves the file uncommitted, and the next run that reaches an issue branch commits it there.
+A profile reused from another branch is committed the same way.
+After fetching the base branch and before switching to the issue branch or creating it, when `.fathom/config.md` is untracked or only staged and the target ref already tracks it, compare the two with `git show <ref>:.fathom/config.md`.
+Remove the uncommitted copy when they match, with `git clean -f -- .fathom/config.md` for an untracked copy or `git rm -f -- .fathom/config.md` for a staged one, since git refuses to switch over an untracked file the target tracks; never use `git checkout -f`, which also discards tracked changes.
+When they differ, stop and ask the user which profile to keep.
 Never announce that setup will happen and then write a profile without having asked each of these questions.
 A profile written without confirmed answers for every step is a defect, not a shortcut.
 A per-invocation destination hint applies only to that invocation; change the profile's `default-destination` only when it is absent or when the user explicitly asks to change it.

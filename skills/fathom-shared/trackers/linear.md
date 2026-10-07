@@ -75,7 +75,7 @@ When the user accepts, record `installed`; when they decline, record `declined` 
 It needs a `LINEAR_API_KEY` repository secret, a personal API key from Linear's settings, and the workflow state id that the profile maps to the `done` phase.
 Read that state id from the same list-issue-statuses call used during first-run setup, and substitute it into the template before writing the file.
 
-Write it to `.github/workflows/fathom-close.yml`, commit it with the profile, and record `merge-closer: installed` so the sweep knows the Action owns the closure and only backstops it.
+Write it to `.github/workflows/fathom-close.yml`, commit it with the profile on the issue branch, as `../trackers.md` says, and record `merge-closer: installed` so the sweep knows the Action owns the closure and only backstops it.
 
 Never asking again applies to the question, not to the file.
 When the profile records `merge-closer: installed` and does not record a declined template rewrite, compare the repository's `.github/workflows/fathom-close.yml` against the template below on profile load, and when the file-discovery block differs, offer once to rewrite the file from the current template.
