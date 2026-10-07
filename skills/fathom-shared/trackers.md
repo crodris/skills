@@ -303,4 +303,4 @@ Leaving it out of setup therefore means a freshly set up repository produces one
 
 On every subsequent run, read the existing profile silently and use it without re-prompting.
 Re-run setup when a mapped state no longer exists in the tracker, or when the user explicitly asks to redo it.
-Re-run setup to resolve merge conflicts in `.fathom/config.md`; do not attempt to hand-merge the conflicting mapping.
+When `.fathom/config.md` holds a merge conflict, never re-run setup or hand-merge it to settle the conflict; stop and hold as `approval.md` says for a conflict while updating from the base branch, so the user resolves the file in place.
