@@ -75,9 +75,9 @@ If any of these files cannot be found and read, stop immediately and report whic
 
    Name a branch that must be created from the issue type (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` by default) followed by the issue ref, cased as the tracker adapter says, and a short title slug; skip creation when a matching branch already exists.
    When that branch is checked out in another worktree, as a held issue from `fan-out.md` leaves it, continue the run from inside that worktree.
+   Before switching to or creating this branch, handle an uncommitted `.fathom/config.md`, and once on it, commit an uncommitted one before anything else, both as the first-run tracker profile in `../fathom-shared/trackers.md` says.
    Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track`, not from a local copy that may be behind.
    Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
-   When `.fathom/config.md` is not yet committed, commit it on this branch before anything else, as the first-run tracker profile in `../fathom-shared/trackers.md` says.
    When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
    When the update conflicts in the beads export, resolve that file first as `../fathom-shared/memory/beads.md` says, even when other files conflict too.
    When any other file is still conflicted, stop and hold exactly as an unfixable test failure would, and leave the update paused where git stopped it, mid-merge or mid-rebase, so the user resolves it in place.

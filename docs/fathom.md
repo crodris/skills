@@ -104,7 +104,7 @@ ln -s "$PWD/skills/fathom-shared" ~/.kiro/skills/fathom-shared
 
 ### 2. Run either skill once per repo
 
-The first run asks the [setup questions](#setup-step-by-step) - tracker, destination, state mapping, base branch, approval mode - and commits the answers to `.fathom/config.md`, so teammates are never asked again.
+The first run asks the [setup questions](#setup-step-by-step) - tracker, destination, state mapping, base branch, approval mode - and commits the answers to `.fathom/config.md` on the first issue's branch, so teammates are never asked again once that review merges.
 
 ### 3. Bam - you're ready to go.
 
