@@ -281,7 +281,8 @@ Never use `git checkout -f`, which also discards tracked changes.
 When they differ, stop and ask the user which profile to keep.
 A modified tracked copy carries over the switch when `git diff --quiet HEAD <ref> -- .fathom/config.md` succeeds, so leave it alone then.
 When that command fails, git refuses the switch.
-Then discard the copy with `git restore --source=HEAD --staged --worktree -- .fathom/config.md` only when both `git diff --quiet <ref> -- .fathom/config.md` and `git diff --cached --quiet <ref> -- .fathom/config.md` succeed, so a staged edit is never lost.
+Then discard the copy with `git restore --source=HEAD --staged --worktree -- .fathom/config.md` only when `git diff --quiet <ref> -- .fathom/config.md` succeeds and the index holds nothing else, meaning `git diff --cached --quiet <ref> -- .fathom/config.md` or `git diff --cached --quiet HEAD -- .fathom/config.md` succeeds.
+That way a staged edit is never lost.
 Otherwise stop and ask the user which profile to keep.
 Never announce that setup will happen and then write a profile without having asked each of these questions.
 A profile written without confirmed answers for every step is a defect, not a shortcut.
