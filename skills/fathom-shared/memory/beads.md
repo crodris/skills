@@ -2,58 +2,50 @@
 
 This adapter is backed by the `bd` CLI, a local dependency-aware task tracker that stores its state in `.beads/` inside the consumer's repo.
 Only use this adapter once `memory.md`'s resolution procedure has already chosen beads for this run.
-The flags below were verified against `bd version 0.49.0` (Homebrew) using `bd --help` and `bd <subcommand> --help`.
+The flags below were verified against `bd version 1.3.1` (Homebrew) using `bd --help` and `bd <subcommand> --help`.
 When a later `bd` upgrade renames or removes a flag used here, re-run those same help commands and update this mapping before trusting it again.
 
-## One database per issue
+## One database per repository
 
-Run every `bd` command for an issue as `bd --no-daemon --db <checkout>/.beads/<issueRef>.db-fathom <subcommand>`.
-`<checkout>` is the absolute path of the checkout the run is on, a fan-out worktree included.
-Every command in this file takes these two flags, though the commands below omit them for brevity.
+`bd` keeps one embedded Dolt database per repository in `.beads/embeddeddolt/`, which `.beads/.gitignore` excludes from git.
+Linked git worktrees share the main checkout's database automatically, so the main checkout and every fan-out worktree read and write the same rows.
+Concurrent writes from several worktrees are safe.
+Let `bd` find that database on its own, and never pass `--db`, which this storage mode ignores without an error.
+Never prefix a `bd` command with an environment variable assignment, since the command permission rules do not match a command that starts with one.
 
-That database holds the rows of the export the issue branch started from, plus this issue's own rows.
-After each change, `bd` writes it to the export beside it, `<checkout>/.beads/issues.jsonl`, so the export carries no other issue's rows into this issue's review.
-The default database is shared by every branch and every linked worktree of the repository, and its automatic export always writes the main checkout's JSONL (verified on 0.49.0).
-That export carries every issue the database has seen, including ones whose reviews are still open.
+Every task row this adapter writes carries the label `<issueRef>`, and every read passes `-l "<issueRef>"`.
+The label is what keeps issues apart, since the database holds every issue's rows at once.
 
-The `.db-fathom` suffix keeps these files out of the user's own `bd` use.
-Plain `bd` and `bd daemon start` look for `.beads/*.db`, and a second `.db` file there makes the daemon refuse to start with "Multiple database files found" (verified on 0.49.0).
-The `.gitignore` beads creates already excludes `*.db?*`, so these files never reach a commit.
+Each issue's task state travels in git as its own file, `.beads/<issueRef>.jsonl`.
+`<checkout>` below is the absolute path of the checkout the run is on, a fan-out worktree included, and every command runs from that checkout's root.
+Write and stage the file with this one command:
 
-`--no-daemon` is required alongside `--db`, since a daemon serving the default database answers a call for another database with a "database mismatch" error.
-A database that does not exist yet is created, and the export imported into it, by the first `bd` call that names it, which is how a run resumed on another machine recovers its tasks.
+```
+bd export -o <main checkout>.fathom/<issueRef>-export.jsonl && sed -n '/"labels":\[[^]]*"<issueRef>"[],]/w .beads/<issueRef>.jsonl' <main checkout>.fathom/<issueRef>-export.jsonl && git add .beads/<issueRef>.jsonl
+```
 
-Treat the working tree's `.beads/issues.jsonl` as output only, since a daemon can rewrite it with every issue's rows at any time.
-Outside the conflict recipe below, whose own checkouts take the restore's place, and outside a branch update paused on a conflict, whose working copy holds the update's own export, restore the committed export with `git checkout HEAD -- .beads/issues.jsonl` at these points, whenever `git cat-file -e HEAD:.beads/issues.jsonl` shows that HEAD tracks it:
-- Before the first `bd` call that names this issue's database, since that call imports the file on its own.
-- Before every `bd import`.
-- Before any git command that switches or updates the branch, such as step 7's base update in `../../execute/SKILL.md` or a stack restack, since git refuses to overwrite a working copy a daemon changed.
+`bd export` writes every issue in the database and has no label filter, so it writes to a scratch file in `<main checkout>.fathom/`, the sibling directory `../../execute/fan-out.md` names, and `sed` copies only the lines whose labels include `<issueRef>`.
+`bd` and `sed` write their own files, since a shell redirect such as `>` needs the user's approval in an agent session, and so does a `jq` filter that uses a `$` variable.
+`bd export` does not create a missing directory, so run `mkdir -p <main checkout>.fathom` once at `init`, taking `<main checkout>` from the first line of `git worktree list --porcelain`.
+Leave the scratch file in place; the next export overwrites it.
 
-The issue's database already holds every change this run made, so a restore loses nothing.
-
-When a `bd` call refuses with "Database out of sync with JSONL", restore the committed export unless a branch update is paused, run `bd import -i <checkout>/.beads/issues.jsonl`, and retry the call.
-This happens after the branch is updated from its base, after an explicit `bd export`, and after a daemon rewrites the working copy.
-The import keeps whichever copy of a row is newer, so it never rolls back this issue's tasks.
-Run that import in place of the `bd sync --import-only` the error suggests, which was verified only against the default database.
-
-A beads daemon already running for the repository keeps running beside the run and acts on the main checkout on its own.
-It exports the default database into `.beads/issues.jsonl`, and it can run `git pull` on the checked-out branch (both seen on 0.49.0).
-Leave it running, since it may serve the user's own beads work.
-At `init`, run `bd daemon status --json`, which takes neither per-issue flag.
-When it reports `"status": "running"`, say in the run summary that a beads daemon is running for this repository, and that `bd daemon start --local` keeps it without its git sync.
+Nothing exports or imports automatically, so a file under `.beads/` changes only when this adapter writes it.
+Nothing writes `.beads/issues.jsonl` any more.
+A repository that tracks it keeps it as history, which `bd bootstrap` imports into a new database, so never stage or edit it.
+Parallel issues never share a file, so only stacked branches of the same issue can conflict on one, as Repository hygiene below describes.
 
 ## Operation mapping
 
 | Contract operation | beads CLI mapping |
 | --- | --- |
-| `init(issueRef)` | First run the daemon check that the One database per issue section describes. Then do nothing more when this issue's database already exists. When `.beads/` is absent from the checkout, run `bd init`, passing a short prefix of three or four characters abbreviated from the repository name and the flag that skips git hook installation. Take the repository name from the main checkout's directory, since a fan-out worktree's directory is named after the issue. The short prefix keeps task ids readable, and skipping hooks avoids installing pre-commit and post-merge hooks that block branch switching and interfere with unrelated commits. When HEAD tracks `.beads/issues.jsonl`, restore it as the One database per issue section describes, then run `bd import -i <checkout>/.beads/issues.jsonl`, which creates this issue's database from the committed export. When `.beads/` exists but HEAD tracks no export, run `bd config set issue_prefix <prefix>` with the `issue-prefix` that `.beads/config.yaml` sets, or the abbreviation above when it sets none, since a database created without an export has no prefix and refuses every `bd create`. Never run `bd init` when `.beads/` already exists, since it either aborts or creates a stray default `beads.db` beside this issue's database. |
+| `init(issueRef)` | When `.beads/metadata.json` exists and `grep -q '"backend"' .beads/metadata.json` fails, stop and tell the user that this workspace predates bd 1.x and needs the "From bd 0.x to bd 1.x" upgrade steps in Fathom's `docs/fathom.md`. Never migrate it yourself. When `.beads/` is absent from the checkout, run `git diff --cached --quiet`, and when it fails, stop and ask the user what to do with the staged changes, since `bd init` commits everything staged. Then run `bd init -p <prefix> --skip-hooks --skip-agents -q`, with a prefix of three or four characters abbreviated from the main checkout's directory name, since a fan-out worktree's directory is named after the issue. `bd init` makes its own git commit on the current branch, so list its files with `git show --name-only --format= HEAD` and report every one, since it was seen to include an untracked `AGENTS.md` even with `--skip-agents`. Then run `bd config get sync.remote`, and when it prints a value, run `bd config unset sync.remote` and stage `.beads/config.yaml` with the first task commit, since that setting makes `bd bootstrap` fail on every other clone. Otherwise, when `.beads/` exists, run `bd bootstrap`, which creates the database and imports the tracked `.beads/issues.jsonl` on a fresh clone and prints "Nothing to do" when the database already exists. Then, when `.beads/<issueRef>.jsonl` exists, run `bd import .beads/<issueRef>.jsonl`, so a run resumed on another machine or after the local database was lost recovers its tasks. Never run `bd init` when `.beads/` already exists. |
 | `createTask(title, description, subIssueRef, deps)` | Run one `bd create "<title>" -d "<description>" -l "<issueRef>" --external-ref "<subIssueRef>" --deps "<comma-separated blocker ids>" --silent` and capture the single line of output as the new task id. Do it in that one call rather than as a create followed by separate writes, for the durability reason in the notes below. Tagging the task with the issue ref lets every task for one issue be listed directly with `bd list -l "<issueRef>"` instead of matching on titles, and `--silent` makes `bd create` print only the issue id, which this adapter always needs for its return value. Omit `--external-ref` entirely when no `subIssueRef` was passed, and omit `--deps` entirely when `deps` is empty, rather than passing an empty value to either. Each id in `--deps` makes the new task depend on that blocker, so it stays excluded from `claimNext` until the blocker closes. Use the title and description exactly as passed in; embedding the issue ref into the title (the `<issueRef>: <task title>` naming convention) is the caller's responsibility, not this adapter's. |
-| `claimNext()` | Run `bd ready -l "<issueRef>" --type task --limit 50 --json` to get this issue's tasks that have no open blockers. The label filter is not optional: `bd ready` without it returns ready work from the whole repository, so an unscoped call will hand back another issue's task and the loop will implement it on this issue's branch and close the wrong sub-issue. The explicit limit matters too, since `bd ready` defaults to showing only ten. Note that `bd ready` includes tasks already `in_progress`, so inspect status before claiming: when a returned task is already `in_progress` from an interrupted run, resume that task and do not call `--claim` on it, because `bd update --claim` fails when the task is already claimed. Otherwise take the oldest still-open task and run `bd update <id> --claim` to set it to `in_progress` atomically, then return that id. Return null only when the scoped result contains no open and no in-progress task. |
-| `ready()` | Run the same scoped `bd ready` call as `claimNext` and return the tasks whose status is `open`, oldest first. Claim nothing. |
-| `claim(taskId)` | Run `bd update <taskId> --claim`. |
-| `close(taskId)` | Run `bd close <taskId>` to mark the task done. Record the short hash of the commit that implemented the task as well, per the commit-verification rules in `../conventions.md`; attach it with `bd update <taskId> --notes` when that flag exists on the installed version, and otherwise state the hash in the progress line. Verify the flag with `bd update --help` rather than assuming it. |
-| `status()` | Run `bd count -l "<issueRef>" --type task --by-status --json` to get counts for this issue's tasks only, grouped by status; the label filter is required here for the same reason as `claimNext`, since an unscoped count reports the whole repository. Compute the open count as the sum of the `open`, `blocked`, `deferred`, and `in_progress` buckets, never the raw `open` bucket alone: a task with an open dependency reports as `blocked`, the claimed task reports as `in_progress`, and dropping either would undercount pending work; this matches the checklist adapter, whose open count also includes the in-progress line. Compute the done count as the `closed` bucket. Run `bd list -l "<issueRef>" --type task --status in_progress --json` to list the in-progress tasks; when it returns no rows, report that none is in progress. |
-| `parentTask(issueRef)` | Fetch first: run `bd list -l "<issueRef>" --type epic --json` and reuse the returned epic's id when one exists. Create it otherwise: `bd create "<issueRef>" --type epic --external-ref "<issueRef>" -l "<issueRef>" -p 1 --silent`, capturing the printed id. Do not attempt to add child dependency edges here; at the time `parentTask` runs the children do not exist yet. After every child task has been created, add one edge per child with `bd dep add <parentId> <childId>` so the parent depends on all of them and cannot close first. Never add the reverse edge, from a child to the parent, which would deadlock both. |
+| `claimNext()` | First run `bd list -l "<issueRef>" --type task --status in_progress --limit 0 --json`. When it returns a task, an interrupted run left it in progress, so return the oldest one to be resumed without claiming it. Otherwise run `bd ready -l "<issueRef>" --type task --sort oldest --claim --json`, which atomically claims this issue's oldest task with no open blockers and returns it as a one-element array. Return element 0's id, or null when the result is `[]`. The label filter is not optional on either call: without it `bd` reads the whole repository, so an unscoped call will hand back or claim another issue's task, and the loop will implement it on this issue's branch and close the wrong sub-issue. |
+| `ready()` | Run `bd ready -l "<issueRef>" --type task --sort oldest --limit 0 --json` and return its tasks, which are this issue's open tasks with no open blockers, oldest first. Claim nothing. |
+| `claim(taskId)` | Run `bd update <taskId> --claim`, which is idempotent for the same actor. |
+| `close(taskId)` | Run `bd close <taskId> -r "commit <short hash>"`, which marks the task done and records the hash of the commit that implemented it in the same write, per the commit-verification rules in `../conventions.md`. |
+| `status()` | Run `bd count -l "<issueRef>" --type task --by-status --json`; the label filter is required here for the same reason as `claimNext`, since an unscoped count reports the whole repository. It returns `{"groups":[{"count":1,"group":"in_progress"},...],"total":N}` and omits every empty group, so read `.groups[]` and count a missing group as 0. Compute the open count as the sum of the `open`, `blocked`, `deferred`, and `in_progress` groups, never the `open` group alone: a task with an open dependency can report as `blocked`, the claimed task reports as `in_progress`, and dropping either would undercount pending work; this matches the checklist adapter, whose open count also includes the in-progress line. Compute the done count as the `closed` group. List the in-progress tasks with the same `bd list` call `claimNext` makes first; when it returns no rows, report that none is in progress. |
+| `parentTask(issueRef)` | Fetch first: run `bd list -l "<issueRef>" --type epic --all --limit 0 --json` and reuse the returned epic's id when one exists. Create it otherwise: `bd create "<issueRef>" --type epic --external-ref "<issueRef>" -l "<issueRef>" -p 1 --silent`, capturing the printed id. Do not attempt to add child dependency edges here; at the time `parentTask` runs the children do not exist yet. After every child task has been created, add one edge per child with `bd dep add <parentId> <childId>` so the parent depends on all of them and cannot close first. Never add the reverse edge, from a child to the parent, which would deadlock both. |
 
 ## Notes
 
@@ -62,42 +54,48 @@ The memory contract only ever needs this adapter to move a task through `open` t
 Never set `blocked` or `deferred` directly.
 Beads does not rewrite a task's stored status when a dependency is added; an unmet dependency keeps the task at `open` while `bd ready` and `bd blocked` compute blocking from the dependency graph at query time.
 That is why claim decisions must come from `bd ready` rather than from a status filter.
+The `in_progress` filter in `claimNext` only finds a task to resume and never claims one.
+`bd ready` no longer returns tasks already in progress, which is why `claimNext` looks for them first.
 `bd update <id> --claim` resolves the current actor from `--actor`, then `$BD_ACTOR`, then git's `user.name`, then `$USER`, in that order.
 Do not pass a separate `--assignee` flag unless multiple agents share one checkout and need distinct identities.
-Prefer `--json` on every read command (`bd list`, `bd count`) when parsing output programmatically, since plain output is meant for a human terminal and can change formatting across versions.
+Prefer `--json` on every read command (`bd list`, `bd ready`, `bd count`) when parsing output programmatically, since plain output is meant for a human terminal and can change formatting across versions.
+`bd list` shows only 50 rows and hides closed issues by default, which is why the calls above pass `--limit 0`, and `--all` where closed rows count.
+Record the commit hash with `bd close -r` rather than `bd update --notes`, which replaces any notes the task already has.
 `createTask` is one `bd create` call rather than a create followed by `bd update --external-ref` and one `bd dep add` per blocker, because those are three writes that can fail apart.
 A run interrupted between them leaves a task carrying no external ref and no dependency edges, and nothing on that orphan identifies which sub-issue it belongs to, so the retry cannot recognize it and creates a second task for the same sub-issue.
 One call either produces a complete task or produces nothing, which makes a retry safe.
-The flags were verified equivalent on 0.49.0: a task created with `--deps <blockerId>` is excluded from `bd ready` until that blocker closes and appears once it does, exactly as one given the same edge by `bd dep add`.
+The flags were verified equivalent on 0.49.0, and `bd create` is unchanged on 1.3.1: a task created with `--deps <blockerId>` is excluded from `bd ready` until that blocker closes and appears once it does, exactly as one given the same edge by `bd dep add`.
 `parentTask` still adds its edges with `bd dep add` afterwards, which is unavoidable, since the children do not exist when the parent is created.
+`bd import` upserts each row and replaces a local row only when the file's copy has a strictly newer `updated_at`.
+It reports older rows as `stale_skipped_ids` and merges labels, dependencies, and comments, so importing an issue's file never rolls back that issue's tasks.
 
 ## Repository hygiene
 
-The beads tooling handles its own ignore rules and merge setup during `init`; verify rather than duplicate.
+The beads tooling writes its own ignore rules during `init`; verify rather than duplicate.
 
-After `init`, confirm two files exist and keep them: `.beads/.gitignore`, which excludes the database, write-ahead and shared-memory files, daemon runtime files, merge artifacts, and per-machine sync state, and `.gitattributes`, which registers the beads merge driver for the JSONL export.
+After `init`, confirm that `.beads/.gitignore` exists and keep it, since it excludes the embedded database and the other per-machine runtime files.
 Do not add a second copy of those rules at the repository root.
-A duplicate block drifts from what the tooling actually ignores, and one earlier hand-written version wrongly ignored `metadata.json`, which beads intends to be tracked alongside the JSONL exports.
+A duplicate block drifts from what the tooling actually ignores, and one earlier hand-written version wrongly ignored `metadata.json`, which beads intends to be tracked alongside `.beads/config.yaml`.
+bd 1.x registers no merge driver, so it writes no `.gitattributes` entry, and a `merge=beads` line left by bd 0.x is removed by the upgrade steps that `init` points to.
 
 Ignore rules cannot rescue a file that is already tracked.
 The dirty-working-tree and failed-branch-switch problems that look like ignore-rule gaps are almost always caused by blanket staging having committed runtime files before any rule existed.
 Follow the staging rules in `../conventions.md`: stage named paths only, never `git add -A` or `git add .`.
 When runtime files are already tracked in a repository, stop staging them and untrack them once with an explicit cached removal, then commit that removal.
 
-Long-lived parallel branches that both write task state will conflict on the JSONL export.
-The merge driver registered by `.gitattributes` is what resolves those conflicts, so keep that file when beads creates it.
-A fresh clone has no merge driver configured, so the export can still conflict when the branch is updated from its base.
-The export is the one conflicted file a run resolves itself during a branch update, since it is generated from task state, and it does so even when other files conflict too.
+Parallel issues each write their own `.beads/<issueRef>.jsonl`, so they never conflict on task state.
+Only stacked branches of the same issue can conflict on that file, when one bundle's branch is updated from another.
+The issue's file is the one conflicted file a run resolves itself during a branch update, since it is generated from task state, and it does so even when other files conflict too.
 Never hand-merge the JSON lines; run these in order:
-1. `git checkout --ours -- .beads/issues.jsonl`, then `bd import -i <checkout>/.beads/issues.jsonl`.
-2. `git checkout --theirs -- .beads/issues.jsonl`, then `bd import -i <checkout>/.beads/issues.jsonl`.
-3. Stage the export as the commit rules below describe, then finish the update unless another file is still conflicted, in which case execute's step 7 holds.
+1. `git checkout --ours -- .beads/<issueRef>.jsonl`, then `bd import .beads/<issueRef>.jsonl`.
+2. `git checkout --theirs -- .beads/<issueRef>.jsonl`, then `bd import .beads/<issueRef>.jsonl`.
+3. Re-export and stage the file with the command in One database per repository, then finish the update unless another file is still conflicted, in which case execute's step 7 holds.
 
-Importing both sides gives the database this issue's rows and the base's, in a merge or a rebase alike, even when the database did not exist yet.
+Importing both sides gives the database the rows from both branches, in a merge or a rebase alike.
 A rebase swaps which side `--ours` names, so the recipe never depends on it.
 
 A conflict in any other file still holds, as execute's step 7 says.
 
-Commit the JSONL export with each task's commit, not only at the end of the run.
-The database itself is ignored by design, so an export left uncommitted means a task closed on this machine is invisible to any other clone, which breaks resume on a different machine.
-Stage the export with one command, `bd export -o <checkout>/.beads/issues.jsonl && git add .beads/issues.jsonl`, so the staged file holds this issue's database, and a daemon can only rewrite it in the moment between the two commands.
+Commit the issue's file with each task's commit, not only at the end of the run.
+The database itself is ignored by design, so a file left uncommitted means a task closed on this machine is invisible to any other clone, which breaks resume on a different machine.
+Stage it with the one export command in One database per repository, so the staged file always holds this issue's current rows.

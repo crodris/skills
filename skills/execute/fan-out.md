@@ -34,7 +34,7 @@ Use this when the invocation names two or more issue refs or URLs.
 
 Each issue subagent is that issue's whole run, and it writes that issue's tracker records, plan document, tasks, and branch.
 Issues share nothing else, so nothing else needs coordinating.
-On beads, each issue's run keeps its own database inside its worktree, per `../fathom-shared/memory/beads.md`.
+On beads, every worktree shares the repository's one database, and label scoping plus each issue's own `.beads/<ISSUE-REF>.jsonl` keep the issues apart, per `../fathom-shared/memory/beads.md`.
 
 ## Parallel tasks
 
