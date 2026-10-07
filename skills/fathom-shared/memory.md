@@ -33,10 +33,11 @@ The file's existence is the signal, not its contents: `init` creates it before a
 Do this even when `.beads/` exists and even when `bd` is installed.
 An issue whose statuses already live in checkboxes keeps that backend for its whole life; adding beads to a repository later must never move an in-flight issue, which would orphan the statuses already recorded in its checklist file.
 
-Otherwise, when `.beads/` exists in the repo, check whether `bd --version` succeeds.
+Otherwise, when `.beads/` exists in the repo, check whether `bd where` succeeds.
 Use the beads adapter when it does.
-When it does not, stop and tell the user that this repo's task state lives in beads but the `bd` binary is not available on this machine.
-Ask them to install beads or continue on a machine that has it.
+`bd --version` is no proof here, since it succeeds even when `bd` cannot open this workspace.
+When `bd where` exits nonzero, stop and show the user the error it printed, which covers both a missing `bd` binary and a workspace this `bd` cannot open.
+Ask them to install or upgrade beads, or to continue on a machine where `bd where` succeeds.
 Do not fall back to the checklist adapter in this case: task status must never fork across two backends, per the no-dual-truth rule below.
 
 When neither exists (a fresh run for this issue), check whether `bd --version` succeeds; use the beads adapter if it does, otherwise use the checklist adapter.
@@ -47,7 +48,7 @@ Do not ask the user to choose a backend; resolution is a silent probe.
 Do state the resolved backend in the run summary whenever it differs from what the repository's other open issues are using, so a mixed-backend period is visible rather than surprising.
 
 Both backends store their state inside the repo, so a later session resumes by reading the repo rather than by remembering anything.
-Resuming on a different machine only works for state that was committed and pushed: the checklist file travels with each task commit, while beads keeps its database out of git deliberately and shares only its export, so a beads run must commit that export alongside each task rather than only at the finish, or an interrupted run's progress stays on the machine where it happened.
+Resuming on a different machine only works for state that was committed and pushed: the checklist file travels with each task commit, while beads keeps its database out of git deliberately and shares each issue's tasks only through that issue's file `.beads/<ISSUE-REF>.jsonl`, so a beads run must commit that file alongside each task rather than only at the finish, or an interrupted run's progress stays on the machine where it happened.
 Resume by reading the working tree, not the last commit.
 An in-progress marker may be uncommitted when a session dies, and the file on disk is the truth, not whatever was last committed.
 

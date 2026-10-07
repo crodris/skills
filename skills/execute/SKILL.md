@@ -79,7 +79,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track`, not from a local copy that may be behind.
    Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
    When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
-   When the update conflicts in the beads export, resolve that file first as `../fathom-shared/memory/beads.md` says, even when other files conflict too.
+   When the update conflicts in this issue's beads file `.beads/<ISSUE-REF>.jsonl`, resolve that file first as `../fathom-shared/memory/beads.md` says, even when other files conflict too.
    When any other file is still conflicted, stop and hold exactly as an unfixable test failure would, and leave the update paused where git stopped it, mid-merge or mid-rebase, so the user resolves it in place.
    Keep the work, leave the task in progress, and report each conflicting file with what this branch and the base each changed in it.
    Name the sides "this branch" and "the base", since a rebase swaps which one git calls ours.
