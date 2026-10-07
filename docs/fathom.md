@@ -253,6 +253,7 @@ Auto mode removes friction, not judgment.
 - A review closed without merging still gets reported and asked about.
 - Accepting a forge CLI found on your `PATH` still asks; auto mode never drives an unfamiliar CLI unattended.
 - A phase with no matching tracker state still asks, rather than mapping review onto something that means something else.
+- The forge, base branch, and approval mode setup questions still ask, and so does the merge-closer question whenever setup offers it, even when your `origin` remote or current branch makes the answer look obvious.
 - An ambiguous setup answer still asks that one question, because a wrong destination misfiles every future issue in the repo.
 - A reply whose target is unclear, an issue ref that disagrees with the branch, an issue already done, and requirements too thin to break down all still stop and ask.
 
