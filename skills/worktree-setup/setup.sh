@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Makes a linked git worktree runnable: copies the main checkout's untracked
-# env files (except ones named for production credentials), local HTTPS
-# certificates, and .claude/settings.local.json, then installs dependencies
-# when they are missing or the lockfile changed.
+# env files (except ones named for production credentials and .env*.bak*
+# backups), local HTTPS certificates, and .claude/settings.local.json, then
+# installs dependencies when they are missing or the lockfile changed.
 # Prints nothing when there is nothing to do, so a SessionStart hook can run it
 # on every session.
 #
