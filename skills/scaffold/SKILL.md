@@ -76,7 +76,7 @@ If any of these files cannot be found and read, stop immediately and report whic
 7. Draft the scaffold from the gathered requirements and the codebase context.
    - Write a main issue title and a description in four parts: the problem from the user's side, the solution from the user's side, numbered user stories in the form "As a <actor>, I want <feature>, so that <benefit>", and the test seams, preferring the highest existing seam each behavior can be tested at.
    - Infer the main issue's type from the requirements, one of feature, bug, chore, or docs, defaulting to feature when the requirements do not indicate one.
-   - Break the requirements into three to seven sub-issue drafts, each a tracer-bullet vertical slice: a narrow path through every layer the change touches, demoable on its own, and never one layer of the whole feature.
+   - Break the requirements into sub-issue drafts, as many as the unit rule in `../execute/SKILL.md` step 8 allows, each a tracer-bullet vertical slice: a narrow path through every layer the change touches, demoable on its own, and never one layer of the whole feature.
    - Give each draft its blocking edges, the other drafts that must land before it can start, or none, and order the drafts so every blocker comes before what it blocks.
    - In ask mode, show the full draft, main issue title, type, description, and every sub-issue, to the user and wait for approval before creating anything.
    - In auto mode, skip that approval: create the scaffold immediately and report the same draft content as what was created.
