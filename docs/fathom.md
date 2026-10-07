@@ -502,7 +502,7 @@ wc -l ~/.claude/plugins/cache/<marketplace>/fathom/*/skills/execute/SKILL.md \
 Two things hold for every legacy repository once you have done the rename for your version below.
 
 Repos set up before forge support need no extra work for the forge field itself.
-The next run asks which forge you use and adds `forge` to the profile, exactly as it repairs any other missing field.
+The next run asks which forge you use and adds `forge` to the profile in the first commit it makes on its issue branch, exactly as it repairs any other missing field.
 Existing `.fathom/` records that carry a branch and no review id keep working.
 The sweep matches them by branch on every run and leaves the record unchanged.
 

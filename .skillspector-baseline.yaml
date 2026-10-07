@@ -217,3 +217,18 @@ rules:
       AS1 hit on a .claude/settings path in setup.sh, including settings.json;
       re-review it if the script ever reads such a file or copies it anywhere
       else.
+
+  - id: "AE1"
+    path: "SKILL.md"
+    message: "*trackers.md (partial)*"
+    reason: >-
+      Coverage limit, not evasion: fathom-shared's SKILL.md lists trackers.md,
+      and the static layer marks that file partial when its directive
+      reconstruction hits a limit (for example more than 8 active directives
+      in one window, MAX_ACTIVE_DIRECTIVES in SkillSpector's
+      security_reconstruction.py), which it reports as
+      "obfuscated_instruction_text". trackers.md is this repo's own contract
+      prose with no encoded or split-letter text; one ordinary rule sentence
+      added to its dense profile section was enough to trigger it. Caution: this
+      also hides a real partial analysis of trackers.md, so re-review the
+      file's diff by hand when it changes.

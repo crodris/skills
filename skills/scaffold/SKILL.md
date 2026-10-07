@@ -91,6 +91,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    - Report the result as a compact block listing the tracker, the main issue ref, title and URL, then one line per sub-issue with its ref and URL, so the scaffold is scannable at a glance.
    - Report each issue's ref using that tracker's issue ref scheme, as defined in that tracker's adapter file; for Asana this is the short `asana-<last six digits of the GID>` form, never the full GID.
    - Hand off with a reference the adapter's `getIssue` can resolve in a fresh session: the key for Linear, and for Asana the full task URL alongside the short ref, since the truncated form alone cannot be resolved back to the task.
+   - In auto mode, where execute starts at once, put that compact block in the run's final reply beside execute's final summary.
 9. A per-invocation destination hint applies only to the issue just created; do not overwrite the tracker profile's saved default because of it.
    Write `default-destination` into the tracker profile only when the profile currently has none, or when the user explicitly asks to change the default.
 10. Hand off, always with the resolvable reference from step 8: the key for Linear, the full task URL for Asana, keeping the short Asana ref for display only, since `getIssue` cannot resolve the truncated form in a fresh session.
