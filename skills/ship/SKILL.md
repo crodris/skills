@@ -262,12 +262,16 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    A subagent that returns nothing usable fails its round rather than passing silently: record that the review produced no result, and run that subagent again, not the ones that returned.
    Give it a timeout, generous against the size of the diff, and treat one that blows through it the same way.
    Any one subagent failing twice in a row is a stop-and-report rather than a merge without it, because its axis has not reviewed the run.
-   Poll every review bot `bots.md` finds present, including one that first shows up on this pull request, until each one's review of the captured SHA settles as that file defines it, re-reading the pull request's head on every poll; a head that moved is step 2's restart, never a new SHA to chase.
-   When the harness can wait on a command or on pull request events, wait with it and poll only without one.
-   Read the pull request's checks on the captured SHA in the same pass.
+   Wait on the checks and on every review bot `bots.md` finds present, including one that first shows up on this pull request, by running `bash <this skill's directory>/watch.sh <pr> <captured-sha> --repo <owner/name>` with one `--bot` per bot this pass waits on, named as `bots.md` says.
+   Run it in the background where the harness notifies on exit, and act on its exit code; never write a polling loop.
+   Exit 0 or 1 goes on to step 2's triage, with any failed check it names among the findings.
+   Exit 3 is step 2's restart, never a new SHA to chase, and exit 7 is a stop-and-report that the pull request is no longer open.
+   Exit 4 is a stop-and-report that the review never settled.
+   Exit 5 and exit 6 are a stop-and-report that quotes the error or the bot's notice the script printed.
+   Any other exit is a stop-and-report.
+   When the harness cannot run a command in the background, run it in the foreground with `--deadline` below the tool's timeout.
    Each bot is a final bar and is never skipped: the code reviewer is a different reviewer with a different brief, and a clean code reviewer round says nothing about what a bot will find.
-   A first-push-only bot, with its mode read as `bots.md` says, is polled on this pass, and on a later one only for a review that `bots.md` or `lanes.md` requests.
-   Give the wait a deadline of roughly thirty minutes, on every pass; past it, stop and report that the review never settled rather than polling on.
+   A first-push-only bot, with its mode read as `bots.md` says, is waited on in this pass, and in a later one only for a review that `bots.md` or `lanes.md` requests.
    Collect findings from every surface - inline comments, the summary comment, full review bodies, and the summaries bots write into the pull request description - because nitpicks hide in collapsed sections.
    Read inline threads with their resolution and outdated state (on GitHub, the GraphQL `reviewThreads` nodes with `isResolved` and `isOutdated`), and skip a thread that is resolved or outdated, so a later pass does not re-triage a finding on code that has since changed.
    Skipping a thread settles nothing: a blocking fix still needs step 5's confirmation, and a finding a bot repeats on the new head is still unresolved under step 6.
@@ -323,14 +327,15 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Once a pass confirms the fix for a blocking bot finding, reply under it naming the fix commit, then resolve its thread when the bot has not resolved it itself; a finding with no thread gets that confirmation in this run's section of the pull request body.
 6. Terminate only on a settled pass that pushed NOTHING and whose actionable findings are, after triage, all dispositioned or already resolved.
    A fixed finding counts as resolved only after a pass checked its fix commit against it: Spec where it runs, and step 2's triage where it does not.
-   A pass that pushed anything always re-polls, however complete the fixing felt.
+   A pass that pushed anything always runs another pass, however complete the fixing felt.
    There is no cap on passes: the loop runs until a settled pass has nothing blocking under step 3, and every push gets step 5's confirmation, so no push goes unreviewed.
    Convergence bounds it instead: a confirmed critical or major, or a failed drive, whose root cause an earlier push already carried a fix for is a stop-and-report, because the fixes are going in circles and choosing between them is the user's call.
    Say what is open, and leave the pull request unmerged.
-7. Wait, under step 1's thirty-minute deadline, until `gh pr checks` on the SHA the review settled on is fully green; triage a failure under step 3, and a blocking one sends the run back to step 4.
+7. Run `bash <this skill's directory>/watch.sh <pr> <settled-sha> --repo <owner/name>` with no `--bot` on the SHA the review settled on, the way step 1 runs it.
+   Exit 0 goes on; exit 1 goes to step 3's triage, and a blocking failure sends the run back to step 4; any other exit is a stop-and-report.
    Check the pull request once more for a table bot no pass waited on, and handle one that shows up as `bots.md` says before going on.
    Re-read the pull request's state and confirm all three of: it is still open, it still targets `base`, and its head is still the SHA the review settled on.
-   Any of the three failing is a stop-and-report, not a re-poll: the pull request changed underneath the run, and deciding what that means is the user's.
+   Any of the three failing is a stop-and-report, not another wait: the pull request changed underneath the run, and deciding what that means is the user's.
    Then read its `reviewDecision`.
    In hold mode, or when `reviewDecision` is `REVIEW_REQUIRED` or `CHANGES_REQUESTED`, stop here and report the pull request with that SHA as ready to merge, awaiting approval, or changes requested, and skip the merge, the release watch, and the cleanup.
    Never merge past a required approval with `--admin`.
@@ -342,7 +347,7 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Whatever the project releases with, that run reaching a successful terminal state is the pass condition, and nothing else is.
    With semantic-release or similar, a landed release commit descending from the recorded merge is necessary but not sufficient: wait for its run to finish successfully too, since a release job can push the commit and then fail on publishing, tagging, or a downstream step.
    A finished-but-failed run is a stop-and-report, never a silent pass.
-   Give this wait a deadline too, roughly thirty minutes past the run's own typical duration; past it, report that the release did not settle and leave the merge as it stands.
+   Give this wait a deadline of roughly thirty minutes past the run's own typical duration; past it, report that the release did not settle and leave the merge as it stands.
    Never push anything to the base branch while its release job may still be running.
 9. Run the resolved `post-merge` command when there is one, and let it define its own scope.
    Otherwise the cleanup depends on whether preflight made a worktree.

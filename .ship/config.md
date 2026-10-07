@@ -5,7 +5,7 @@ touches the working tree. Edit it directly; ship rewrites it only when one of
 these commands stops resolving.
 
 ```markdown
-verify: bin/test-worktree-setup.sh && bin/test-scan-skills.sh && bin/scan-skills.sh && bin/sync-versions.sh && bin/test-check-dashes.sh && bin/check-dashes.sh && bin/test-check-frontmatter.sh && bin/check-frontmatter.sh && claude plugin validate --strict .   # asked
+verify: bin/test-watch.sh && bin/test-worktree-setup.sh && bin/test-scan-skills.sh && bin/scan-skills.sh && bin/sync-versions.sh && bin/test-check-dashes.sh && bin/check-dashes.sh && bin/test-check-frontmatter.sh && bin/check-frontmatter.sh && claude plugin validate --strict .   # asked
 base: main
 release: none
 post-merge: none

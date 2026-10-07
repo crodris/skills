@@ -85,7 +85,7 @@ See the [full guide](./docs/fathom.md) for setup, task memory, and the security 
 
 ---
 
-### ship (v2.0.1)
+### ship (v2.1.0)
 
 Ship takes the current branch from working tree to a ready pull request, or to a merged release when asked, in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains.
 It stops there with a pull request that is ready for you to merge, unless the request says to merge, or the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request; then it adds the squash-merge, release watch, and post-merge cleanup.
@@ -94,7 +94,8 @@ Everything from the pull request onward needs an installed and authenticated Git
 #### Prerequisites
 
 - A git repository with a remote
-- [GitHub CLI](https://cli.github.com/) installed and authenticated (`gh`) for the pull request, merge, and check-polling stages; without it ship pushes the branch, prints the compare URL, and hands the review off to you
+- [GitHub CLI](https://cli.github.com/) installed and authenticated (`gh`) for the pull request, merge, and check-waiting stages; without it ship pushes the branch, prints the compare URL, and hands the review off to you
+- [jq](https://jqlang.org/) for the check-waiting stage; without it ship stops at the first wait and reports that `watch.sh` needs jq
 
 #### Install
 
@@ -125,6 +126,7 @@ ship it
 - **A blocking bar, not a nit hunt** - ship fixes verify failures, confirmed critical or major findings, and confirmed minors (defects or code smells) worth fixing whose fix stays contained to the flagged code, replies with a disposition for everything else, lets minors buy a push on their own only once per run, and never pushes for a nit; fixing every nit hands the next pass fresh code to find fault with, which is how a review loop never converges
 - **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagents for changes that are entirely low-risk, or add a security review when a sensitive path is touched; an optional `drive`, a command or a `skill:<name>` verification skill, runs once before the push on a behavior-changing diff, and again on each confirmation pass a fix push buys, where it replaces the subagents' confirmation round when at least one bot is present and every present bot re-reviews every push
 - **Different reviewers, not one twice** - the pre-merge review is two `general-purpose` subagents on the same SHA, one checking the repository's documented conventions and one checking the change against its issue or stated intent (on Claude Code, the conventions check runs on Sonnet, the intent check runs on Opus for the full diff and on Sonnet when it confirms fixes, and a security-lane review stays on Opus), and each review bot is a final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway; a bot that reviews only the first push is never asked to re-review a fix push, and the subagents confirm every fix, except in the light lane, which has no subagents and re-requests the bot instead
+- **A tested wait, not an improvised loop** - stage 3 waits on checks and review bots through the bundled `watch.sh`, which `bin/test-watch.sh` checks against fake `gh` responses; it pins the head SHA, gives up at a deadline, and exits with a distinct code for a forge error, a moved head, or a bot that will not review
 - **Review bots are optional** - ship waits on CodeRabbit and Greptile when the repository runs them, found from their config file or their reviews on recent pull requests unless their config turns automatic review off, or from their first appearance on the pull request, and a repository with neither reviews with the subagents alone
 - **Bot review mode from the repo** - ship reads whether each bot reviews every push or only the first from its config file: `reviews.auto_review.auto_incremental_review` in `.coderabbit.yaml`, and `autoReview` in `.greptile/config.json` or `greptile.json`, where Greptile defaults to the first push only; a setting made only in a bot's web app is invisible to ship, which then waits on a re-review that never comes, or merges without waiting for one the bot posts on its own, so keep it in the file (for CodeRabbit, with `inheritance: true` to leave the web-app settings in force)
 - **Hold mode by default** - "ship", "babysit", "watch", "monitor", or "get it green" runs everything up to the merge and reports the pull request ready; ship merges only when the request says to merge, or when `.ship/config.md` on the base branch sets `merge: yes` and the request does not ask only to babysit or get it green; a pull request that still needs a human approval holds either way, and ship never merges past it with `--admin`
