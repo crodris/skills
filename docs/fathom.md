@@ -137,6 +137,8 @@ Unlike the tracker, an unverified forge does not stop the run - it selects a tie
 
 Without beads, task state lives in a markdown checklist committed on your branch, which is fine for solo work and small issues.
 Both backends honor task dependencies, so a task cannot be started before the work it depends on is finished; beads adds atomic claiming, a queryable ready-work view, and a close reason that records each task's commit hash.
+Installing `bd` alone does not switch a repository to beads: Fathom uses beads only in a repository whose base branch already tracks a bd 1.x `.beads/`, and it never sets beads up itself.
+To opt a repository in, run `bd init -p <prefix> --skip-hooks --skip-agents` on a branch, which commits `.beads/` there, then run `bd config unset sync.remote` and commit `.beads/config.yaml` when the repository has a remote, and merge that branch into the base.
 
 ```bash
 brew install beads
@@ -284,12 +286,10 @@ Is neither connected?                   -> stop, name both, print setup steps
 
 ```
 Does this issue already have a checklist file?  -> checklist, even if beads is installed
-Does the repo have beads state?
-    and bd works?                               -> beads
-    and bd is missing?                          -> stop and say so, never switch backends
-Neither, so a fresh issue?
-    bd available?                               -> beads
-    bd absent?                                  -> checklist
+Does the base branch track .beads/metadata.json?
+    and bd where succeeds?                      -> beads
+    and bd where fails?                         -> stop and show bd's error, never switch backends
+Neither?                                        -> checklist, even if bd is installed
 ```
 
 An issue keeps the backend it started with for life.
@@ -442,7 +442,7 @@ Check for a `disabled` flag on the entry before adding a new server.
 
 **Branch switching fails with beads errors.** Beads runtime files were committed by a previous version.
 Ignore rules do not apply to already-tracked files, so untrack them once: `git rm -r --cached .beads` then commit.
-`bd init` writes its own `.beads/.gitignore`, so do not duplicate those rules at the repository root.
+Beads writes its own `.beads/.gitignore`, so do not duplicate those rules at the repository root.
 
 **Phase transitions show up as comments instead of moving the card.** Your Asana MCP build has no section-move tool.
 This is expected and handled, but the V2 server does support real section moves.
@@ -514,14 +514,13 @@ A repository whose beads workspace was created by bd 0.x stops the run until it 
 You can tell such a workspace by its `.beads/metadata.json`, which has no `"backend"` key.
 Do these steps once, from the main checkout:
 
-1. With an empty index, move `.beads/beads.db` and the old daemon files (`daemon.*`, `last-touched`, `sync-state.json`, `.local_version`) out of `.beads/`.
+1. With nothing staged, move `.beads/beads.db` and the old daemon files (`daemon.*`, `last-touched`, `sync-state.json`, `.local_version`) out of `.beads/`.
 2. Run `bd init -p <your prefix> --skip-hooks --skip-agents --from-jsonl -q`.
    It makes its own commit, and it imports the tracked `issues.jsonl`.
 3. Run `bd config unset sync.remote`.
 4. Delete the `merge=beads` line from `.gitattributes`, and run `git config --remove-section merge.beads`.
 5. Commit and push to the base branch.
 6. Other clones then need only `bd bootstrap`.
-
 
 ### From workbench 1.x to Fathom 2.0.0
 
