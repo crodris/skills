@@ -219,6 +219,7 @@ The connected tracker MCP is the only permitted channel for tracker operations a
 Run this setup procedure once per repository, then reuse its output on every later run.
 
 Trigger setup when the repository has no `.fathom/config.md`.
+When the issue branch the run will use already tracks `.fathom/config.md`, load the profile from it with `git show <branch>:.fathom/config.md` and skip setup and the reuse offer, since switching to that branch brings the profile with it.
 Before prompting the user, check other local branches for a newer `.fathom/config.md` and offer to reuse it instead of starting over.
 Find candidate branches with `git log --branches --not HEAD --diff-filter=AM --format='%h %cI %s' -- .fathom/config.md`, which lists each commit on another local branch that added or changed the profile, newest first, and prints nothing when no other branch has one.
 Name the branches that carry a listed commit with `git branch --contains <commit>`.
