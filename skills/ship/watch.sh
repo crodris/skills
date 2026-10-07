@@ -9,16 +9,18 @@
 #
 # With no --bot it waits on the checks alone.
 # --rerequest <bot> implies --bot <bot> and posts the bot's re-request comment
-# once before the first poll; a notice older than that post is then ignored.
+# once, after a poll finds the pull request open on <head-sha> and the bot not
+# settled; a notice older than that post is then ignored.
 #
 # | Exit | Meaning                                                              |
 # | ---- | -------------------------------------------------------------------- |
 # | 0    | settled, every check passed                                          |
 # | 1    | settled, one or more checks failed; prints each failed check's name  |
-# | 2    | usage error                                                          |
+# | 2    | usage error, or gh or jq missing                                     |
 # | 3    | head moved: it is no longer <head-sha>                               |
 # | 4    | deadline passed before settling; prints what is still pending        |
-# | 5    | forge error: 3 consecutive failed polls; prints the last error text  |
+# | 5    | forge error: 3 consecutive failed polls, or a failed re-request      |
+# |      | comment; prints the last error text                                  |
 # | 6    | a bot will not review (trial or plan quota notice); prints the notice |
 # | 7    | pull request is no longer open (MERGED or CLOSED); prints its state  |
 #
@@ -29,11 +31,28 @@
 # shellcheck disable=SC2016 # jq and GraphQL programs use $ for their own variables.
 set -euo pipefail
 
+finish() {
+  echo "verdict: $1: $2"
+  case $1 in
+    passed) exit 0 ;;
+    failed) exit 1 ;;
+    usage) exit 2 ;;
+    moved) exit 3 ;;
+    deadline) exit 4 ;;
+    forge) exit 5 ;;
+    refused) exit 6 ;;
+    closed) exit 7 ;;
+  esac
+}
+
+{ command -v gh && command -v jq; } >/dev/null || finish usage "watch.sh needs gh and jq on PATH"
+
 # A fresh push has no checks registered yet, so an empty rollup settles only after this many seconds.
 NO_CHECKS_GRACE=120
 MAX_FAILED_POLLS=3
 
-# Every bot rule lives here. login is the GraphQL login, which has no [bot] suffix.
+# Mirrors the table in bots.md; change both together.
+# login is the GraphQL login, which has no [bot] suffix.
 # A bot settles on whichever of status, check_run, or review_on_sha it defines.
 BOTS='{
   "coderabbit": {
@@ -53,7 +72,7 @@ QUERY='query($owner:String!,$repo:String!,$n:Int!,$sha:GitObjectID!){repository(
  pullRequest(number:$n){state headRefOid
   reviews(last:30){nodes{author{login} commit{oid} submittedAt body}}
   comments(last:30){nodes{author{login} updatedAt body}}}
- object(oid:$sha){... on Commit{committedDate statusCheckRollup{contexts(first:100){nodes{__typename
+ object(oid:$sha){... on Commit{committedDate statusCheckRollup{contexts(first:100){pageInfo{hasNextPage} nodes{__typename
   ... on CheckRun{name status conclusion}
   ... on StatusContext{context state description createdAt}}}}}}}}'
 
@@ -61,6 +80,8 @@ QUERY='query($owner:String!,$repo:String!,$n:Int!,$sha:GitObjectID!){repository(
 ERRORS='
 if .errors then [.errors[]? | .message // tojson] | join("; ") | if . == "" then "GraphQL errors field" else . end
 elif (.data.repository.pullRequest | type) != "object" then "response has no pull request"
+elif .data.repository.object.statusCheckRollup.contexts.pageInfo.hasNextPage == true
+then "more than 100 checks on the SHA; watch.sh reads only the first 100"
 else empty end'
 
 # Reduces one GraphQL response to a verdict. Inputs: $sha, $bots (ids in order),
@@ -70,7 +91,7 @@ REDUCE='
 def epoch: sub("\\.[0-9]+"; "") | fromdateiso8601;
 def fresh($since): $since == null or (. != null and epoch >= $since);
 def author: .author.login // "" | sub("\\[bot\\]$"; "");
-# Mirrors checkKind in pr-watch (~/.claude-config/mods/pr-watch/hooks/pr.ts).
+# A status passes on SUCCESS and waits on PENDING or EXPECTED; a check run waits until COMPLETED and passes on SUCCESS, NEUTRAL, or SKIPPED; anything else failed.
 def kind:
   if (.state | type) == "string" then
     if .state == "SUCCESS" then "passed"
@@ -84,7 +105,8 @@ def notice($rerequest):
   if test("reached the [0-9]+-credit limit|trial (has )?(ended|expired)|upgrade (your|to a paid) plan"; "i") then "refused"
   elif test($rerequest; "i") then "rerequest"
   else null end;
-def body_notice: notice("rate limit exceeded");
+# Only the first line: a real notice opens with its phrase, and a summary below it may quote code.
+def body_notice: split("\n")[0] | notice("rate limit exceeded");
 
 .data.repository as $repo
 | $repo.pullRequest as $pr
@@ -95,9 +117,10 @@ def body_notice: notice("rate limit exceeded");
     | [$pr.reviews.nodes // [] | .[] | select(author == $b.login and .commit.oid == $sha)] as $reviews
     | [$pr.comments.nodes // [] | .[]
        | select(author == $b.login and $committed != null and (.updatedAt | epoch) >= ($committed | epoch))] as $comments
+    # A bot with a status gives notices only there, since its walkthrough comments quote code.
     | [ ($status | select(. != null and (.createdAt | fresh($since)))
          | {kind: (.description // "" | notice($b.status.notice)), text: .description}),
-        ($reviews[], $comments[] | select(.submittedAt // .updatedAt | fresh($since))
+        ($reviews[], $comments[] | select($b.status == null and (.submittedAt // .updatedAt | fresh($since)))
          | {kind: (.body // "" | body_notice), text: .body})
       | select(.kind != null) ] as $notices
     | ( ($status != null and $status.state == "SUCCESS"
@@ -144,23 +167,9 @@ STILL_PENDING='[
   (.bots | to_entries[] | select(.value != "settled") | "\(.key) \(.value)")
 ] | join("; ")'
 
-finish() {
-  echo "verdict: $1: $2"
-  case $1 in
-    passed) exit 0 ;;
-    failed) exit 1 ;;
-    usage) exit 2 ;;
-    moved) exit 3 ;;
-    deadline) exit 4 ;;
-    forge) exit 5 ;;
-    refused) exit 6 ;;
-    closed) exit 7 ;;
-  esac
-}
-
 usage() {
   echo "usage: watch.sh <pr-number> <head-sha> --repo <owner/name> [--bot coderabbit|greptile]... [--rerequest coderabbit|greptile]... [--deadline <seconds>] [--interval <seconds>]" >&2
-  echo "  --rerequest <bot> implies --bot <bot> and posts its re-request comment once before the first poll" >&2
+  echo "  --rerequest <bot> implies --bot <bot> and posts its re-request comment once, after a poll finds the pull request open on <head-sha> and the bot not settled" >&2
   finish usage "$1"
 }
 
@@ -223,20 +232,18 @@ poll() {
 v() { jq -r "$@" <<<"$verdict"; }
 
 # Posts the re-request comment of each bot in the JSON array $1 that this run
-# has not re-requested yet. Sets $error and returns 1 when a post fails.
+# has not re-requested yet. The bot is recorded before the post, and a failed
+# post ends the run, because a post that may have landed must not be retried.
 rerequest() {
   local bot comment rc
   for bot in $(jq -r '.[]' <<<"$1"); do
     [ "$(jq --arg b "$bot" 'has($b)' <<<"$rerequested")" = false ] || continue
+    rerequested=$(jq -c --arg b "$bot" --argjson t "$(date +%s)" '.[$b] = $t' <<<"$rerequested")
     comment=$(jq -r --arg b "$bot" '.[$b].rerequest' <<<"$BOTS")
     rc=0
     gh pr comment "$pr" --repo "$repo" --body "$comment" >&2 2>"$errfile" || rc=$?
     cat "$errfile" >&2
-    if [ "$rc" != 0 ]; then
-      error="re-request for $bot failed: $(cat "$errfile")"
-      return 1
-    fi
-    rerequested=$(jq -c --arg b "$bot" --argjson t "$(date +%s)" '.[$b] = $t' <<<"$rerequested")
+    [ "$rc" = 0 ] || finish forge "re-request for $bot failed: $(tr '\n' ' ' <"$errfile")"
   done
 }
 
@@ -247,7 +254,7 @@ failed_poll() {
 
 start=$SECONDS failures=0 shown='' verdict='' error='' rerequested='{}'
 while :; do
-  if rerequest "$forced" && poll; then
+  if poll; then
     failures=0
     line=$(v "$STATUS_LINE")
     [ "$line" = "$shown" ] || { echo "$line"; shown=$line; }
@@ -258,7 +265,8 @@ while :; do
         | "\($b): \(.notices[$b] | gsub("\\s+"; " ") | .[0:200])"')" ;;
       failed) finish failed "$(v '.checks.failed_names | join(", ")')" ;;
       passed) finish passed "$(v '"\(.checks.passed) checks passed"')" ;;
-      waiting) rerequest "$(v '[.bots | to_entries[] | select(.value == "rerequest") | .key]')" || failed_poll ;;
+      waiting) rerequest "$(v --argjson forced "$forced" '[.bots | to_entries[]
+        | select(.value == "rerequest" or (.value != "settled" and (.key | IN($forced[])))) | .key]')" ;;
     esac
   else
     failed_poll

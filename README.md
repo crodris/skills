@@ -94,7 +94,7 @@ Everything from the pull request onward needs an installed and authenticated Git
 #### Prerequisites
 
 - A git repository with a remote
-- [GitHub CLI](https://cli.github.com/) installed and authenticated (`gh`) for the pull request, merge, and check-polling stages; without it ship pushes the branch, prints the compare URL, and hands the review off to you
+- [GitHub CLI](https://cli.github.com/) installed and authenticated (`gh`), and [jq](https://jqlang.org/), for the pull request, merge, and check-waiting stages; without it ship pushes the branch, prints the compare URL, and hands the review off to you
 
 #### Install
 

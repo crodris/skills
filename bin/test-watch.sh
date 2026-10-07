@@ -2,8 +2,8 @@
 # test-watch.sh - run skills/ship/watch.sh against a fake gh that replays
 # fixture responses in order, one per poll with the last one repeating, and
 # logs every call. A poll's fixture is N.json, or N.err to fail with that
-# stderr text. Each case checks the exit code and, where it matters, stdout or
-# the gh call log.
+# stderr text, and comment.err makes every `gh pr comment` fail the same way.
+# Each case checks the exit code and, where it matters, stdout or the gh call log.
 set -euo pipefail
 
 WATCH="$(cd "$(dirname "$0")/.." && pwd)/skills/ship/watch.sh"
@@ -20,6 +20,7 @@ cat > "$tmp/bin/gh" <<'STUB'
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$*" >> "$FIXTURES/gh.log"
+if [ "$1 $2" = "pr comment" ] && [ -e "$FIXTURES/comment.err" ]; then cat "$FIXTURES/comment.err" >&2; exit 1; fi
 [ "$1 $2" = "api graphql" ] || exit 0
 n=$(( $(cat "$FIXTURES/polls" 2>/dev/null || echo 0) + 1 ))
 echo "$n" > "$FIXTURES/polls"
@@ -155,8 +156,60 @@ run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
 expect_exit "--rerequest waits on the bot and settles past an older skipped notice" 0
 expect_count "--rerequest posts exactly one re-request comment" gh.log "pr comment 7 --repo o/r --body @coderabbitai review" 1
 expect_count "--rerequest posts no other comment" gh.log "pr comment" 1
-if head -1 "$dir/gh.log" | grep -q '^pr comment'; then echo "ok: --rerequest posts before the first poll"; else
-  echo "FAIL: --rerequest posts before the first poll (first gh call: $(head -1 "$dir/gh.log" | cut -c1-40))"; failures=$((failures + 1)); fi
+if head -1 "$dir/gh.log" | grep -q '^api graphql'; then echo "ok: --rerequest posts after the first poll"; else
+  echo "FAIL: --rerequest posts after the first poll (first gh call: $(head -1 "$dir/gh.log" | cut -c1-40))"; failures=$((failures + 1)); fi
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit PENDING "Review in progress")" > "$dir/1.json"
+response OPEN $SHA '[]' "$BUILD" "$CR_DONE" > "$dir/2.json"
+run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
+expect_exit "--rerequest settles a bot that showed no notice" 0
+expect_count "--rerequest posts for a bot that showed no notice" gh.log "pr comment 7 --repo o/r --body @coderabbitai review" 1
+
+case_dir
+response MERGED $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review skipped")" > "$dir/1.json"
+run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
+expect_exit "--rerequest on a merged pull request exits 7" 7
+expect_count "--rerequest posts nothing on a merged pull request" gh.log "pr comment" 0
+
+case_dir
+response OPEN $OLD '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review skipped")" > "$dir/1.json"
+run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
+expect_exit "--rerequest on a moved head exits 3" 3
+expect_count "--rerequest posts nothing on a moved head" gh.log "pr comment" 0
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review rate limited")" > "$dir/1.json"
+echo "HTTP 502: Bad Gateway" > "$dir/comment.err"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "a failed re-request comment exits 5" 5
+expect_in "the failed comment's stderr is printed" out "re-request for coderabbit failed: HTTP 502"
+expect_count "a failed re-request comment is never retried" gh.log "pr comment" 1
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit PENDING "Review in progress")" |
+  jq '.data.repository.pullRequest.comments.nodes = [{author: {login: "coderabbitai"}, updatedAt: "2020-01-01T00:05:00Z",
+    body: "<!-- This is an auto-generated comment: summarize by coderabbit.ai -->\n## Walkthrough\nReturns 429 with \"Rate limit exceeded\" and shows \"Upgrade your plan\" for free users."}]' > "$dir/1.json"
+response OPEN $SHA '[]' "$BUILD" "$CR_DONE" > "$dir/2.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "notice phrases in a CodeRabbit walkthrough are not notices" 0
+expect_count "a CodeRabbit walkthrough triggers no re-request" gh.log "pr comment" 0
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit PENDING "Review in progress")" |
+  jq '.data.repository.pullRequest.comments.nodes = [{author: {login: "coderabbitai"}, updatedAt: "2020-01-01T00:05:00Z",
+    body: "Upgrade your plan is now shown to free users once they hit rate limit exceeded."}]' > "$dir/1.json"
+response OPEN $SHA '[]' "$BUILD" "$CR_DONE" > "$dir/2.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "CodeRabbit comments are never read as notices, even on their first line" 0
+expect_count "a CodeRabbit comment triggers no re-request" gh.log "pr comment" 0
+
+case_dir
+response OPEN $SHA "[$(review greptile-apps $SHA "<h3>Greptile Summary</h3>
+Adds backoff when the API answers rate limit exceeded.")]" "$BUILD" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot greptile --interval 0 --deadline 5
+expect_exit "a notice phrase below a Greptile summary's first line still settles" 0
+expect_count "a Greptile summary triggers no re-request" gh.log "pr comment" 0
 
 case_dir
 response OPEN $SHA "[$(review greptile-apps $SHA "Rate limit exceeded, try again later.")]" "$BUILD" > "$dir/1.json"
@@ -192,6 +245,22 @@ expect_in "gh's stderr text is printed" out "HTTP 502: Bad Gateway"
 expect_count "it gives up after exactly three polls" gh.log "api graphql" 3
 
 case_dir
+echo "HTTP 502: Bad Gateway" > "$dir/1.err"
+cp "$dir/1.err" "$dir/2.err"
+response OPEN $SHA '[]' "$BUILD" "$(check_run test IN_PROGRESS)" > "$dir/3.json"
+cp "$dir/1.err" "$dir/4.err"
+cp "$dir/1.err" "$dir/5.err"
+response OPEN $SHA '[]' "$BUILD" "$(check_run test COMPLETED SUCCESS)" > "$dir/6.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a successful poll resets the failed-poll count" 0
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" | jq '.data.repository.object.statusCheckRollup.contexts.pageInfo.hasNextPage = true' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "more than 100 checks is a failed poll" 5
+expect_in "the check limit is printed" out "more than 100 checks on the SHA; watch.sh reads only the first 100"
+
+case_dir
 echo '{"errors": [{"type": "RATE_LIMITED", "message": "API rate limit exceeded for user ID 1."}]}' > "$dir/1.json"
 run 7 $SHA --repo o/r --interval 0 --deadline 5
 expect_exit "a GraphQL errors field counts as a failed poll" 5
@@ -225,5 +294,11 @@ expect_exit "a missing --repo is a usage error" 2
 case_dir
 run 7 $SHA --repo o/r --bot coderabbitai
 expect_exit "an unknown bot is a usage error" 2
+
+case_dir
+got=0
+PATH="$tmp/bin" FIXTURES=$dir "$BASH" "$WATCH" 7 $SHA --repo o/r --interval 0 --deadline 1 > "$dir/out" 2> "$dir/err" || got=$?
+expect_exit "a missing jq is a usage error" 2
+expect_in "the missing tools are named" out "needs gh and jq"
 
 [ "$failures" = 0 ]
