@@ -269,7 +269,7 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Exit 4 is a stop-and-report that the review never settled.
    Exit 5 and exit 6 are a stop-and-report that quotes the error or the bot's notice the script printed.
    Any other exit is a stop-and-report.
-   When the harness cannot run a command in the background, run it in the foreground with `--deadline` below the tool's timeout, and treat exit 4 as a stop-and-report.
+   When the harness cannot run a command in the background, run it in the foreground with `--deadline` below the tool's timeout.
    Each bot is a final bar and is never skipped: the code reviewer is a different reviewer with a different brief, and a clean code reviewer round says nothing about what a bot will find.
    A first-push-only bot, with its mode read as `bots.md` says, is waited on in this pass, and in a later one only for a review that `bots.md` or `lanes.md` requests.
    Collect findings from every surface - inline comments, the summary comment, full review bodies, and the summaries bots write into the pull request description - because nitpicks hide in collapsed sections.
@@ -335,7 +335,7 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Exit 0 goes on; exit 1 goes to step 3's triage, and a blocking failure sends the run back to step 4; any other exit is a stop-and-report.
    Check the pull request once more for a table bot no pass waited on, and handle one that shows up as `bots.md` says before going on.
    Re-read the pull request's state and confirm all three of: it is still open, it still targets `base`, and its head is still the SHA the review settled on.
-   Any of the three failing is a stop-and-report, not a re-poll: the pull request changed underneath the run, and deciding what that means is the user's.
+   Any of the three failing is a stop-and-report, not another wait: the pull request changed underneath the run, and deciding what that means is the user's.
    Then read its `reviewDecision`.
    In hold mode, or when `reviewDecision` is `REVIEW_REQUIRED` or `CHANGES_REQUESTED`, stop here and report the pull request with that SHA as ready to merge, awaiting approval, or changes requested, and skip the merge, the release watch, and the cleanup.
    Never merge past a required approval with `--admin`.

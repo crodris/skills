@@ -232,8 +232,8 @@ poll() {
 v() { jq -r "$@" <<<"$verdict"; }
 
 # Posts the re-request comment of each bot in the JSON array $1 that this run
-# has not re-requested yet. The bot is recorded before the post, and a failed
-# post ends the run, because a post that may have landed must not be retried.
+# has not re-requested yet. A failed post ends the run, because a post that may
+# have landed must not be retried.
 rerequest() {
   local bot comment rc
   for bot in $(jq -r '.[]' <<<"$1"); do
