@@ -301,6 +301,8 @@ The `stacking` line is optional and is not one of the six setup questions above,
 Write it only when the user asks for a repository-wide answer, and treat its absence as `never` exactly as `approval.md` states.
 Leaving it out of setup therefore means a freshly set up repository produces one review per issue and never proposes a split, which is the opt-in behavior stacking is meant to have; a repository that wants stacking adds the line itself.
 
-On every subsequent run, read the existing profile silently and use it without re-prompting.
+On every subsequent run, first check whether `.fathom/config.md` holds a merge conflict: `git ls-files -u -- .fathom/config.md` lists it, or the file has a leftover conflict marker.
+When it does, never re-run setup or hand-merge it.
+Stop and hold as `approval.md` says for a conflict while updating from the base branch, so the user resolves the file in place.
+Otherwise read the existing profile silently and use it without re-prompting.
 Re-run setup when a mapped state no longer exists in the tracker, or when the user explicitly asks to redo it.
-Re-run setup to resolve merge conflicts in `.fathom/config.md`; do not attempt to hand-merge the conflicting mapping.
