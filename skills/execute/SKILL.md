@@ -59,8 +59,9 @@ If any of these files cannot be found and read, stop immediately and report whic
 3. Resolve which tracker owns this issue and which memory backend owns its task state, following `trackers.md` and `memory.md`, including `memory.md`'s stop when the repo holds beads state but beads is unavailable.
    Load the existing `.fathom/config.md` tracker profile, or run first-run setup when none exists; either way, run the tracker adapter's profile-load checks and honor any one-time offers they define.
 4. When the invocation names two or more issues, read `fan-out.md` in this skill's folder and follow its several-issues section instead of the rest of this procedure.
-   Before reading the branch name, check whether this checkout holds a base update paused by an earlier hold: `git rev-parse -q --verify MERGE_HEAD` succeeds mid-merge, and the directory `git rev-parse --git-path rebase-merge` or `git rev-parse --git-path rebase-apply` names exists mid-rebase.
-   When one is paused, read the branch from `git branch --show-current` mid-merge, or from the `head-name` file in that rebase directory mid-rebase, since a paused rebase detaches HEAD.
+   Before reading the branch name, check whether this checkout holds a base update paused by an earlier hold: `git rev-parse -q --verify MERGE_HEAD` succeeds mid-merge, and a `head-name` file exists at the path `git rev-parse --path-format=absolute --git-path rebase-merge/head-name` or `git rev-parse --path-format=absolute --git-path rebase-apply/head-name` prints mid-rebase.
+   Run each of these as its own command and read that file by the printed path, never through `$(...)`, since a permission check can deny a nested command.
+   When one is paused, read the branch from `git branch --show-current` mid-merge, or from that `head-name` file mid-rebase, since a paused rebase detaches HEAD.
    Then run no switch, no fetch-and-update, and never `git merge --quit` until step 7's resume rule finishes or holds the update, since quitting drops the merge's second parent.
    Then determine the issue ref from the invocation argument, a pasted issue URL, or the current branch name, which for a paused update is the branch read above, in that order of preference; when the argument and the branch name refer to different issues, stop and ask the user which one to use.
 5. Call `getIssue` for that ref and save its title, description, type, URL, and existing children for the rest of this run.
@@ -82,6 +83,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    Keep the work, leave the task in progress, and report each conflicting file with what this branch and the base each changed in it.
    Name the sides "this branch" and "the base", since a rebase swaps which one git calls ours.
    Ask the user to `git add` each file once it is resolved, and leave the choice of resolution to them, recommending neither side.
+   When you say what keeping a side would mean, such as which planned tasks it would already cover, say it for both sides or for neither.
    Never resolve a conflict by discarding either side's changes.
    When step 4 finds an update paused, hold again while `git ls-files -u` lists a conflicted file or `git diff --cached --check` reports a leftover conflict marker.
    Otherwise finish it with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`, and hold the same way when the rebase stops on its next commit.
