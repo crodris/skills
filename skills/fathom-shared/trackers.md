@@ -267,7 +267,11 @@ When a user's reply could answer more than one pending question, or its target i
    Ask whether future runs should stop for approval at the usual points, or run straight through without asking.
    Record the answer as `approval: ask` or `approval: auto` per `approval.md`, and say that the safety stops listed there fire either way, so choosing auto does not mean unattended risk.
 
-Save the confirmed profile to `.fathom/config.md` and commit that file only once all six steps above have an answer; include the confirmed default destination.
+Save the confirmed profile to `.fathom/config.md` only once all six steps above have an answer; include the confirmed default destination.
+Commit it on the issue branch, as that branch's first commit, so the profile reaches the base branch through review.
+Never commit it on the base branch directly: `execute` creates the issue branch from `origin/<base>`, which would leave that commit behind.
+A run that ends before reaching an issue branch, such as `scaffold` without its handoff, leaves the file uncommitted, and the next `execute` run commits it on its issue branch.
+A profile reused from another branch is committed the same way.
 Never announce that setup will happen and then write a profile without having asked each of these questions.
 A profile written without confirmed answers for every step is a defect, not a shortcut.
 A per-invocation destination hint applies only to that invocation; change the profile's `default-destination` only when it is absent or when the user explicitly asks to change it.

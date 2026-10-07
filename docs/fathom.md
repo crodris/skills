@@ -146,7 +146,7 @@ bd version
 ### 4. Answer the first-run questions
 
 The first time either skill runs in a repository it asks a short series of questions, one at a time, and writes the answers to `.fathom/config.md`.
-Because that file is committed, **teammates who clone the repo are never asked any of it**.
+That file is committed on the first issue's branch and reaches your base branch when that review merges, after which **teammates who clone the repo are never asked any of it**.
 
 | Question | Why it is asked |
 | --- | --- |
