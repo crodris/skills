@@ -60,3 +60,5 @@ Claude Code: add these to the permissions allowlist in settings (project or user
 Kiro: add these to its trusted/allowed command configuration.
 
 Without this pre-approval, each command triggers an interactive confirmation prompt and breaks autonomous execution.
+
+Run each command that reads git or tracker state on its own, never in a shell loop or through `$(...)`, since a permission check can deny a command it cannot read in advance, even when its parts are pre-approved.

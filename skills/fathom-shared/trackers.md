@@ -220,6 +220,11 @@ Run this setup procedure once per repository, then reuse its output on every lat
 
 Trigger setup when the repository has no `.fathom/config.md`.
 Before prompting the user, check other local branches for a newer `.fathom/config.md` and offer to reuse it instead of starting over.
+Find candidate branches with `git log --branches --not HEAD --diff-filter=AM --format='%h %cI %s' -- .fathom/config.md`, which lists each commit on another local branch that added or changed the profile, newest first, and prints nothing when no other branch has one.
+Name the branches that carry a listed commit with `git branch --contains <commit>`.
+Read each branch's current profile with `git show <branch>:.fathom/config.md`, and skip a branch where that fails, since the profile was deleted at its tip.
+Offer each branch that still has a profile once, ordered by its newest listed commit.
+Run each of these commands on its own, as the Permissions section of `agents.md` says.
 
 When no existing profile is found anywhere, the agent must run these six steps in order and must not skip any of them.
 Auto mode may record the destination in step 1 and the state mapping in step 2 without asking, only as `approval.md` allows; every other step is asked.
