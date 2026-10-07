@@ -31,11 +31,11 @@ A setting made only in the bot's web dashboard is invisible here, so a repositor
 ## Settled
 
 A bot has settled on the captured SHA when the table's signal says so for that SHA and no other.
-On every poll, also read each bot's newest review and comment on the pull request, since a notice arrives there and never as the table's signal.
-A notice in place of a review settles nothing.
-A rate limit or a skipped review, including a `success` status whose description says so, is re-requested and waited on under stage 3's deadline.
-A first-push-only bot's skipped notice on a head after the one it reviewed is expected: outside the light lane, ignore it and never re-request that bot.
-A notice that the bot will not review at all, such as an ended trial or a spent plan quota, is a stop-and-report at once, since waiting cannot change it and merging without that bot is the user's call.
+`watch.sh` in this skill's folder implements the table's settle signals and the notice rules: a notice in place of a review settles nothing, a rate limit or a skipped review is re-requested once and waited on, and a notice that the bot will not review at all ends the wait.
+Pass it `--bot coderabbit` for CodeRabbit and `--bot greptile` for Greptile, once for each present bot that the current pass waits on.
+A bot this run must re-request on a head, as `lanes.md` asks, is passed with `--rerequest` instead of `--bot`.
+A first-push-only bot's skipped notice on a head after the one it reviewed is expected: outside the light lane, do not pass that bot on that head, and never re-request it.
+A bot that will not review at all, such as after an ended trial or a spent plan quota, is a stop-and-report at once, since waiting cannot change it and merging without that bot is the user's call.
 
 ## Red flag
 

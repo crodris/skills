@@ -262,12 +262,14 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    A subagent that returns nothing usable fails its round rather than passing silently: record that the review produced no result, and run that subagent again, not the ones that returned.
    Give it a timeout, generous against the size of the diff, and treat one that blows through it the same way.
    Any one subagent failing twice in a row is a stop-and-report rather than a merge without it, because its axis has not reviewed the run.
-   Poll every review bot `bots.md` finds present, including one that first shows up on this pull request, until each one's review of the captured SHA settles as that file defines it, re-reading the pull request's head on every poll; a head that moved is step 2's restart, never a new SHA to chase.
-   When the harness can wait on a command or on pull request events, wait with it and poll only without one.
-   Read the pull request's checks on the captured SHA in the same pass.
+   Wait on the checks and on every review bot `bots.md` finds present, including one that first shows up on this pull request, by running `bash <this skill's directory>/watch.sh <pr> <captured-sha> --repo <owner/name>` with one `--bot` per bot this pass waits on, named as `bots.md` says.
+   Run it in the background where the harness notifies on exit, and act on its exit code; never write a polling loop.
+   Exit 0 or 1 goes on to step 2's triage, with any failed check it names among the findings.
+   Exit 3 is step 2's restart, never a new SHA to chase, and exit 7 is a stop-and-report that the pull request is no longer open.
+   Exit 4 is a stop-and-report that the review never settled.
+   Exit 5 and exit 6 are a stop-and-report that quotes the error or the bot's notice the script printed.
    Each bot is a final bar and is never skipped: the code reviewer is a different reviewer with a different brief, and a clean code reviewer round says nothing about what a bot will find.
-   A first-push-only bot, with its mode read as `bots.md` says, is polled on this pass, and on a later one only for a review that `bots.md` or `lanes.md` requests.
-   Give the wait a deadline of roughly thirty minutes, on every pass; past it, stop and report that the review never settled rather than polling on.
+   A first-push-only bot, with its mode read as `bots.md` says, is waited on in this pass, and in a later one only for a review that `bots.md` or `lanes.md` requests.
    Collect findings from every surface - inline comments, the summary comment, full review bodies, and the summaries bots write into the pull request description - because nitpicks hide in collapsed sections.
    Read inline threads with their resolution and outdated state (on GitHub, the GraphQL `reviewThreads` nodes with `isResolved` and `isOutdated`), and skip a thread that is resolved or outdated, so a later pass does not re-triage a finding on code that has since changed.
    Skipping a thread settles nothing: a blocking fix still needs step 5's confirmation, and a finding a bot repeats on the new head is still unresolved under step 6.
@@ -327,7 +329,8 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    There is no cap on passes: the loop runs until a settled pass has nothing blocking under step 3, and every push gets step 5's confirmation, so no push goes unreviewed.
    Convergence bounds it instead: a confirmed critical or major, or a failed drive, whose root cause an earlier push already carried a fix for is a stop-and-report, because the fixes are going in circles and choosing between them is the user's call.
    Say what is open, and leave the pull request unmerged.
-7. Wait, under step 1's thirty-minute deadline, until `gh pr checks` on the SHA the review settled on is fully green; triage a failure under step 3, and a blocking one sends the run back to step 4.
+7. Run `bash <this skill's directory>/watch.sh <pr> <settled-sha> --repo <owner/name>` with no `--bot` on the SHA the review settled on, the way step 1 runs it.
+   Exit 0 goes on; exit 1 goes to step 3's triage, and a blocking failure sends the run back to step 4; any other exit is a stop-and-report.
    Check the pull request once more for a table bot no pass waited on, and handle one that shows up as `bots.md` says before going on.
    Re-read the pull request's state and confirm all three of: it is still open, it still targets `base`, and its head is still the SHA the review settled on.
    Any of the three failing is a stop-and-report, not a re-poll: the pull request changed underneath the run, and deciding what that means is the user's.
