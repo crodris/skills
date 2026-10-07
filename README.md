@@ -330,7 +330,7 @@ HTML
 
 ---
 
-### worktree-setup (v1.0.1)
+### worktree-setup (v1.0.2)
 
 Worktree setup makes a fresh git worktree runnable before the agent starts work in it.
 A new worktree gets the tracked files and nothing else, so dev servers, tests, and builds fail on the missing env files and `node_modules`.
@@ -375,7 +375,7 @@ The skill never edits your settings; add the hook yourself.
 
 | Skill | Description |
 |-------|-------------|
-| `worktree-setup` | Copies the main checkout's untracked env files (except `.env.prod*` files and Sentry's `.env.sentry-build-plugin`), local HTTPS certificates, and `.claude/settings.local.json` into a linked worktree, then installs dependencies when they are missing or the lockfile changed. Not user-invocable; the agent and the hook run it. |
+| `worktree-setup` | Copies the main checkout's untracked env files (except `.env.prod*` files, Sentry's `.env.sentry-build-plugin`, and `.env*.bak*` backups), local HTTPS certificates, and `.claude/settings.local.json` into a linked worktree, then installs dependencies when they are missing or the lockfile changed. Not user-invocable; the agent and the hook run it. |
 
 #### Features
 
