@@ -33,7 +33,7 @@ Fathom needs a tracker MCP. Ship needs a git repository with a remote.
 
 ## Available Plugins
 
-### fathom (v2.5.15)
+### fathom (v2.5.16)
 
 Fathom provides two agent skills, execute and scaffold, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter.
 It works with Asana or Linear as your issue tracker, and both skills run unchanged on Claude Code and Kiro.
@@ -69,7 +69,7 @@ scaffold these requirements
 
 - **Resumable pass** - execute reads durable state from disk and the tracker on every invocation, never from memory of a previous run
 - **Scaffold-to-execute handoff** - scaffold drafts a main issue plus sub-issues, then offers to hand straight into execute
-- **Task memory** - beads-backed when available, with a plain checklist file fallback
+- **Task memory** - beads-backed when the base branch tracks a bd 1.x `.beads/`, and a plain checklist file otherwise
 - **Conventional Commits** - one commit per task, referencing the issue ref
 - **Fan-out** - independent tasks run on parallel subagents in their own worktrees, and naming several issues runs each one on its own subagent
 - **Tracker-only access** - tracker work only happens through the connected tracker MCP; when it is missing, the skill refuses and stops

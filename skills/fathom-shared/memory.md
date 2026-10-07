@@ -33,14 +33,19 @@ The file's existence is the signal, not its contents: `init` creates it before a
 Do this even when `.beads/` exists and even when `bd` is installed.
 An issue whose statuses already live in checkboxes keeps that backend for its whole life; adding beads to a repository later must never move an in-flight issue, which would orphan the statuses already recorded in its checklist file.
 
-Otherwise, when `.beads/` exists in the repo, check whether `bd where` succeeds.
-Use the beads adapter when it does.
+Otherwise, check whether the base branch tracks a beads workspace.
+Take the base from the tracker profile's `base-branch`, resolved per `forges.md`, and run `git fetch origin <base>` first when `origin/<base>` is missing or may be stale.
+When `git cat-file -e origin/<base>:.beads/metadata.json` succeeds, run `bd where`.
+Use the beads adapter when `bd where` succeeds.
 `bd --version` is no proof here, since it succeeds even when `bd` cannot open this workspace.
-When `bd where` exits nonzero, stop and show the user the error it printed, which covers both a missing `bd` binary and a workspace this `bd` cannot open.
+`bd where` fails when `bd` is missing and when it refuses a 0.49-era workspace that still has `.beads/beads.db`.
+The beads adapter's `init` catches a 0.49-era workspace that has no `.beads/beads.db`.
+When `bd where` exits nonzero, stop and show the user the error it printed.
 Ask them to install or upgrade beads, or to continue on a machine where `bd where` succeeds.
 Do not fall back to the checklist adapter in this case: task status must never fork across two backends, per the no-dual-truth rule below.
 
-When neither exists (a fresh run for this issue), check whether `bd --version` succeeds; use the beads adapter if it does, otherwise use the checklist adapter.
+When the base branch does not track `.beads/metadata.json`, use the checklist adapter, even when `bd` is installed.
+A repository that wants beads initializes it once by hand and merges that into the base, as Fathom's `docs/fathom.md` describes, and issues started after that use beads.
 
 Repositories do change backends over time, and that is fine as long as it happens per issue.
 When a repository gains beads while checklist-mode issues are still open, those issues stay on checklists and only issues started afterward use beads.

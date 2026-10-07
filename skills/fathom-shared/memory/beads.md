@@ -16,17 +16,18 @@ Never prefix a `bd` command with an environment variable assignment, since the c
 Every task row this adapter writes carries the label `<issueRef>`, and every read passes `-l "<issueRef>"`.
 The label is what keeps issues apart, since the database holds every issue's rows at once.
 
+Every command in this file runs from the root of the checkout the run is on, a fan-out worktree included.
+
 Each issue's task state travels in git as its own file, `.beads/<issueRef>.jsonl`.
-`<checkout>` below is the absolute path of the checkout the run is on, a fan-out worktree included, and every command runs from that checkout's root.
-Write and stage the file with this one command:
+Write and stage the file with these three export steps, each run as its own command:
+1. `bd export -o <main checkout>.fathom/<issueRef>-export.jsonl`
+2. `sed -n '/"labels":\[[^]]*"<issueRef>"[],]/w .beads/<issueRef>.jsonl' <main checkout>.fathom/<issueRef>-export.jsonl`
+3. `git add .beads/<issueRef>.jsonl`
 
-```
-bd export -o <main checkout>.fathom/<issueRef>-export.jsonl && sed -n '/"labels":\[[^]]*"<issueRef>"[],]/w .beads/<issueRef>.jsonl' <main checkout>.fathom/<issueRef>-export.jsonl && git add .beads/<issueRef>.jsonl
-```
-
+Run them as three separate commands, since a restricted allowlist refuses a whole chained command when any part of it is not allowed.
 `bd export` writes every issue in the database and has no label filter, so it writes to a scratch file in `<main checkout>.fathom/`, the sibling directory `../../execute/fan-out.md` names, and `sed` copies only the lines whose labels include `<issueRef>`.
 `bd` and `sed` write their own files, since a shell redirect such as `>` needs the user's approval in an agent session, and so does a `jq` filter that uses a `$` variable.
-`bd export` does not create a missing directory, so run `mkdir -p <main checkout>.fathom` once at `init`, taking `<main checkout>` from the first line of `git worktree list --porcelain`.
+`bd export` does not create a missing directory, which is why `init` creates `<main checkout>.fathom`, taking `<main checkout>` from the first line of `git worktree list --porcelain`.
 Leave the scratch file in place; the next export overwrites it.
 
 Nothing exports or imports automatically, so a file under `.beads/` changes only when this adapter writes it.
@@ -38,7 +39,7 @@ Parallel issues never share a file, so only stacked branches of the same issue c
 
 | Contract operation | beads CLI mapping |
 | --- | --- |
-| `init(issueRef)` | When `.beads/metadata.json` exists and `grep -q '"backend"' .beads/metadata.json` fails, stop and tell the user that this workspace predates bd 1.x and needs the "From bd 0.x to bd 1.x" upgrade steps in Fathom's `docs/fathom.md`. Never migrate it yourself. When `.beads/` is absent from the checkout, run `git diff --cached --quiet`, and when it fails, stop and ask the user what to do with the staged changes, since `bd init` commits everything staged. Then run `bd init -p <prefix> --skip-hooks --skip-agents -q`, with a prefix of three or four characters abbreviated from the main checkout's directory name, since a fan-out worktree's directory is named after the issue. `bd init` makes its own git commit on the current branch, so list its files with `git show --name-only --format= HEAD` and report every one, since it was seen to include an untracked `AGENTS.md` even with `--skip-agents`. Then run `bd config get sync.remote`, and when it prints a value, run `bd config unset sync.remote` and stage `.beads/config.yaml` with the first task commit, since that setting makes `bd bootstrap` fail on every other clone. Otherwise, when `.beads/` exists, run `bd bootstrap`, which creates the database and imports the tracked `.beads/issues.jsonl` on a fresh clone and prints "Nothing to do" when the database already exists. Then, when `.beads/<issueRef>.jsonl` exists, run `bd import .beads/<issueRef>.jsonl`, so a run resumed on another machine or after the local database was lost recovers its tasks. Never run `bd init` when `.beads/` already exists. |
+| `init(issueRef)` | When `grep -q '"backend"' .beads/metadata.json` fails, stop and tell the user that this workspace predates bd 1.x and needs the "From bd 0.x to bd 1.x" upgrade steps in Fathom's `docs/fathom.md`. Never migrate it yourself. Otherwise run `mkdir -p <main checkout>.fathom`, then `bd bootstrap`, which creates the database and imports the tracked `.beads/issues.jsonl` on a fresh clone and prints "Nothing to do" when the database already exists. Then, when `.beads/<issueRef>.jsonl` exists, run `bd import .beads/<issueRef>.jsonl`, so a run resumed on another machine or after the local database was lost recovers its tasks. |
 | `createTask(title, description, subIssueRef, deps)` | Run one `bd create "<title>" -d "<description>" -l "<issueRef>" --external-ref "<subIssueRef>" --deps "<comma-separated blocker ids>" --silent` and capture the single line of output as the new task id. Do it in that one call rather than as a create followed by separate writes, for the durability reason in the notes below. Tagging the task with the issue ref lets every task for one issue be listed directly with `bd list -l "<issueRef>"` instead of matching on titles, and `--silent` makes `bd create` print only the issue id, which this adapter always needs for its return value. Omit `--external-ref` entirely when no `subIssueRef` was passed, and omit `--deps` entirely when `deps` is empty, rather than passing an empty value to either. Each id in `--deps` makes the new task depend on that blocker, so it stays excluded from `claimNext` until the blocker closes. Use the title and description exactly as passed in; embedding the issue ref into the title (the `<issueRef>: <task title>` naming convention) is the caller's responsibility, not this adapter's. |
 | `claimNext()` | First run `bd list -l "<issueRef>" --type task --status in_progress --limit 0 --json`. When it returns a task, an interrupted run left it in progress, so return the oldest one to be resumed without claiming it. Otherwise run `bd ready -l "<issueRef>" --type task --sort oldest --claim --json`, which atomically claims this issue's oldest task with no open blockers and returns it as a one-element array. Return element 0's id, or null when the result is `[]`. The label filter is not optional on either call: without it `bd` reads the whole repository, so an unscoped call will hand back or claim another issue's task, and the loop will implement it on this issue's branch and close the wrong sub-issue. |
 | `ready()` | Run `bd ready -l "<issueRef>" --type task --sort oldest --limit 0 --json` and return its tasks, which are this issue's open tasks with no open blockers, oldest first. Claim nothing. |
@@ -71,9 +72,7 @@ It reports older rows as `stale_skipped_ids` and merges labels, dependencies, an
 
 ## Repository hygiene
 
-The beads tooling writes its own ignore rules during `init`; verify rather than duplicate.
-
-After `init`, confirm that `.beads/.gitignore` exists and keep it, since it excludes the embedded database and the other per-machine runtime files.
+The beads tooling writes its own ignore rules in `.beads/.gitignore`, which excludes the embedded database and the other per-machine runtime files.
 Do not add a second copy of those rules at the repository root.
 A duplicate block drifts from what the tooling actually ignores, and one earlier hand-written version wrongly ignored `metadata.json`, which beads intends to be tracked alongside `.beads/config.yaml`.
 bd 1.x registers no merge driver, so it writes no `.gitattributes` entry, and a `merge=beads` line left by bd 0.x is removed by the upgrade steps that `init` points to.
@@ -89,7 +88,7 @@ The issue's file is the one conflicted file a run resolves itself during a branc
 Never hand-merge the JSON lines; run these in order:
 1. `git checkout --ours -- .beads/<issueRef>.jsonl`, then `bd import .beads/<issueRef>.jsonl`.
 2. `git checkout --theirs -- .beads/<issueRef>.jsonl`, then `bd import .beads/<issueRef>.jsonl`.
-3. Re-export and stage the file with the command in One database per repository, then finish the update unless another file is still conflicted, in which case execute's step 7 holds.
+3. Re-export and stage the file with the three export steps in One database per repository, then finish the update unless another file is still conflicted, in which case execute's step 7 holds.
 
 Importing both sides gives the database the rows from both branches, in a merge or a rebase alike.
 A rebase swaps which side `--ours` names, so the recipe never depends on it.
@@ -98,4 +97,4 @@ A conflict in any other file still holds, as execute's step 7 says.
 
 Commit the issue's file with each task's commit, not only at the end of the run.
 The database itself is ignored by design, so a file left uncommitted means a task closed on this machine is invisible to any other clone, which breaks resume on a different machine.
-Stage it with the one export command in One database per repository, so the staged file always holds this issue's current rows.
+Stage it with the three export steps in One database per repository, so the staged file always holds this issue's current rows.
