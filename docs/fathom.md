@@ -38,7 +38,7 @@ The design goal is that **nothing is remembered between invocations**.
 Every run reads state from your repository and your tracker, so an interrupted run resumes by being re-invoked, in either agent.
 
 Resuming on a *different* machine works for whatever was committed and pushed.
-The checklist backend travels with each task commit; beads keeps its database out of git by design and shares only its export, so a beads run commits that export alongside each task for the same reason.
+The checklist backend travels with each task commit; beads keeps its database out of git by design and shares each issue's tasks through that issue's `.beads/<ref>.jsonl`, so a beads run commits that file alongside each task for the same reason.
 
 **Requirements:** an Asana or Linear MCP connected in your agent, and optionally the beads CLI (`bd`) for richer task memory.
 On GitHub, the GitHub CLI (`gh`) authenticated. On another forge, an adapter you write - or nothing at all: the bundled generic-git fallback still pushes the branch and hands the review off to you. See [Forges](#forges).
@@ -136,7 +136,7 @@ Unlike the tracker, an unverified forge does not stop the run - it selects a tie
 ### 3. Optionally install beads
 
 Without beads, task state lives in a markdown checklist committed on your branch, which is fine for solo work and small issues.
-Both backends honor task dependencies, so a task cannot be started before the work it depends on is finished; beads adds atomic claiming, a queryable ready-work view, and a notes field for commit hashes.
+Both backends honor task dependencies, so a task cannot be started before the work it depends on is finished; beads adds atomic claiming, a queryable ready-work view, and a close reason that records each task's commit hash.
 
 ```bash
 brew install beads
@@ -337,7 +337,7 @@ In the manual tier the "review merged" line never fires, because nothing can obs
 | `.fathom/forge.md` | Only if you wrote an adapter for a forge Fathom does not ship. See [Forges](#forges). |
 | `.fathom/plans/<ref>.md` | The per-issue plan: issue link, branch, codebase context, approach, tasks, testing strategy. Written for people, never carries status. The branch sits on its own `- Branch:` line, which the merge-closer matches to find this issue. |
 | `.fathom/tasks/<ref>.md` | Task statuses as checkboxes. Only when the checklist backend is active. |
-| `.beads/` | Beads task state, when beads is the backend: one ignored database per issue, `<ref>.db-fathom`, and the committed JSONL export, which carries only the base's rows plus this issue's. |
+| `.beads/` | Beads task state, when beads is the backend: one ignored database in `.beads/embeddeddolt/` that the repository's checkouts and worktrees share, plus one committed `.beads/<ref>.jsonl` per issue, which carries only that issue's tasks. |
 | `.github/workflows/fathom-close.yml` | Only if you accepted the optional merge-closer Action. GitHub only; never offered on a forge without CI hooks. |
 
 Plans and task files stay after the review merges; they are the record of how the work was broken down.
@@ -506,7 +506,22 @@ The next run asks which forge you use and adds `forge` to the profile in the fir
 Existing `.fathom/` records that carry a branch and no review id keep working.
 The sweep matches them by branch on every run and leaves the record unchanged.
 
-If the repo used beads, confirm `.beads/.gitignore` and `.gitattributes` exist, since the beads tooling writes both, and untrack any beads runtime files an earlier version committed.
+If the repo used beads, confirm `.beads/.gitignore` exists, since the beads tooling writes it, and untrack any beads runtime files an earlier version committed.
+
+### From bd 0.x to bd 1.x
+
+A repository whose beads workspace was created by bd 0.x stops the run until it is upgraded, since bd 1.x stores tasks in a different database.
+You can tell such a workspace by its `.beads/metadata.json`, which has no `"backend"` key.
+Do these steps once, from the main checkout:
+
+1. With an empty index, move `.beads/beads.db` and the old daemon files (`daemon.*`, `last-touched`, `sync-state.json`, `.local_version`) out of `.beads/`.
+2. Run `bd init -p <your prefix> --skip-hooks --skip-agents --from-jsonl -q`.
+   It makes its own commit, and it imports the tracked `issues.jsonl`.
+3. Run `bd config unset sync.remote`.
+4. Delete the `merge=beads` line from `.gitattributes`, and run `git config --remove-section merge.beads`.
+5. Commit and push to the base branch.
+6. Other clones then need only `bd bootstrap`.
+
 
 ### From workbench 1.x to Fathom 2.0.0
 
