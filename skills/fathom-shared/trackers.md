@@ -279,9 +279,9 @@ When they match, remove the uncommitted copy, since git refuses to switch over a
 Remove an untracked copy with `git clean -f -- .fathom/config.md` and a staged one with `git rm -f -- .fathom/config.md`.
 Never use `git checkout -f`, which also discards tracked changes.
 When they differ, stop and ask the user which profile to keep.
-A modified tracked copy carries over the switch when the target's version equals HEAD's, and git refuses the switch when it differs.
-In that case compare the modified copy with the target's the same way.
-When they match, discard it with `git restore --source=HEAD --staged --worktree -- .fathom/config.md`; when they differ, stop and ask the user which profile to keep.
+A modified tracked copy carries over the switch when `git diff --quiet HEAD <ref> -- .fathom/config.md` succeeds, so leave it alone then.
+When that command fails, git refuses the switch, so compare the modified copy with the target's the same way.
+Discard a matching copy with `git restore --source=HEAD --staged --worktree -- .fathom/config.md`, and ask about a differing one as above.
 Never announce that setup will happen and then write a profile without having asked each of these questions.
 A profile written without confirmed answers for every step is a defect, not a shortcut.
 A per-invocation destination hint applies only to that invocation; change the profile's `default-destination` only when it is absent or when the user explicitly asks to change it.
