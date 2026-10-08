@@ -106,7 +106,6 @@ ln -s "$PWD/skills/fathom-shared" ~/.kiro/skills/fathom-shared
 ### 2. Run either skill once per repo
 
 The first run asks the [setup questions](#setup-step-by-step) - tracker, destination, state mapping, base branch, approval mode - and commits the answers to `.fathom/config.md` on the first issue's branch, so teammates are never asked again once that review merges.
-Scaffold creates no branch, so a profile it writes stays uncommitted until execute commits it on the first issue branch.
 
 ### 3. Bam - you're ready to go.
 

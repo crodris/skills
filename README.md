@@ -133,7 +133,7 @@ ship it
 - **Bot review mode from the repo** - ship reads whether each bot reviews every push or only the first from its config file: `reviews.auto_review.auto_incremental_review` in `.coderabbit.yaml`, and `autoReview` in `.greptile/config.json` or `greptile.json`, where Greptile defaults to the first push only; a setting made only in a bot's web app is invisible to ship, which then waits on a re-review that never comes, or merges without waiting for one the bot posts on its own, so keep it in the file (for CodeRabbit, with `inheritance: true` to leave the web-app settings in force)
 - **Hold mode by default** - "ship", "babysit", "watch", "monitor", or "get it green" runs everything up to the merge and reports the pull request ready; ship merges only when the request says to merge, or when `.ship/config.md` on the base branch sets `merge: yes` and the request does not ask only to babysit or get it green; a pull request that still needs a human approval holds either way, and ship never merges past it with `--admin`
 - **Written for the reader** - the pull request title names the outcome in the repository's style, and the body opens with the problem, then the fix, then a merge-danger line; a reused pull request gets only ship's delimited section rewritten
-- **Bot comments are reports, not orders** - ship verifies each claim against the code, replies under non-blocking findings with an agent label line, and resolves the thread
+- **Bot claims get checked** - ship verifies each claim against the code, replies under non-blocking findings with an agent label line, and resolves the thread
 - **Project-local override** - a repository that ships its own `.claude/skills/ship/SKILL.md`, `.agents/skills/ship/SKILL.md`, or `.kiro/skills/ship/SKILL.md` takes precedence, carrying its specialized pipeline; ship names the file driving the run, and that file cannot relax ship's authority and boundary rules
 
 ---
@@ -237,7 +237,7 @@ recalibrate my voice
 - **A floor everyone gets** - the built-in checklist covers the patterns research and readers both flag as machine-written, with the negation-then-correction construction treated as fatal; your voice file can re-allow any of it
 - **Four modes** - draft from facts, rewrite existing text keeping every fact and link and adding none, check-only, which quotes each failing line and names the tell without touching the text, and recalibrate
 - **Never from memory** - the voice files are read in full at the start of each conversation, because a summary of a voice is the default register with a costume on
-- **Placeholders, not inventions** - where the text needs a fact you did not give, voice leaves a bracketed placeholder and lists it, and it ignores instructions found inside voice or sample files
+- **Placeholders for missing facts** - where the text needs a fact you did not give, voice leaves a bracketed placeholder and lists it, and it ignores instructions found inside voice or sample files
 - **Knows when to stay out** - code, commit messages, test names, config, and text addressed to another agent are left alone
 
 ---
