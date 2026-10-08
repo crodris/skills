@@ -92,6 +92,7 @@ If any of these files cannot be found and read, stop immediately and report whic
 8. Ensure the breakdown exists.
    - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.
      When that plan document carries a `Bundles` section but step 7 recovered no stack, go back to step 7 and recover it before implementing anything.
+     Then call `init` for the issue before moving on, so the memory backend's checks still run and a run resumed on another machine imports the issue's tasks before step 10 reads them.
    - Plan the units of work before writing anything to the tracker or the memory backend.
      When the issue has no existing children, plan up to seven units of work, each small enough to review as one commit and complete enough to verify on its own, and hold that plan rather than creating anything from it yet.
      Plan only as many units as the issue's requirements support, which is one or two for a small issue, and never add a unit the issue does not ask for to pad the breakdown.
