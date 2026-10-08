@@ -444,6 +444,18 @@ Check for a `disabled` flag on the entry before adding a new server.
 Ignore rules do not apply to already-tracked files, so untrack them once: `git rm -r --cached .beads` then commit.
 Beads writes its own `.beads/.gitignore`, so do not duplicate those rules at the repository root.
 
+**Execute stops because the beads database has no issue prefix.** The local database that `.beads/metadata.json` names has no `issue_prefix`, so `bd config get issue_prefix` prints `issue_prefix (not set)`.
+Every `bd create` would then fail with "issue_prefix config is missing".
+Setting `issue-prefix` in `.beads/config.yaml` does not fix it, since bd reads the prefix from the database.
+One way this happens is a `.beads/embeddeddolt/` that holds a database under another name.
+`bd bootstrap` then reports "Nothing to do".
+bd's automatic import from `.beads/issues.jsonl` into the named database can then fail, for example on a dependency loop in that file.
+Run the repair from the main checkout, with no execute run or other `bd` command running, since linked worktrees share its `.beads/embeddeddolt/`.
+Move `.beads/embeddeddolt` out of `.beads/` instead of deleting it, then run `bd bootstrap`.
+Check that `bd config get issue_prefix` prints your prefix.
+Keep the moved directory until runs work again.
+Fathom commits each issue's tasks to `.beads/<ref>.jsonl` on that issue's branch, but anything created with plain `bd` and never exported exists only in the moved directory.
+
 **Phase transitions show up as comments instead of moving the card.** Your Asana MCP build has no section-move tool.
 This is expected and handled, but the V2 server does support real section moves.
 
