@@ -415,11 +415,10 @@ Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/mark
 A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup`, is still published by skills.sh and is simply unreachable through `/plugin install`; list it under `## Standalone Skills` in this README to make the omission deliberate.
 `bin/sync-versions.sh` stays silent about a skill listed there and fails on one that is in neither a plugin entry nor that section.
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
-`bin/sync-versions.sh` syncs the plugin versions (`fathom`, `ship`) from `marketplace.json` into this README's plugin headings, and fails when a skill directory is claimed by no plugin and not listed as standalone, claimed by more than one, or claimed but missing.
-Standalone headings are edited by hand to match each skill's `SKILL.md` version.
+`bin/sync-versions.sh` syncs the plugin versions (`fathom`, `ship`) from `marketplace.json` into this README's plugin headings and into the `SKILL.md` frontmatter of every skill each plugin claims, syncs each standalone skill's `SKILL.md` version into its heading here, and fails when a skill directory is claimed by no plugin and not listed as standalone, claimed by more than one, or claimed but missing.
 `bin/hooks/pre-commit` runs the sync before each commit and never blocks one; enable it with `git config core.hooksPath bin/hooks`.
 `claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
-CI has four workflows: `skillspector.yml` (the scan, plus `bin/test-scan-skills.sh`, `bin/test-worktree-setup.sh`, and `bin/test-watch.sh`), `frontmatter.yml` and `prose.yml` (each with its test), and `plugin-validate.yml`.
+CI has four workflows: `skillspector.yml` (the scan, plus `bin/test-scan-skills.sh`, `bin/test-worktree-setup.sh`, and `bin/test-watch.sh`), `frontmatter.yml` (the frontmatter check and a check that `bin/sync-versions.sh` leaves no diff, each with its test), `prose.yml` (the dash check and its test), and `plugin-validate.yml`.
 `bin/check-dashes.sh` fails on any em or en dash in `skills/`, `bin/`, this README, `CODING_STANDARDS.md`, and `docs/fathom.md`, and CI runs it and its test on every pull request.
 The dated records in `docs/plans/` and `docs/superpowers/` are not checked.
 `bin/check-frontmatter.sh` parses the frontmatter of every `skills/*/SKILL.md` with a pinned `yaml` package, the parser the skills CLI uses.

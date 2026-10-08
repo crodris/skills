@@ -30,7 +30,8 @@ Write one sentence per line in Markdown, in plain declarative sentences, with on
 Update `README.md` and `docs/fathom.md` wherever they describe the changed behavior.
 
 Update the version in the same pull request.
-Plugin skills take theirs from `.claude-plugin/marketplace.json`, which `bin/sync-versions.sh` copies into the README.
-Standalone skills carry theirs in the `SKILL.md` frontmatter and the README heading.
+Plugin skills take theirs from `.claude-plugin/marketplace.json`, which `bin/sync-versions.sh` copies into the README and into each claimed skill's `SKILL.md` frontmatter.
+Standalone skills carry theirs in the `SKILL.md` frontmatter, which `bin/sync-versions.sh` copies into the README heading.
+CI fails when running the sync would change a file.
 
 Credit adapted outside work in the README's License section.

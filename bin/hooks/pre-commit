@@ -15,10 +15,11 @@ fi
 echo "[pre-commit] Syncing plugin versions..."
 
 if "$SYNC_SCRIPT"; then
-  # Auto-stage only the two target files if they changed
+  # Auto-stage only the files the sync writes if they changed
   cd "$REPO_ROOT"
   git diff --quiet .claude-plugin/marketplace.json 2>/dev/null || git add .claude-plugin/marketplace.json
   git diff --quiet README.md 2>/dev/null || git add README.md
+  git diff --quiet -- 'skills/*/SKILL.md' 2>/dev/null || git add -- 'skills/*/SKILL.md'
 else
   echo "[pre-commit] Version sync failed (continuing anyway)"
 fi
