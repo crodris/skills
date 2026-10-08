@@ -72,6 +72,7 @@ scaffold these requirements
 - **Task memory** - beads-backed when the base branch tracks a bd 1.x `.beads/`, and a plain checklist file otherwise
 - **Conventional Commits** - one commit per task, referencing the issue ref
 - **Fan-out** - independent tasks run on parallel subagents in their own worktrees, and naming several issues runs each one on its own subagent
+- **Your model split** - on Claude Code, execute asks you once per machine which models should run issues and tasks, and saves your answer to `~/.config/fathom/models.md` (if you already have a pstack model rule, it reads that and skips the question)
 - **Tracker-only access** - tracker work only happens through the connected tracker MCP; when it is missing, the skill refuses and stops
 - **Forge-portable** - reviews go through a five-operation forge contract; GitHub and a generic-git fallback ship built in, and any other forge is a `.fathom/forge.md` you write without forking
 
