@@ -80,11 +80,10 @@ For bundle k of N:
 
 - Commit any leftover uncommitted change that belongs to this bundle's tasks, leaving unrelated working-tree edits alone rather than sweeping them into the review.
   A change left uncommitted here is absent from bundle k's review and lands in bundle k+1's instead.
-- For every bundle after the first, check whether bundle k-1 already merged, as A lower bundle that already merged below describes.
-  Do it before the reconciliation, since its rebase changes the range the reconciliation counts.
-- Then reconcile bundle k's closed tasks against the commits on its branch, over that bundle's own range as it stands after the commit above, per the per-bundle rule in `conventions.md`; stop and do not open this bundle's review when they disagree.
-  Keep this order, because the leftover commit changes the range the reconciliation counts.
-- Call `resolveBase` on bundle 1's base, which is the resolved base branch, or on branch k-1 for every later bundle, except the resolved base branch when bundle k-1 already merged.
+- For every bundle after the first, run the lower-bundle check below.
+- Then reconcile bundle k's closed tasks against the commits on its branch, over that bundle's own range as it stands after the steps above, per the per-bundle rule in `conventions.md`; stop and do not open this bundle's review when they disagree.
+  Keep this order, because the leftover commit and the lower-bundle check's rebase both change the range the reconciliation counts.
+- Call `resolveBase` on bundle k's base: the resolved base branch for bundle 1, and branch k-1 for every later bundle unless the lower-bundle check moved it to the resolved base branch.
 - Write `- Review: pending (bundle k/N)` beneath that bundle's line in the `Bundles` section, and commit it on branch k, before calling `openReview` for this bundle.
   Stage only the plan document, by explicit path, list what is staged and confirm it carries only that one added marker line, and word it as bookkeeping rather than as a task: `chore(<issue-ref>): mark bundle k review pending`, naming no task in the body.
   Make it before branch k reaches the remote, so that whichever push puts the branch there carries it: the push below on an ordinary adapter, or the push `openReview` owns under `pushesForYou`.
@@ -106,23 +105,32 @@ For bundle k of N:
   That is a phase update and nothing more: reusing a review never reopens it and never calls `publishReview` on it again.
   Later bundles never apply the phase, whether their reviews were newly opened or reused.
 
-### A lower bundle that already merged
+### The lower-bundle check
 
-A reviewer can merge bundle k-1 before bundle k's review opens, often while a run is interrupted partway through bundle k.
+A reviewer can merge the bundles below bundle k before bundle k's review opens, often while a run is interrupted partway through bundle k.
 A review against branch k-1 would then merge into a branch that never reaches the base, so bundle k targets the base instead.
 
-Call `getReviewState` on bundle k-1's recorded review.
-On any result other than `merged`, change nothing here.
-On `merged`:
+Skip this check, keeping branch k-1 as bundle k's base, when the resolved forge declares `reviewLookup: none`, since it cannot report a review's state.
+Otherwise call `getReviewState` on the recorded review of every bundle from 1 to k-1, and act on the results:
+- When any reports `unknown` or `closed-unmerged`, stop and hold naming those bundles, since bundle k's base cannot be settled.
+- When bundle k-1 reports `open`, change nothing: branch k-1 stays bundle k's base.
+- When bundle k-1 reports `merged` but a bundle below it does not, stop and hold naming them, since bundle k-1 merged into a branch that has not reached the base.
+- When every bundle from 1 to k-1 reports `merged`, move bundle k onto the base with the steps below.
+
+Before those steps, stop and hold when bundle k's entry already carries a `- Review: pending (bundle k/N)` marker, since a review opened for it may target branch k-1.
+Say that the user should retarget that review to the base and record it as a full `- Review:` line, or close it and replace the marker with `- Review: none confirmed (bundle k/N)`, as the pending-marker lookup describes.
+
 1. Fetch the resolved base branch.
-   When branch k-1's tip is already an ancestor of it, as after a merge commit, skip to step 4.
-2. Rebase only bundle k's own commits onto it: `git rebase --onto origin/<base> <cut point> <branch k>`.
-   The cut point is branch k-1, or, when that branch is gone locally and on the remote, the commit on branch k whose subject is `chore(<issue-ref>): record bundle k-1 review id`, which is where branch k was cut.
+   The cut point is the parent of the oldest commit in `origin/<base>..<branch k>` whose `Task:` trailer names one of bundle k's tasks.
+   When the cut point is already an ancestor of `origin/<base>`, as after a merge commit or a rebase an earlier run finished, skip to the last step below.
+2. Rebase only bundle k's own commits: `git rebase --autostash --onto origin/<base> <cut point> <branch k>`.
+   `--autostash` carries uncommitted edits across the rebase, such as checklist mode's pending hash edit, since git refuses to rebase a dirty tree.
    When the rebase conflicts, note the conflicting files from `git ls-files -u`, run `git rebase --abort`, then stop and hold naming them.
 3. The rebase rewrote bundle k's commits, so re-record every closed task in bundle k.
-   Find each one's new commit with `git log --format=%h --grep "^Task: <task id>$" origin/<base>..<branch k>`, and call `close` on that task again with that commit.
-   Commit the task-state files this changed as `chore(<issue-ref>): re-record bundle k commits after rebase`, staging them by explicit path as step 11's closing commit does; on beads that means the three export steps in `../fathom-shared/memory/beads.md`.
-   When branch k is already on the remote, push it with `--force-with-lease`, never a bare force push, and hold when the lease is rejected.
+   Find each one's new commit with `git log --format=%h --grep "^Task: <id>$" origin/<base>..<branch k>`, and call `close` on that task again with that commit.
+   Commit the task-state files this changed as `chore(<issue-ref>): re-record bundle k commits after rebase`, naming no task in the body and staging them by explicit path as step 11's closing commit does; on beads that means the three export steps in One database per repository in `../fathom-shared/memory/beads.md`.
+   When branch k is already on the remote, push it with `--force-with-lease`, never a bare force push.
+   When the lease is rejected, stop and hold: another commit reached that branch, and overwriting it discards someone's work.
 4. Use the resolved base branch as bundle k's base for the rest of this routine: the reconciliation range, `resolveBase`, `openReview`, and the pending-marker lookup.
 
 ### Reusing a bundle's review
@@ -147,7 +155,7 @@ A forge retains a review after its head branch is deleted, so branch absence can
 ### A missing bundle branch
 
 When branch k is absent from both the local repository and the remote, run only the lookup below and the recording it calls for, then stop and hold for bundle k.
-Skip the leftover-commit step, the reconciliation, and `openReview`, since all three read or write a branch that is not there.
+Skip the leftover-commit step, the lower-bundle check, the reconciliation, and `openReview`, since all four read or write a branch that is not there.
 Say that branch k is missing, that bundle k's commits cannot be located from it, and that this run recorded what it learned about that bundle's review and changed nothing else.
 Say what unblocks it: restore branch k from a clone, a reflog, or a branch above it that still carries those commits, or decide that bundle's work is gone and rebuild it.
 Both are the user's judgment call.
