@@ -444,6 +444,11 @@ Check for a `disabled` flag on the entry before adding a new server.
 Ignore rules do not apply to already-tracked files, so untrack them once: `git rm -r --cached .beads` then commit.
 Beads writes its own `.beads/.gitignore`, so do not duplicate those rules at the repository root.
 
+**Execute stops with `issue_prefix (not set)`.** The local beads database that `.beads/metadata.json` names is missing or empty.
+This happens when `.beads/embeddeddolt/` holds a database under another name, so `bd bootstrap` reports "Nothing to do", and bd's automatic import from `.beads/issues.jsonl` then fails, for example on a dependency loop in that file.
+Move `.beads/embeddeddolt` out of `.beads/` rather than deleting it, then run `bd bootstrap`, and check that `bd config get issue_prefix` prints your prefix.
+Keep the moved directory until runs work again: Fathom's tasks travel in each issue's `.beads/<ref>.jsonl`, which the next run imports, but anything created with plain `bd` and never exported exists only there.
+
 **Phase transitions show up as comments instead of moving the card.** Your Asana MCP build has no section-move tool.
 This is expected and handled, but the V2 server does support real section moves.
 
