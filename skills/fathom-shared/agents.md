@@ -25,6 +25,7 @@ This file only names which tools each agent offers for it.
 `execute`'s fan-out runs issues and tasks on background subagents, as `../execute/fan-out.md` describes.
 
 Claude Code: dispatch each one with the Agent tool, `subagent_type: general-purpose`, the role's model from Subagent models below, and `run_in_background: true`.
+Start each `description` with that model in brackets, such as `[opus] Execute TES-246`, or `[inherit]` when `model` is omitted, since Claude Code's agent list shows the description but not the model.
 Leave `isolation` unset, since the parent creates every worktree itself so a task's branch starts from the issue branch and outlives the subagent for resume.
 An issue subagent can fan out its own tasks only when `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` allows nested subagents; otherwise it runs them one at a time.
 
