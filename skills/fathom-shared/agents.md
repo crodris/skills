@@ -40,7 +40,7 @@ A headless Claude Code run with a restricted tool allowlist also needs `--add-di
 Claude Code fan-out has two roles: `issue`, the subagent that runs one issue when several are named, and `task`, the implementer subagent that builds one task.
 Each person picks their split once per machine, never per repository, so it lives outside the committed profile.
 Resolve each role in this order, and stop at the first source that names it.
-Read both files with the Read tool, since a restricted allowlist refuses a shell read outside the workspace.
+Read the Fathom file with the Read tool, since a restricted allowlist refuses a shell read outside the workspace; Claude Code already loads the pstack rule into context, so read it only when it is not there.
 
 1. The person's Fathom file, `$XDG_CONFIG_HOME/fathom/models.md`, or `~/.config/fathom/models.md` when that variable is unset: its `issue:` and `task:` lines.
 2. The pstack model rule, `~/.claude/rules/pstack-models.md`: its `hardest tasks:` line for `issue` and its `feature, refactoring:` line for `task`.
