@@ -80,9 +80,11 @@ For bundle k of N:
 
 - Commit any leftover uncommitted change that belongs to this bundle's tasks, leaving unrelated working-tree edits alone rather than sweeping them into the review.
   A change left uncommitted here is absent from bundle k's review and lands in bundle k+1's instead.
+- For every bundle after the first, check whether bundle k-1 already merged, as A lower bundle that already merged below describes.
+  Do it before the reconciliation, since its rebase changes the range the reconciliation counts.
 - Then reconcile bundle k's closed tasks against the commits on its branch, over that bundle's own range as it stands after the commit above, per the per-bundle rule in `conventions.md`; stop and do not open this bundle's review when they disagree.
   Keep this order, because the leftover commit changes the range the reconciliation counts.
-- Call `resolveBase` on bundle 1's base, which is the resolved base branch, or on branch k-1 for every later bundle.
+- Call `resolveBase` on bundle 1's base, which is the resolved base branch, or on branch k-1 for every later bundle, except the resolved base branch when bundle k-1 already merged.
 - Write `- Review: pending (bundle k/N)` beneath that bundle's line in the `Bundles` section, and commit it on branch k, before calling `openReview` for this bundle.
   Stage only the plan document, by explicit path, list what is staged and confirm it carries only that one added marker line, and word it as bookkeeping rather than as a task: `chore(<issue-ref>): mark bundle k review pending`, naming no task in the body.
   Make it before branch k reaches the remote, so that whichever push puts the branch there carries it: the push below on an ordinary adapter, or the push `openReview` owns under `pushesForYou`.
@@ -103,6 +105,25 @@ For bundle k of N:
   A resumed run that reuses bundle 1's existing review publishes nothing, so apply `inReview` there instead, whenever the tracker still shows the issue in an earlier phase; read that phase from the tracker rather than assuming the interrupted run applied it.
   That is a phase update and nothing more: reusing a review never reopens it and never calls `publishReview` on it again.
   Later bundles never apply the phase, whether their reviews were newly opened or reused.
+
+### A lower bundle that already merged
+
+A reviewer can merge bundle k-1 before bundle k's review opens, often while a run is interrupted partway through bundle k.
+A review against branch k-1 would then merge into a branch that never reaches the base, so bundle k targets the base instead.
+
+Call `getReviewState` on bundle k-1's recorded review.
+On any result other than `merged`, change nothing here.
+On `merged`:
+1. Fetch the resolved base branch.
+   When branch k-1's tip is already an ancestor of it, as after a merge commit, skip to step 4.
+2. Rebase only bundle k's own commits onto it: `git rebase --onto origin/<base> <cut point> <branch k>`.
+   The cut point is branch k-1, or, when that branch is gone locally and on the remote, the commit on branch k whose subject is `chore(<issue-ref>): record bundle k-1 review id`, which is where branch k was cut.
+   When the rebase conflicts, note the conflicting files from `git ls-files -u`, run `git rebase --abort`, then stop and hold naming them.
+3. The rebase rewrote bundle k's commits, so re-record every closed task in bundle k.
+   Find each one's new commit with `git log --format=%h --grep "^Task: <task id>$" origin/<base>..<branch k>`, and call `close` on that task again with that commit.
+   Commit the task-state files this changed as `chore(<issue-ref>): re-record bundle k commits after rebase`, staging them by explicit path as step 11's closing commit does; on beads that means the three export steps in `../fathom-shared/memory/beads.md`.
+   When branch k is already on the remote, push it with `--force-with-lease`, never a bare force push, and hold when the lease is rejected.
+4. Use the resolved base branch as bundle k's base for the rest of this routine: the reconciliation range, `resolveBase`, `openReview`, and the pending-marker lookup.
 
 ### Reusing a bundle's review
 
