@@ -456,6 +456,9 @@ Check that `bd config get issue_prefix` prints your prefix.
 Keep the moved directory until runs work again.
 Fathom commits each issue's tasks to `.beads/<ref>.jsonl` on that issue's branch, but anything created with plain `bd` and never exported exists only in the moved directory.
 
+**A task's recorded commit hash isn't in the base branch's history.** The review was squash-merged, so the base holds one squash commit and the task commits stay on the review's branch.
+GitHub keeps them on the pull request's `refs/pull/<n>/head` ref after the branch is deleted, so `git fetch origin pull/<n>/head` brings them back, and the pull request's Commits tab shows them.
+
 **Phase transitions show up as comments instead of moving the card.** Your Asana MCP build has no section-move tool.
 This is expected and handled, but the V2 server does support real section moves.
 
