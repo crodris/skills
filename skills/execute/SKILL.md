@@ -58,6 +58,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    When the resolved forge declares `reviewLookup: none`, neither the claim nor the sweep can be checked: say so once and act on nothing, closing no issue on the strength of an unverifiable claim.
 3. Resolve which tracker owns this issue and which memory backend owns its task state, following `trackers.md` and `memory.md`, including `memory.md`'s stop when the base tracks beads but `bd where` fails.
    Load the existing `.fathom/config.md` tracker profile, or run first-run setup when none exists; either way, run the tracker adapter's profile-load checks and honor any one-time offers they define.
+   On an agent that can spawn subagents, resolve the subagent models as `../fathom-shared/agents.md` says, asking only when no source names a role.
 4. When the invocation names two or more issues, read `fan-out.md` in this skill's folder and follow its several-issues section instead of the rest of this procedure.
    Before reading the branch name, check whether this checkout holds a base update paused by an earlier hold: `git rev-parse -q --verify MERGE_HEAD` succeeds mid-merge, and a `head-name` file exists at the path `git rev-parse --path-format=absolute --git-path rebase-merge/head-name` or `git rev-parse --path-format=absolute --git-path rebase-apply/head-name` prints mid-rebase.
    Run each of these on its own, as the Permissions section of `../fathom-shared/agents.md` says, and read that file by the printed path.

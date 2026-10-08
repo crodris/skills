@@ -162,6 +162,11 @@ That file is committed on the first issue's branch and reaches your base branch 
 
 If your tracker has no state for a phase, which is common for review states in a fresh Linear team, the skill says so and offers real choices rather than silently picking the nearest state.
 
+On Claude Code, execute also asks once per machine which models its subagents run on: the subagent that runs each issue when you name several, and the subagent that builds each parallel task.
+The answer goes to `~/.config/fathom/models.md` (or `$XDG_CONFIG_HOME/fathom/models.md`), not the profile, so each teammate keeps their own split.
+When `~/.claude/rules/pstack-models.md` exists, execute reads its `hardest tasks` and `feature, refactoring` lines instead of asking.
+Edit the file to change your split; the format is in [agents.md](../skills/fathom-shared/agents.md#subagent-models).
+
 ### 5. Pre-approve the commands
 
 Autonomous runs stall on permission prompts.
@@ -520,6 +525,8 @@ Repos set up before forge support need no extra work for the forge field itself.
 The next run asks which forge you use and adds `forge` to the profile in the first commit it makes on its issue branch, exactly as it repairs any other missing field.
 Existing `.fathom/` records that carry a branch and no review id keep working.
 The sweep matches them by branch on every run and leaves the record unchanged.
+
+The first execute run on Claude Code after upgrading to 2.6.0 asks the subagent model question once, unless your pstack model rule already answers it.
 
 If the repo used beads, confirm `.beads/.gitignore` exists, since the beads tooling writes it, and untrack any beads runtime files an earlier version committed.
 

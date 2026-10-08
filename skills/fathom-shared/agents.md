@@ -24,7 +24,7 @@ This file only names which tools each agent offers for it.
 
 `execute`'s fan-out runs issues and tasks on background subagents, as `../execute/fan-out.md` describes.
 
-Claude Code: dispatch each one with the Agent tool, `subagent_type: general-purpose`, `model: sonnet`, and `run_in_background: true`.
+Claude Code: dispatch each one with the Agent tool, `subagent_type: general-purpose`, the role's model from Subagent models below, and `run_in_background: true`.
 Leave `isolation` unset, since the parent creates every worktree itself so a task's branch starts from the issue branch and outlives the subagent for resume.
 An issue subagent can fan out its own tasks only when `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` allows nested subagents; otherwise it runs them one at a time.
 
@@ -33,6 +33,29 @@ Kiro, or Claude Code without that skill, runs the install command the lockfile n
 Kiro: treat it as an agent with no subagents, and run issues and tasks one at a time.
 
 A headless Claude Code run with a restricted tool allowlist also needs `--add-dir <main checkout>.fathom`, since fan-out worktrees and the GitHub review body file live in that sibling directory.
+
+### Subagent models
+
+Claude Code fan-out has two roles: `issue`, the subagent that runs one issue when several are named, and `task`, the implementer subagent that builds one task.
+Each person picks their split once per machine, never per repository, so it lives outside the committed profile.
+Resolve each role in this order, and stop at the first source that names it:
+
+1. The person's Fathom file, `$XDG_CONFIG_HOME/fathom/models.md`, or `~/.config/fathom/models.md` when that variable is unset: its `issue:` and `task:` lines.
+2. The pstack model rule, `~/.claude/rules/pstack-models.md`: its `hardest tasks:` line for `issue` and its `feature, refactoring:` line for `task`.
+   When a line lists several models, use the first.
+3. Ask, at the point `../execute/SKILL.md` step 3 names, as one structured question covering each role still unresolved.
+   Offer Sonnet for both, Opus for issues and Sonnet for tasks, Opus for both, and the parent session's model for both.
+   Write the answer to the Fathom file, creating its directory, and keep any line already there.
+   In auto mode skip the question, use `sonnet` for each unresolved role, write nothing, and say so in the run's report, so the next run in ask mode asks.
+
+A value is `fable`, `opus`, `sonnet`, or `haiku`; `inherit-parent` or `auto` means omit `model`, so the role runs on the parent session's model.
+A file in this format:
+
+```markdown
+# fathom subagent models
+issue: opus
+task: sonnet
+```
 
 ## MCP tool naming
 
