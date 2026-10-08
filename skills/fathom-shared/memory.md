@@ -39,7 +39,7 @@ When `git cat-file -e origin/<base>:.beads/metadata.json` succeeds, run `bd wher
 Use the beads adapter when `bd where` succeeds.
 `bd --version` is no proof here, since it succeeds even when `bd` cannot open this workspace.
 `bd where` fails when `bd` is missing and when it refuses a 0.49-era workspace that still has `.beads/beads.db`.
-The beads adapter's `init` catches a 0.49-era workspace that has no `.beads/beads.db`.
+The beads adapter's `init` catches a 0.49-era workspace that has no `.beads/beads.db`, and a database with no issue prefix, which `bd where` also passes.
 When `bd where` exits nonzero, stop and show the user the error it printed.
 Ask them to install or upgrade beads, or to continue on a machine where `bd where` succeeds.
 Do not fall back to the checklist adapter in this case: task status must never fork across two backends, per the no-dual-truth rule below.
