@@ -38,7 +38,7 @@ The design goal is that **nothing is remembered between invocations**.
 Every run reads state from your repository and your tracker, so an interrupted run resumes by being re-invoked, in either agent.
 
 Resuming on a *different* machine works for whatever was committed and pushed.
-The checklist backend travels with each task commit; beads keeps its database out of git by design and shares each issue's tasks through that issue's `.beads/<ref>.jsonl`, so a beads run commits that file alongside each task for the same reason.
+The checklist backend travels with each task commit; beads keeps its database out of git by design and shares each issue's tasks through that issue's `.beads/<ref>.jsonl`, so a beads run commits that file with the breakdown and alongside each task for the same reason.
 
 **Requirements:** an Asana or Linear MCP connected in your agent, and optionally the beads CLI (`bd`) for richer task memory.
 On GitHub, the GitHub CLI (`gh`) authenticated. On another forge, an adapter you write - or nothing at all: the bundled generic-git fallback still pushes the branch and hands the review off to you. See [Forges](#forges).

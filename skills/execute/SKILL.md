@@ -92,6 +92,7 @@ If any of these files cannot be found and read, stop immediately and report whic
 8. Ensure the breakdown exists.
    - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.
      When that plan document carries a `Bundles` section but step 7 recovered no stack, go back to step 7 and recover it before implementing anything.
+     Then call `init` for the issue before moving on, so the memory backend's checks still run and a run resumed on another machine imports the issue's tasks before step 10 reads them.
    - Plan the units of work before writing anything to the tracker or the memory backend.
      When the issue has no existing children, plan up to seven units of work, each small enough to review as one commit and complete enough to verify on its own, and hold that plan rather than creating anything from it yet.
      Plan only as many units as the issue's requirements support, which is one or two for a small issue, and never add a unit the issue does not ask for to pad the breakdown.
@@ -120,6 +121,7 @@ If any of these files cannot be found and read, stop immediately and report whic
      When a split was confirmed, create them as `stack.md`'s step 8 section says.
    - After every child task exists, add the parent's dependency edge on each child, so the parent cannot close before its children.
    - Whether the sub-issues were newly created or adopted, write the plan document described in `conventions.md` and commit it with the breakdown.
+     When beads is the backend, run the three export steps in One database per repository in `../fathom-shared/memory/beads.md` before that commit, so it carries `.beads/<ISSUE-REF>.jsonl`.
      A confirmed split adds the `Bundles` section and the `Merge-closer` line that `stack.md` describes.
    - Write `.fathom/tasks/<ISSUE-REF>.md` only when the resolved backend is the checklist adapter.
 9. Call `updateState` to move the issue to the `inProgress` phase.
