@@ -53,7 +53,8 @@ Do not ask the user to choose a backend; resolution is a silent probe.
 Do state the resolved backend in the run summary whenever it differs from what the repository's other open issues are using, so a mixed-backend period is visible rather than surprising.
 
 Both backends store their state inside the repo, so a later session resumes by reading the repo rather than by remembering anything.
-Resuming on a different machine only works for state that was committed and pushed: the checklist file travels with each task commit, while beads keeps its database out of git deliberately and shares each issue's tasks only through that issue's file `.beads/<ISSUE-REF>.jsonl`, so a beads run must commit that file with the breakdown and alongside each task rather than only at the finish, or an interrupted run's progress stays on the machine where it happened.
+Resuming on a different machine only works for state that was committed and pushed.
+The checklist file travels with each task commit, and beads commits its per-issue file as Repository hygiene in `memory/beads.md` describes.
 Resume by reading the working tree, not the last commit.
 An in-progress marker may be uncommitted when a session dies, and the file on disk is the truth, not whatever was last committed.
 
