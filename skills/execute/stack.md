@@ -117,19 +117,18 @@ Otherwise call `getReviewState` on the recorded review of every bundle from 1 to
 - When bundle k-1 reports `merged` but a bundle below it does not, stop and hold naming them, since bundle k-1 merged into a branch that has not reached the base.
 - When every bundle from 1 to k-1 reports `merged`, move bundle k onto the base with the steps below.
 
-Before those steps, stop and hold when bundle k's entry already carries a `- Review: pending (bundle k/N)` marker, since a review opened for it may target branch k-1.
-Say that the user should retarget that review to the base and record it as a full `- Review:` line, or close it and replace the marker with `- Review: none confirmed (bundle k/N)`, as the pending-marker lookup describes.
-
 1. Fetch the resolved base branch.
    The cut point is the parent of the oldest commit in `origin/<base>..<branch k>` whose `Task:` trailer names one of bundle k's tasks.
-   When the cut point is already an ancestor of `origin/<base>`, as after a merge commit or a rebase an earlier run finished, skip to the last step below.
-2. Rebase only bundle k's own commits: `git rebase --autostash --onto origin/<base> <cut point> <branch k>`.
+   When the cut point is already an ancestor of `origin/<base>`, as after a merge commit or a rebase an earlier run made, skip the next step.
+2. Stop and hold when bundle k's entry carries a `- Review: pending (bundle k/N)` marker, since a review opened for it may target branch k-1.
+   Say that the user should retarget that review to the base and record it as a full `- Review:` line, or close it and replace the marker with `- Review: none confirmed (bundle k/N)`, as the pending-marker lookup describes.
+   Otherwise rebase only bundle k's own commits: `git rebase --autostash --onto origin/<base> <cut point> <branch k>`.
    `--autostash` carries uncommitted edits across the rebase, such as checklist mode's pending hash edit, since git refuses to rebase a dirty tree.
    When the rebase conflicts, note the conflicting files from `git ls-files -u`, run `git rebase --abort`, then stop and hold naming them.
-3. The rebase rewrote bundle k's commits, so re-record every closed task in bundle k.
-   Find each one's new commit with `git log --format=%h --grep "^Task: <id>$" origin/<base>..<branch k>`, and call `close` on that task again with that commit.
-   Commit the task-state files this changed as `chore(<issue-ref>): re-record bundle k commits after rebase`, naming no task in the body and staging them by explicit path as step 11's closing commit does; on beads that means the three export steps in One database per repository in `../fathom-shared/memory/beads.md`.
-   When branch k is already on the remote, push it with `--force-with-lease`, never a bare force push.
+3. A rebase, this run's or an interrupted earlier one's, leaves recorded commits that no longer exist.
+   For every closed task in bundle k whose recorded commit is not in `origin/<base>..<branch k>`, find its new commit with `git log --format=%h --grep "^Task: <id>$" origin/<base>..<branch k>`, and call `close` on that task again with that commit.
+   When that re-recorded any task, commit the task-state files it changed as `chore(<issue-ref>): re-record bundle k commits after rebase`, naming no task in the body and staging them by explicit path as step 11's closing commit does; on beads that means the three export steps in One database per repository in `../fathom-shared/memory/beads.md`.
+   When branch k is on the remote and differs from the local branch, push it with `--force-with-lease`, never a bare force push.
    When the lease is rejected, stop and hold: another commit reached that branch, and overwriting it discards someone's work.
 4. Use the resolved base branch as bundle k's base for the rest of this routine: the reconciliation range, `resolveBase`, `openReview`, and the pending-marker lookup.
 
