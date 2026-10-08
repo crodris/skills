@@ -121,7 +121,7 @@ Check the recorded hashes as well: every hash recorded at close must name a comm
 When the counts disagree, stop and report the discrepancy rather than opening a review: either a commit is missing, or tasks were combined into one commit, and both contradict the one-commit-per-task rule.
 
 When the issue was split into a stack, reconcile once per bundle rather than once per issue, and do it before that bundle's review opens rather than at the end of the run.
-Count over the range from that bundle's own base to that bundle's head: the resolved base branch for bundle 1, and branch k-1 for bundle k.
+Count over the range from that bundle's own base to that bundle's head: the resolved base branch for bundle 1, and branch k-1 for bundle k, or the resolved base branch when the lower-bundle check in `../execute/stack.md` moved bundle k onto it.
 Compare that count to the number of tasks closed for that bundle only.
 A stack-wide count over the whole range would pass even when one bundle carried another bundle's commits, which is exactly the mistake the check exists to catch.
 Stop on a mismatch the same way, and do not open that bundle's review.

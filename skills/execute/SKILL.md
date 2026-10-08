@@ -125,6 +125,8 @@ If any of these files cannot be found and read, stop immediately and report whic
      A confirmed split adds the `Bundles` section and the `Merge-closer` line that `stack.md` describes.
    - Write `.fathom/tasks/<ISSUE-REF>.md` only when the resolved backend is the checklist adapter.
 9. Call `updateState` to move the issue to the `inProgress` phase.
+   For a stacked issue whose `Bundles` section records bundle 1's review, call `getIssue` again first.
+   Skip the update when it shows the issue already in `inReview`, since that review is open and moving the issue back would misreport it.
 10. Run the implementation loop until `claimNext` reports nothing claimable.
     On a stacked issue, run the check in `stack.md`'s step 10 section before the first pass.
     On an issue not split into a stack, read `fan-out.md` in this skill's folder before the first pass and apply its parallel-tasks section at the start of every pass; its recovery rule applies even when the running agent cannot spawn subagents.

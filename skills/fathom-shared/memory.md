@@ -15,7 +15,7 @@ Adapter files implement each one against a specific backend; treat the operation
 | `claimNext()` | Return and mark in-progress this issue's first open task whose deps are all closed; null when none remain. Scope every call to the issue being worked: a backend able to see other issues' tasks must filter to this one, or the loop will implement another issue's work on this branch and close the wrong sub-issue. When an interrupted run left one of this issue's tasks in progress, return that task to be resumed rather than claiming a new one. |
 | `ready()` | Return this issue's open tasks whose deps are all closed, in creation order, without claiming any. Scope it to the issue exactly as `claimNext` is. |
 | `claim(taskId)` | Mark one task from `ready()` in progress, so several tasks can be in progress at once. |
-| `close(taskId)` | Mark a task done. |
+| `close(taskId)` | Mark a task done. Calling it on a task already done replaces its recorded commit with the new one. |
 | `status()` | Return this issue's open and done counts and its in-progress tasks, scoped to the issue exactly as `claimNext` is. |
 | `parentTask(issueRef)` | Create or fetch the parent task representing the overarching issue. Its dependency edges on the children are added after the children exist, not during this call, since at that point they do not. |
 
