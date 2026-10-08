@@ -114,7 +114,7 @@ A progress line describes repository state, so never name a commit that does not
 
 Reconcile before finishing.
 A task commit is one whose subject is scoped to this issue's ref and which implements a task; the breakdown commit, every plan document commit including the per-bundle one that records a bundle's review id, and any task-state bookkeeping commit are not task commits.
-Those bookkeeping commits are recognizable rather than a matter of judgment: each is typed `chore`, touches only records under `.fathom/`, and names no task, so none of them can be counted as the commit that implemented one.
+Those bookkeeping commits are recognizable rather than a matter of judgment: each is typed `chore`, touches only records under `.fathom/` and, on beads, this issue's `.beads/<ISSUE-REF>.jsonl`, and names no task, so none of them can be counted as the commit that implemented one.
 Count them over the range from the resolved base branch to the current head, not over all history, since a branch inherits its base's commits.
 Compare that count to the number of tasks closed for this issue.
 Check the recorded hashes as well: every hash recorded at close must name a commit inside that same range, and each closed task's hash must be distinct, which catches a mismatch that subject-line counting can misclassify.

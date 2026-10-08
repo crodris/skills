@@ -121,7 +121,7 @@ If any of these files cannot be found and read, stop immediately and report whic
      When a split was confirmed, create them as `stack.md`'s step 8 section says.
    - After every child task exists, add the parent's dependency edge on each child, so the parent cannot close before its children.
    - Whether the sub-issues were newly created or adopted, write the plan document described in `conventions.md` and commit it with the breakdown.
-     When beads is the backend, run the three export steps in `../fathom-shared/memory/beads.md` before that commit, so it carries `.beads/<ISSUE-REF>.jsonl`.
+     When beads is the backend, run the three export steps in One database per repository in `../fathom-shared/memory/beads.md` before that commit, so it carries `.beads/<ISSUE-REF>.jsonl`.
      A confirmed split adds the `Bundles` section and the `Merge-closer` line that `stack.md` describes.
    - Write `.fathom/tasks/<ISSUE-REF>.md` only when the resolved backend is the checklist adapter.
 9. Call `updateState` to move the issue to the `inProgress` phase.
