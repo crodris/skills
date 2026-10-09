@@ -1,7 +1,7 @@
 ---
 name: execute
 description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5, or several at once like "execute ONC-5 ONC-6". Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
-version: 2.6.0
+version: 2.7.0
 ---
 
 # Execute
@@ -94,6 +94,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.
      When that plan document carries a `Bundles` section but step 7 recovered no stack, go back to step 7 and recover it before implementing anything.
      Then call `init` for the issue before moving on, so the memory backend's checks still run and a run resumed on another machine imports the issue's tasks before step 10 reads them.
+     When beads is the backend, then run the sync steps in the Dolt remote section of `../fathom-shared/memory/beads.md`, which retries a sync that an interrupted run never finished.
    - Plan the units of work before writing anything to the tracker or the memory backend.
      When the issue has no existing children, plan up to seven units of work, each small enough to review as one commit and complete enough to verify on its own, and hold that plan rather than creating anything from it yet.
      Plan only as many units as the issue's requirements support, which is one or two for a small issue, and never add a unit the issue does not ask for to pad the breakdown.
@@ -123,6 +124,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    - After every child task exists, add the parent's dependency edge on each child, so the parent cannot close before its children.
    - Whether the sub-issues were newly created or adopted, write the plan document described in `conventions.md` and commit it with the breakdown.
      When beads is the backend, run the three export steps in One database per repository in `../fathom-shared/memory/beads.md` before that commit, so it carries `.beads/<ISSUE-REF>.jsonl`.
+     After that commit, when beads is the backend, run the sync steps in the Dolt remote section of `../fathom-shared/memory/beads.md`.
      A confirmed split adds the `Bundles` section and the `Merge-closer` line that `stack.md` describes.
    - Write `.fathom/tasks/<ISSUE-REF>.md` only when the resolved backend is the checklist adapter.
 9. Call `updateState` to move the issue to the `inProgress` phase.
@@ -189,9 +191,12 @@ If any of these files cannot be found and read, stop immediately and report whic
     Still apply `inReview`, and say plainly that no later run will move this issue to `done` on its own because the forge cannot be observed, so closing it is now a manual step.
 
     Finally, post a completion comment on the issue, including the done-on-merge note from `asana.md` when the tracker is Asana, then write `- Finalization: complete` into this issue's plan document per `conventions.md`, and commit and push the task-state files this run changed as a final closing commit so the branch carries the completed state, staging them by explicit path per the staging rules in `conventions.md`: when beads is the backend, run the three export steps in One database per repository in `../fathom-shared/memory/beads.md`, which stage `.beads/<ISSUE-REF>.jsonl` with the final state, including the last task's close and the parent's close, and stage this issue's files under `.fathom/`; never sweep `.beads/` or `.fathom/` as directories, since the beads database and runtime files must not ride into the review.
-    Write that line last, after every other closing action has been taken; a line written earlier would make the check at the top of this step skip the rest of it forever.
+    Write that line last, after every other closing action except the Dolt sync below; a line written earlier would make the check at the top of this step skip the rest of it forever.
     It rides this same closing commit.
     Push this closing commit with an ordinary `git push` of the branch even when the adapter declares `pushesForYou`, since that capability governs only the push that opens the review, per `../fathom-shared/forges.md`.
+    When beads is the backend, then run the sync steps in the Dolt remote section of `../fathom-shared/memory/beads.md`.
+    This sync is the one action that follows the finalization line, since it changes nothing on the branch.
+    Step 8 retries it when a run stops before it.
     On a stacked issue, `stack.md`'s after-bundle-N section says which branch carries this commit and what to say at handoff.
 12. Report a final summary: the issue, the review URL when one was opened, every bundle's review URL in order when the issue was split into a stack, or the resolved tier when no review was opened, the tracker's current phase, and the task counts from `status()`.
 

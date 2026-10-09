@@ -35,11 +35,36 @@ Nothing writes `.beads/issues.jsonl` any more.
 A repository that tracks it keeps it as history, which `bd bootstrap` imports into a new database, so never stage or edit it.
 Parallel issues never share a file, so only stacked branches of the same issue can conflict on one, as Repository hygiene below describes.
 
+## Dolt remote
+
+A repository can share its database through a Dolt remote, which is how teammates who run `bd` without Fathom see the same rows.
+The repository has one when `bd dolt remote list` names a remote, and that command prints "No remotes configured." when it has none.
+With no remote, skip every step in this section.
+
+`init` pulls before the run reads or writes any task, as its mapping row says.
+The sync steps send the database to the remote.
+Run these two commands, each on its own:
+1. `bd dolt pull`
+2. `bd dolt push`, only when the pull exited 0.
+
+`bd dolt push` sends the whole database, which carries every issue's rows and any schema migration a `bd` upgrade applied locally.
+Never push without a pull that succeeded just before it.
+After a `bd` upgrade applies a schema migration, the pull fails with "local changes would be stomped by merge".
+`bd dolt push` alone was seen to send the migration to the remote.
+When either command fails, report bd's error, name "Execute stops because `bd dolt pull` failed or a schema migration ran" in Fathom's `docs/fathom.md`, and continue the run.
+`.beads/<issueRef>.jsonl` on the branch still holds the tasks, and the next sync sends them.
+
+Never pass `--force` or `--strategy`, never run `bd dolt commit`, and never move or re-bootstrap the database to make a pull or push succeed.
+Each of those decides whose history wins, so it is the user's decision.
+
+The per-issue files stay the branch-scoped record that resume and the merge sweep read.
+The database and the file converge, per the `bd import` note below.
+
 ## Operation mapping
 
 | Contract operation | beads CLI mapping |
 | --- | --- |
-| `init(issueRef)` | When `grep -q '"backend"' .beads/metadata.json` fails, stop and tell the user that this workspace predates bd 1.x and needs the "From bd 0.x to bd 1.x" upgrade steps in Fathom's `docs/fathom.md`. Never migrate it yourself. Otherwise run `mkdir -p <main checkout>.fathom`, then `bd bootstrap`, which creates the database and imports the tracked `.beads/issues.jsonl` on a fresh clone and prints "Nothing to do" when the database already exists. Then run `bd config get issue_prefix --json` before any other `bd` command. It exits 0 whether or not a prefix is set, so read the `value` it prints, and stop when `value` is empty. `bd where` and `bd bootstrap` both pass on a database with no prefix, but every `createTask` would fail. Tell the user to follow "Execute stops because the beads database has no issue prefix" in Fathom's `docs/fathom.md`, and never move `.beads/embeddeddolt` yourself. Then, when `.beads/<issueRef>.jsonl` exists, run `bd import .beads/<issueRef>.jsonl`, so a run resumed on another machine or after the local database was lost recovers its tasks. Repeating the import is safe, per the `bd import` note below. |
+| `init(issueRef)` | When `grep -q '"backend"' .beads/metadata.json` fails, stop and tell the user that this workspace predates bd 1.x and needs the "From bd 0.x to bd 1.x" upgrade steps in Fathom's `docs/fathom.md`. Never migrate it yourself. Otherwise run `mkdir -p <main checkout>.fathom`, then `bd bootstrap`, which creates the database and imports the tracked `.beads/issues.jsonl` on a fresh clone and prints "Nothing to do" when the database already exists. Then run `bd config get issue_prefix --json` before any other `bd` command. It exits 0 whether or not a prefix is set, so read the `value` it prints, and stop when `value` is empty. `bd where` and `bd bootstrap` both pass on a database with no prefix, but every `createTask` would fail. Tell the user to follow "Execute stops because the beads database has no issue prefix" in Fathom's `docs/fathom.md`, and never move `.beads/embeddeddolt` yourself. Then, when the repository has a Dolt remote, as Dolt remote above defines, run `bd dolt pull`, and stop when it exits nonzero or when any `bd` command in this `init` printed a line containing `schema migration`. On that stop, show bd's output, say that the fix decides whose history wins, so it is the user's to choose and Fathom will not commit or force anything, and tell the user to follow "Execute stops because `bd dolt pull` failed or a schema migration ran" in Fathom's `docs/fathom.md`. Then, when `.beads/<issueRef>.jsonl` exists, run `bd import .beads/<issueRef>.jsonl`, so a run resumed on another machine or after the local database was lost recovers its tasks. Repeating the import is safe, per the `bd import` note below. |
 | `createTask(title, description, subIssueRef, deps)` | Run one `bd create "<title>" -d "<description>" -l "<issueRef>" --external-ref "<subIssueRef>" --deps "<comma-separated blocker ids>" --silent` and capture the single line of output as the new task id. Do it in that one call rather than as a create followed by separate writes, for the durability reason in the notes below. Tagging the task with the issue ref lets every task for one issue be listed directly with `bd list -l "<issueRef>"` instead of matching on titles, and `--silent` makes `bd create` print only the issue id, which this adapter always needs for its return value. Omit `--external-ref` entirely when no `subIssueRef` was passed, and omit `--deps` entirely when `deps` is empty, rather than passing an empty value to either. Each id in `--deps` makes the new task depend on that blocker, so it stays excluded from `claimNext` until the blocker closes. Use the title and description exactly as passed in; embedding the issue ref into the title (the `<issueRef>: <task title>` naming convention) is the caller's responsibility, not this adapter's. |
 | `claimNext()` | First run `bd list -l "<issueRef>" --type task --status in_progress --limit 0 --json`. When it returns a task, an interrupted run left it in progress, so return the oldest one to be resumed without claiming it. Otherwise run `bd ready -l "<issueRef>" --type task --sort oldest --claim --json`, which atomically claims this issue's oldest task with no open blockers and returns it as a one-element array. Return element 0's id, or null when the result is `[]`. The label filter is not optional on either call: without it `bd` reads the whole repository, so an unscoped call will hand back or claim another issue's task, and the loop will implement it on this issue's branch and close the wrong sub-issue. |
 | `ready()` | Run `bd ready -l "<issueRef>" --type task --sort oldest --limit 0 --json` and return its tasks, which are this issue's open tasks with no open blockers, oldest first. Claim nothing. |
@@ -86,7 +111,7 @@ Parallel issues each write their own `.beads/<issueRef>.jsonl`, so they never co
 Only stacked branches of the same issue can conflict on that file, when one bundle's branch is updated from another.
 The issue's file is the one conflicted file a run resolves itself during a branch update, since it is generated from task state, and it does so even when other files conflict too.
 Never hand-merge the JSON lines; run these in order:
-1. Run the steps of `init` that come before its `bd import`, with the same stops: the metadata check, `mkdir -p <main checkout>.fathom`, `bd bootstrap`, and the `issue_prefix` probe.
+1. Run the steps of `init` that come before its `bd import`, with the same stops: the metadata check, `mkdir -p <main checkout>.fathom`, `bd bootstrap`, the `issue_prefix` probe, and the Dolt pull.
    A resumed run reaches this recipe in execute's step 7, before step 8 calls `init`.
    On a fresh clone, a `bd import` with no database fails and still creates `.beads/embeddeddolt` with no prefix, which `bd bootstrap` then leaves as it is.
 2. `git checkout --ours -- .beads/<issueRef>.jsonl`, then `bd import .beads/<issueRef>.jsonl`.
