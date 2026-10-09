@@ -580,8 +580,10 @@ Pick one of these by bd's error:
 - "no branches found in remote" means `sync.remote` is set but nobody pushed the database yet.
   Run `bd dolt push` once from the clone whose database holds the tasks, then move `.beads/embeddeddolt` out of `.beads/` and run `bd bootstrap` on every other clone.
   To keep tasks local instead, run `bd config unset sync.remote` and commit `.beads/config.yaml`.
-- "merge conflicts in issues require operator resolution" means you and a teammate changed the same task on two machines, and bd aborted the pull with your copy untouched.
-  Agree on whose edit wins, then run `bd dolt pull --strategy theirs` to keep the remote's or `bd dolt pull --strategy ours` to keep yours, and then `bd dolt push`.
+- "merge conflicts in issues require operator resolution" means the same task was changed on two machines, and bd aborted the pull with your copy untouched.
+  Agree on whose edit wins.
+  Run `bd dolt pull --strategy theirs` to keep the remote's edit, or `bd dolt pull --strategy ours` to keep yours, then run `bd dolt push`.
+  The strategy applies to every task that conflicts in that pull, and after the push the losing edit is gone for everyone.
 - Any other error, such as a network or credential failure, is between bd and the remote, so fix it and rerun.
 
 **Execute holds on a conflicted `.fathom/config.md`.** Execute never re-runs setup on a conflicted profile and never merges it for you.
