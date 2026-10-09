@@ -23,8 +23,9 @@ Use this when the invocation names two or more issue refs or URLs.
    Otherwise fetch the resolved base and run `git worktree add --detach <main checkout>.fathom/<ISSUE-REF> origin/<base>`, and let the run create or check out the issue's branch there at step 7.
    When `.fathom/config.md` is not on `origin/<base>`, copy the parent's file into the worktree, so the subagent loads the profile step 3 settled rather than starting first-run setup.
 3. Dispatch one background subagent per issue.
-   Its brief carries pointers, not restated rules: this skill's `SKILL.md` path, the issue ref, the worktree path, and the resolved approval mode, plus the shell-command rule above, stated in full.
+   Its brief carries pointers, not restated rules: this skill's `SKILL.md` path, the issue ref, the worktree path, the resolved approval mode, and the resolved `issue` and `task` models, plus the shell-command rule above, stated in full.
    Tell it to run this procedure for that one issue against its worktree, and to skip step 2's sweep and step 3's one-time offers, because the parent already ran both.
+   Tell it to give its implementer subagents the `task` model instead of resolving models again.
    Once step 7 puts it on the issue branch, it installs the worktree's dependencies as `../fathom-shared/agents.md` says.
    Any other question the procedure would ask the user becomes a hold: it stops and reports the question.
 4. Report as each subagent finishes, without waiting for the rest: the step 12 summary for a finished issue, the hold and its question for a held one.

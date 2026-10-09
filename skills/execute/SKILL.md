@@ -1,7 +1,7 @@
 ---
 name: execute
 description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5, or several at once like "execute ONC-5 ONC-6". Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
-version: 1.0.0
+version: 2.6.0
 ---
 
 # Execute
@@ -58,6 +58,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    When the resolved forge declares `reviewLookup: none`, neither the claim nor the sweep can be checked: say so once and act on nothing, closing no issue on the strength of an unverifiable claim.
 3. Resolve which tracker owns this issue and which memory backend owns its task state, following `trackers.md` and `memory.md`, including `memory.md`'s stop when the base tracks beads but `bd where` fails.
    Load the existing `.fathom/config.md` tracker profile, or run first-run setup when none exists; either way, run the tracker adapter's profile-load checks and honor any one-time offers they define.
+   On an agent that can spawn subagents, resolve the subagent models as `../fathom-shared/agents.md` says, asking only when no source names a role.
 4. When the invocation names two or more issues, read `fan-out.md` in this skill's folder and follow its several-issues section instead of the rest of this procedure.
    Before reading the branch name, check whether this checkout holds a base update paused by an earlier hold: `git rev-parse -q --verify MERGE_HEAD` succeeds mid-merge, and a `head-name` file exists at the path `git rev-parse --path-format=absolute --git-path rebase-merge/head-name` or `git rev-parse --path-format=absolute --git-path rebase-apply/head-name` prints mid-rebase.
    Run each of these on its own, as the Permissions section of `../fathom-shared/agents.md` says, and read that file by the printed path.

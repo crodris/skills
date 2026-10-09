@@ -17,6 +17,7 @@ It works with **Asana** or **Linear**, and runs unchanged on **Claude Code** and
 - [Setup, step by step](#setup-step-by-step)
 - [Using scaffold](#using-scaffold)
 - [Using execute](#using-execute)
+- [Stacked reviews](#stacked-reviews)
 - [Approval modes](#approval-modes)
 - [Decision trees](#decision-trees)
 - [What lands in your repo](#what-lands-in-your-repo)
@@ -162,7 +163,10 @@ See [Troubleshooting](#troubleshooting) when a pull fails.
 ### 4. Answer the first-run questions
 
 The first time either skill runs in a repository it asks a short series of questions, one at a time, and writes the answers to `.fathom/config.md`.
-That file is committed on the first issue's branch and reaches your base branch when that review merges, after which **teammates who clone the repo are never asked any of it**.
+Execute commits that file as the first commit on the first issue's branch, and it reaches your base branch when that review merges, after which **teammates who clone the repo are never asked any of it**.
+Scaffold creates no branch, so a profile it writes stays uncommitted until execute reaches an issue branch.
+When the issue's own branch already carries a profile, the run loads it without asking.
+When another local branch carries one, the run offers to reuse it before it starts the questions.
 
 | Question | Why it is asked |
 | --- | --- |
@@ -176,10 +180,21 @@ That file is committed on the first issue's branch and reaches your base branch 
 
 If your tracker has no state for a phase, which is common for review states in a fresh Linear team, the skill says so and offers real choices rather than silently picking the nearest state.
 
+On Claude Code, execute also asks you once per machine which models its subagents should run on: one for the subagent that runs each issue when you name several, and one for the subagent that builds each parallel task.
+Your answer is saved to `~/.config/fathom/models.md` (or `$XDG_CONFIG_HOME/fathom/models.md`), outside the committed profile, so each teammate keeps their own split.
+If you already have `~/.claude/rules/pstack-models.md`, execute reads its model lines too.
+Execute asks only for a role neither file names, and only in ask mode.
+In auto mode it uses Sonnet for that role, writes nothing, and says so.
+A value other than `fable`, `opus`, `sonnet`, `haiku`, or `inherit-parent` (or its alias `auto`) is ignored.
+Each subagent's description starts with its model, such as `[opus] Execute TES-250`, so Claude Code's agent list shows it.
+To change your split later, edit `models.md`; the format and the details are in [agents.md](../skills/fathom-shared/agents.md#subagent-models).
+
 ### 5. Pre-approve the commands
 
 Autonomous runs stall on permission prompts.
 Pre-approve `git`, `bd`, your forge's CLI (`gh` on GitHub), and your tracker MCP's tools: in Claude Code through the permissions allowlist, in Kiro through trusted commands.
+
+A headless Claude Code run with a restricted tool allowlist also needs `--add-dir <checkout>.fathom`, the sibling directory described under [What lands in your repo](#what-lands-in-your-repo).
 
 Read [Security boundary](#security-boundary) before blanket-approving shell access.
 
@@ -240,15 +255,84 @@ A stacked issue stays sequential, because its tasks form one chain.
 Naming several issues runs each one in its own worktree on its own subagent, after one shared preflight and sweep.
 Each issue still gets its own branch and review.
 In this mode a question execute would normally ask becomes a hold, and the hold report carries the question.
-On an agent with no subagents, both kinds of fan-out fall back to running one at a time.
+On an agent with no subagents, such as Kiro, both kinds of fan-out fall back to running one at a time.
+A held issue keeps its worktree.
+Answer its question by running `execute <ref>` from inside that worktree.
+When you name an issue that is a sub-issue of another issue you named, execute drops it and lets its parent's run cover it.
 The last task, or each bundle's last task on a stack, runs the typecheck and the full suite instead of its own test files.
 At the end it pushes, opens the review - or, in the manual tier, hands you everything needed to open it - and moves the issue to in review.
 
 Re-invoking on the same issue resumes it.
 Guards see what already exists and skip it.
 
+When the issue's branch already exists and the base branch has moved on, execute updates the branch from the base before it implements anything, and says so.
+A conflict in the issue's own `.beads/<ref>.jsonl` resolves automatically.
+Any other conflict holds the run with the merge or rebase paused where git stopped it, and the report lists each conflicting file.
+Resolve the files, run `git add` on each one, and invoke execute again.
+The run then finishes the paused update.
+Don't run `git merge --quit` in between, because quitting drops the merge's second parent.
+
 **When tests cannot pass**, the run stops and holds: the work stays, the task stays open, and you get told what failed.
 It does not push broken work or open a misleading review.
+
+## Stacked reviews
+
+A stack splits one issue into several dependent reviews, one per bundle of tasks, on chained branches.
+Each review is smaller to read, and the issue still ships as one piece of work.
+
+### Turning it on
+
+Stacking is opt-in.
+Add `stacking: propose` to `.fathom/config.md` to let execute propose a split.
+`stacking: never`, or no `stacking` line, keeps every issue on one review.
+First-run setup never asks about stacking and never writes the line.
+Read [Before turning on stacked reviews](#before-turning-on-stacked-reviews) first.
+
+### When execute proposes a split
+
+Execute proposes a split only when the breakdown has five or more units of work and at least one clean cut point exists.
+A cut point is clean when the units before it stand on their own and the units after it build on them.
+Execute's own proposal has at most three bundles, and each bundle holds at least two units.
+A specific split you ask for can have more bundles.
+The manual forge tier never proposes a split, because it cannot create reviews.
+In ask mode you confirm the proposal before anything is written to the tracker.
+In auto mode execute applies the proposed split without asking for confirmation and reports the bundles.
+Without a confirmed split the issue gets one review.
+
+### What a stack looks like
+
+- Bundle 1 uses the usual issue branch.
+  Each later bundle k uses the same name with `-k` appended, such as `feat/onc-5-add-webhooks-2`.
+- Tasks run one after another across the whole issue, so a stack never fans out its tasks.
+- A bundle's review opens when its last task closes.
+- Every review body says `Part k of N`.
+  Every body after the first also links the review it depends on.
+- Only the last bundle's body carries `Closes <ref>`.
+  Earlier bodies link the issue without a closing keyword.
+- The plan document gets a `Bundles` section, so a resumed run recovers the stack from the repository.
+
+### How a stacked issue closes
+
+The plan document also records `- Merge-closer: suppressed` for a stacked issue.
+The merge-closer Action sees that line and takes no action, so merging the first bundle can't close the whole issue.
+The issue moves to done when a later run's sweep sees every bundle merged.
+Saying "clean up merged issues" runs that sweep.
+
+### After a partial merge
+
+When some bundles have merged and others are still open, the next run restacks the open ones.
+A cleanup request runs the same check.
+Execute rebases a remaining bundle branch onto its updated base when the merged work is not already in that branch's history.
+It pushes the rebased branch with `--force-with-lease`.
+Execute holds instead, and tells you why, when any of these is true:
+
+- A bundle's review was closed without merging, or its state can't be read.
+- The push lease is rejected, because another commit reached the branch.
+- The rebase conflicts.
+  Execute aborts the rebase and names the conflicting files.
+
+If every bundle below bundle k merged before bundle k's review opened, execute rebases bundle k onto the base and targets the review at the base.
+A review against a merged lower branch would never reach the base.
 
 ## Approval modes
 
@@ -257,7 +341,7 @@ Two modes, and the difference is only how many questions you get.
 **Ask mode**, the default, stops for the issue draft, the handoff, and any genuinely ambiguous choice.
 
 **Auto mode** runs straight through.
-It skips the draft approval, the approach choice, the handoff question, ties that the documented precedence can settle on its own, and the two first-run answers that are genuinely determinate: exactly one available destination, or state names that match the three phases exactly.
+It skips the draft approval, the approach choice, the handoff question, confirmation of the bundle split, the subagent model question, ties that the documented precedence can settle on its own, and the two first-run answers that are genuinely determinate: exactly one available destination, or state names that match the three phases exactly.
 Everything else is asked even in auto mode.
 
 Auto mode removes friction, not judgment.
@@ -306,6 +390,10 @@ Does the base branch track .beads/metadata.json?
 Neither?                                        -> checklist, even if bd is installed
 ```
 
+Two more stops apply once a repository is on beads.
+A `.beads/metadata.json` with no `"backend"` key marks a bd 0.x workspace, and execute stops and points to [From bd 0.x to bd 1.x](#from-bd-0x-to-bd-1x).
+A database with no issue prefix stops execute and points to its entry under [Troubleshooting](#troubleshooting).
+
 An issue keeps the backend it started with for life.
 Adding beads to a repository later only affects issues started afterwards, so a mixed period is normal rather than broken.
 
@@ -337,6 +425,7 @@ Whichever resolves, the safety stops above are unaffected.
 Work starts               -> in progress
 Review opened             -> in review
 Review merged             -> done, by whichever closer you configured
+Every bundle merged       -> done, on a stacked issue, by a later run's sweep
 Review closed unmerged    -> nothing automatic; you are told once and asked what to do
 Tests cannot pass         -> stays in progress, run stops and holds
 ```
@@ -347,14 +436,18 @@ In the manual tier the "review merged" line never fires, because nothing can obs
 
 | Path | What it is |
 | --- | --- |
-| `.fathom/config.md` | The committed profile: tracker, forge, destination, state mapping, base branch, closer choice. |
+| `.fathom/config.md` | The committed profile: tracker, forge, destination, state mapping, base branch, closer choice, approval mode, and an optional `stacking` line. |
 | `.fathom/forge.md` | Only if you wrote an adapter for a forge Fathom does not ship. See [Forges](#forges). |
-| `.fathom/plans/<ref>.md` | The per-issue plan: issue link, branch, codebase context, approach, tasks, testing strategy. Written for people, never carries status. The branch sits on its own `- Branch:` line, which the merge-closer matches to find this issue. |
+| `.fathom/plans/<ref>.md` | The per-issue plan: issue link, branch, codebase context, approach, tasks, testing strategy, and a `- Review:` line once a review exists. A stacked issue adds a `Bundles` section and a `- Merge-closer: suppressed` line, and a finished issue records `- Finalization: complete`. Written for people, never carries task status. The branch sits on its own `- Branch:` line, which the merge-closer matches to find this issue. |
 | `.fathom/tasks/<ref>.md` | Task statuses as checkboxes. Only when the checklist backend is active. |
 | `.beads/` | Beads task state, when beads is the backend: one ignored database in `.beads/embeddeddolt/` that the repository's checkouts and worktrees share, plus one committed `.beads/<ref>.jsonl` per issue, which carries only that issue's tasks. With a Dolt remote, the database also lives on your git remote as `refs/dolt/data`. |
 | `.github/workflows/fathom-close.yml` | Only if you accepted the optional merge-closer Action. GitHub only; never offered on a forge without CI hooks. |
 
 Plans and task files stay after the review merges; they are the record of how the work was broken down.
+
+Fathom also uses a sibling directory next to your checkout, named after it with `.fathom` appended.
+It holds the fan-out worktrees, the GitHub review body file, and on beads the export file.
+It sits outside the repository, so nothing in it is committed.
 
 ## Forges
 
@@ -390,6 +483,7 @@ Linear can close issues natively, Asana cannot, so Fathom supports several arran
 It asks once which one you use and records the answer - unless your forge is not GitHub, or declares no CI hooks, in which case the question is skipped and the sweep is the only mechanism.
 
 1. **The tracker's own forge integration.** On GitHub, Linear closes an issue when a review body contains `Closes TES-5`.
+   Linear's integration reacts only to merges into the default branch, so when your `base-branch` is another branch, the sweep closes the issue.
    Asana can do the equivalent with its free GitHub App plus a rule that completes a task when its linked pull request merges.
    Nothing from this plugin runs.
    Best option when your organization allows the app.
@@ -486,6 +580,9 @@ Pick one of these by bd's error:
   To keep tasks local instead, run `bd config unset sync.remote` and commit `.beads/config.yaml`.
 - Any other error, such as a network or credential failure, is between bd and the remote, so fix it and rerun.
 
+**Execute holds on a conflicted `.fathom/config.md`.** Execute never re-runs setup on a conflicted profile and never merges it for you.
+Resolve the file, run `git add .fathom/config.md`, and invoke execute again.
+
 **A task's recorded commit hash isn't in the base branch's history.** The review was squash-merged, so the base holds one squash commit and the task commits stay on the review's branch.
 GitHub keeps them on the pull request's `refs/pull/<n>/head` ref after the branch is deleted, so `git fetch origin pull/<n>/head` brings them back, and the pull request's Commits tab shows them.
 
@@ -551,7 +648,17 @@ The next run asks which forge you use and adds `forge` to the profile in the fir
 Existing `.fathom/` records that carry a branch and no review id keep working.
 The sweep matches them by branch on every run and leaves the record unchanged.
 
+The first time you run execute on Claude Code after upgrading to 2.6.0, it asks the subagent model question once, unless your pstack model rule already answers it.
+Auto mode runs skip it and use Sonnet until a run in ask mode asks.
+
 If the repo used beads, confirm `.beads/.gitignore` exists, since the beads tooling writes it, and untrack any beads runtime files an earlier version committed.
+
+### Before turning on stacked reviews
+
+An installed merge-closer Action is a copy of the template taken when you accepted it.
+An older copy doesn't know the `- Merge-closer: suppressed` line, so it closes a stacked issue as soon as the first bundle merges.
+A run that finds an out-of-date copy offers once to rewrite it.
+Accept that offer before you write `stacking: propose`.
 
 ### From bd 0.x to bd 1.x
 

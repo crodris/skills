@@ -21,3 +21,9 @@ jobs:
 
       - name: Check every skill's frontmatter
         run: bin/check-frontmatter.sh
+
+      - name: Check the version sync against a scratch repository
+        run: bin/test-sync-versions.sh
+
+      - name: Check versions are in sync
+        run: bin/sync-versions.sh && git diff --exit-code
