@@ -91,7 +91,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    A run that stopped inside that recipe leaves the file conflicted.
    When the update is still paused after that, hold again while `git ls-files -u` lists a conflicted file or `git diff --cached --check` reports a leftover conflict marker.
    Otherwise finish it with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`.
-   When the rebase stops on its next commit, apply this resume rule again from the beads file check.
+   When any `--continue`, including the one in the beads recipe, stops the rebase on its next commit, start again from the check for this issue's beads file above.
    On a stack these rules describe bundle 1's branch, and `stack.md` names and creates the later bundles' branches.
 8. Ensure the breakdown exists.
    - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.
