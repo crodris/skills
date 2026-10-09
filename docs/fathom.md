@@ -152,6 +152,7 @@ Their bootstrap then copies your database, while a `bd bootstrap` run before you
 To keep tasks local to each clone instead, run `bd config unset sync.remote` and commit `.beads/config.yaml`.
 
 With a Dolt remote, Fathom runs `bd dolt pull` before it reads any task, and `bd dolt pull` then `bd dolt push` after the breakdown and after the issue's final close.
+A resumed run repeats the pull and push, so a run that stopped between a commit and its push still shares its tasks.
 Teammates who use `bd` without Fathom see an issue's tasks while it is in progress.
 Each issue's `.beads/<ref>.jsonl` stays on its branch as the record that resume and the merge sweep read.
 The two copies converge, since `bd import` keeps the newer copy of each row.

@@ -49,7 +49,7 @@ Run these two commands, each on its own:
 
 `bd dolt push` sends the whole database, which carries every issue's rows and any schema migration a `bd` upgrade applied locally.
 Never push without a pull that succeeded just before it.
-After such an upgrade, the pull fails with "local changes would be stomped by merge".
+After a `bd` upgrade applies a schema migration, the pull fails with "local changes would be stomped by merge".
 `bd dolt push` alone was seen to send the migration to the remote.
 When either command fails, report bd's error, name "Execute stops because `bd dolt pull` failed or a schema migration ran" in Fathom's `docs/fathom.md`, and continue the run.
 `.beads/<issueRef>.jsonl` on the branch still holds the tasks, and the next sync sends them.

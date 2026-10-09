@@ -1,7 +1,7 @@
 ---
 name: execute
 description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5, or several at once like "execute ONC-5 ONC-6". Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
-version: 2.6.0
+version: 2.7.0
 ---
 
 # Execute
@@ -191,11 +191,12 @@ If any of these files cannot be found and read, stop immediately and report whic
     Still apply `inReview`, and say plainly that no later run will move this issue to `done` on its own because the forge cannot be observed, so closing it is now a manual step.
 
     Finally, post a completion comment on the issue, including the done-on-merge note from `asana.md` when the tracker is Asana, then write `- Finalization: complete` into this issue's plan document per `conventions.md`, and commit and push the task-state files this run changed as a final closing commit so the branch carries the completed state, staging them by explicit path per the staging rules in `conventions.md`: when beads is the backend, run the three export steps in One database per repository in `../fathom-shared/memory/beads.md`, which stage `.beads/<ISSUE-REF>.jsonl` with the final state, including the last task's close and the parent's close, and stage this issue's files under `.fathom/`; never sweep `.beads/` or `.fathom/` as directories, since the beads database and runtime files must not ride into the review.
-    Write that line last, after every other closing action has been taken; a line written earlier would make the check at the top of this step skip the rest of it forever.
+    Write that line last, after every other closing action except the Dolt sync below; a line written earlier would make the check at the top of this step skip the rest of it forever.
     It rides this same closing commit.
     Push this closing commit with an ordinary `git push` of the branch even when the adapter declares `pushesForYou`, since that capability governs only the push that opens the review, per `../fathom-shared/forges.md`.
     When beads is the backend, then run the sync steps in the Dolt remote section of `../fathom-shared/memory/beads.md`.
-    This sync is the one action that follows the finalization line, since it changes nothing on the branch, and step 8 retries it when a run stops before it.
+    This sync is the one action that follows the finalization line, since it changes nothing on the branch.
+    Step 8 retries it when a run stops before it.
     On a stacked issue, `stack.md`'s after-bundle-N section says which branch carries this commit and what to say at handoff.
 12. Report a final summary: the issue, the review URL when one was opened, every bundle's review URL in order when the issue was split into a stack, or the resolved tier when no review was opened, the tracker's current phase, and the task counts from `status()`.
 
