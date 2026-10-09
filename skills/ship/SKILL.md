@@ -1,7 +1,7 @@
 ---
 name: ship
 description: Use when the user says "ship", "ship it", "/ship", "ship and merge", "take this all the way", "get this merged and released", or asks for the current branch to be carried from working tree to a merged release. Plain "ship" stops at a green pull request, and the merge needs a request that says to merge or a `merge` value of `yes` in the repository's `.ship/config.md`. Also use when the branch is already pushed or already has an open pull request and the user asks to finish it, and when the user asks to babysit, watch, or monitor a pull request or get it green without merging. Not for a single commit or a release cut from an already-merged main.
-version: 2.1.0
+version: 2.1.1
 ---
 
 # Ship
@@ -263,6 +263,7 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Give it a timeout, generous against the size of the diff, and treat one that blows through it the same way.
    Any one subagent failing twice in a row is a stop-and-report rather than a merge without it, because its axis has not reviewed the run.
    Wait on the checks and on every review bot `bots.md` finds present, including one that first shows up on this pull request, by running `bash <this skill's directory>/watch.sh <pr> <captured-sha> --repo <owner/name>` with one `--bot` per bot this pass waits on, named as `bots.md` says.
+   It also waits on the SHA's GitHub Actions workflows until they finish.
    Run it in the background where the harness notifies on exit, and act on its exit code; never write a polling loop.
    Exit 0 or 1 goes on to step 2's triage, with any failed check it names among the findings.
    Exit 3 is step 2's restart, never a new SHA to chase, and exit 7 is a stop-and-report that the pull request is no longer open.

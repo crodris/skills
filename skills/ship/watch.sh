@@ -8,6 +8,9 @@
 #          [--deadline <seconds, default 1800>] [--interval <seconds, default 30>]
 #
 # With no --bot it waits on the checks alone.
+# A GitHub Actions workflow on the SHA that has not finished counts as a pending
+# check, and settling waits up to NO_CHECKS_GRACE seconds for a first check and
+# a first workflow.
 # --rerequest <bot> implies --bot <bot> and posts the bot's re-request comment
 # once, after a poll finds the pull request open on <head-sha> and the bot not
 # settled; a notice older than that post is then ignored.
@@ -47,7 +50,10 @@ finish() {
 
 { command -v gh && command -v jq; } >/dev/null || finish usage "watch.sh needs gh and jq on PATH"
 
-# A fresh push has no checks registered yet, so an empty rollup settles only after this many seconds.
+# A fresh push may have no checks and no GitHub Actions workflow registered yet,
+# so settling waits for both or for this many seconds; a repo with no workflows,
+# or whose workflows all skip by paths filters, therefore waits this long before
+# settling.
 NO_CHECKS_GRACE=120
 MAX_FAILED_POLLS=3
 
@@ -74,7 +80,8 @@ QUERY='query($owner:String!,$repo:String!,$n:Int!,$sha:GitObjectID!){repository(
   comments(last:30){nodes{author{login} updatedAt body}}}
  object(oid:$sha){... on Commit{committedDate statusCheckRollup{contexts(first:100){pageInfo{hasNextPage} nodes{__typename
   ... on CheckRun{name status conclusion}
-  ... on StatusContext{context state description createdAt}}}}}}}}'
+  ... on StatusContext{context state description createdAt}}}}
+  checkSuites(first:100){pageInfo{hasNextPage} nodes{status workflowRun{workflow{name}}}}}}}}'
 
 # Prints the failure text of a response that counts as a failed poll, else nothing.
 ERRORS='
@@ -82,11 +89,14 @@ if .errors then [.errors[]? | .message // tojson] | join("; ") | if . == "" then
 elif (.data.repository.pullRequest | type) != "object" then "response has no pull request"
 elif .data.repository.object.statusCheckRollup.contexts.pageInfo.hasNextPage == true
 then "more than 100 checks on the SHA; watch.sh reads only the first 100"
+elif .data.repository.object.checkSuites.pageInfo.hasNextPage == true
+then "more than 100 check suites on the SHA; watch.sh reads only the first 100"
 else empty end'
 
 # Reduces one GraphQL response to a verdict. Inputs: $sha, $bots (ids in order),
 # $registry, $rerequested (bot id -> epoch seconds of this run's re-request),
-# and $allow_empty (whether an empty rollup may settle).
+# and $grace_over (whether NO_CHECKS_GRACE has passed, so settling no longer
+# needs a first check and a first workflow).
 REDUCE='
 def epoch: sub("\\.[0-9]+"; "") | fromdateiso8601;
 def fresh($since): $since == null or (. != null and epoch >= $since);
@@ -111,7 +121,12 @@ def body_notice: split("\n")[0] | notice("rate limit exceeded");
 .data.repository as $repo
 | $repo.pullRequest as $pr
 | ($repo.object.committedDate // null) as $committed
-| [$repo.object.statusCheckRollup.contexts.nodes // [] | .[] | . + {kind: kind, label: (.name // .context)}] as $checks
+# Only a GitHub Actions suite has a workflow run; other apps leave theirs QUEUED forever.
+# A finished workflow fails through its check runs.
+| [$repo.object.checkSuites.nodes // [] | .[] | select(.workflowRun != null)] as $workflows
+| [ ($repo.object.statusCheckRollup.contexts.nodes // [] | .[] | . + {kind: kind, label: (.name // .context)}),
+    ($workflows[] | select(.status != "COMPLETED") | {kind: "pending", label: "workflow \(.workflowRun.workflow.name)"})
+  ] as $checks
 | def bot($b; $since):
     ([$checks[] | select($b.status != null and .context == $b.status.context)] | last) as $status
     | [$pr.reviews.nodes // [] | .[] | select(author == $b.login and .commit.oid == $sha)] as $reviews
@@ -146,6 +161,7 @@ def body_notice: split("\n")[0] | notice("rate limit exceeded");
       failed_names: [$checks[] | select(.kind == "failed") | .label],
       pending_names: [$checks[] | select(.kind == "pending") | .label]
     },
+    no_workflow: ($workflows == [] and ($grace_over | not)),
     bots: ($botstates | map({(.id): .state}) | add // {}),
     notices: ($botstates | map(select(.notice != null) | {(.id): .notice}) | add // {})
   }
@@ -153,7 +169,7 @@ def body_notice: split("\n")[0] | notice("rate limit exceeded");
     if .pr != "open" then .pr
     elif any(.bots[]; . == "refused") then "refused"
     elif all(.bots[]; . == "settled") and .checks.pending == 0
-         and (.checks.passed + .checks.failed > 0 or $allow_empty)
+         and (.checks.passed + .checks.failed > 0 or $grace_over) and (.no_workflow | not)
     then (if .checks.failed > 0 then "failed" else "passed" end)
     else "waiting" end)'
 
@@ -164,6 +180,8 @@ STILL_PENDING='[
   (if .checks.pending > 0 then "checks \(.checks.pending_names | join(", "))"
    elif .checks.passed + .checks.failed == 0 then "no checks registered"
    else empty end),
+  (if .no_workflow and (.checks.pending > 0 or .checks.passed + .checks.failed > 0)
+   then "no GitHub Actions workflow registered" else empty end),
   (.bots | to_entries[] | select(.value != "settled") | "\(.key) \(.value)")
 ] | join("; ")'
 
@@ -211,8 +229,8 @@ trap 'rm -f "$errfile"' EXIT
 
 # Sets $verdict on success; sets $error and returns 1 on a failed poll.
 poll() {
-  local out rc=0 allow_empty=false reduced
-  [ $((SECONDS - start)) -lt "$NO_CHECKS_GRACE" ] || allow_empty=true
+  local out rc=0 grace_over=false reduced
+  [ $((SECONDS - start)) -lt "$NO_CHECKS_GRACE" ] || grace_over=true
   out=$(gh api graphql -f query="$QUERY" -f owner="${repo%%/*}" -f repo="${repo#*/}" -F n="$pr" -f sha="$sha" 2>"$errfile") || rc=$?
   if [ "$rc" != 0 ]; then
     error=$(cat "$errfile")
@@ -224,7 +242,7 @@ poll() {
   error=$(jq -r "$ERRORS" <<<"$out" 2>&1) || { error="unreadable response: $error"; return 1; }
   [ -z "$error" ] || return 1
   reduced=$(jq -c --arg sha "$sha" --argjson bots "$bots" --argjson registry "$BOTS" \
-    --argjson rerequested "$rerequested" --argjson allow_empty "$allow_empty" "$REDUCE" <<<"$out" 2>&1) ||
+    --argjson rerequested "$rerequested" --argjson grace_over "$grace_over" "$REDUCE" <<<"$out" 2>&1) ||
     { error="unreadable response: $reduced"; return 1; }
   verdict=$reduced
 }
