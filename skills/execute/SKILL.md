@@ -1,7 +1,7 @@
 ---
 name: execute
 description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5, or several at once like "execute ONC-5 ONC-6". Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
-version: 2.7.0
+version: 2.7.1
 ---
 
 # Execute
@@ -87,8 +87,11 @@ If any of these files cannot be found and read, stop immediately and report whic
    Ask the user to `git add` each file once it is resolved, and leave the choice of resolution to them, recommending neither side.
    When you say what keeping a side would mean, such as which planned tasks it would already cover, say it for both sides or for neither.
    Never resolve a conflict by discarding either side's changes.
-   When step 4 finds an update paused, hold again while `git ls-files -u` lists a conflicted file or `git diff --cached --check` reports a leftover conflict marker.
-   Otherwise finish it with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`, and hold the same way when the rebase stops on its next commit.
+   When step 4 finds an update paused and `git ls-files -u` still lists this issue's beads file, resolve that file first as `../fathom-shared/memory/beads.md` says.
+   A run that stopped inside that recipe leaves the file conflicted.
+   When the update is still paused after that, hold again while `git ls-files -u` lists a conflicted file or `git diff --cached --check` reports a leftover conflict marker.
+   Otherwise finish it with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`.
+   When any `--continue`, including the one in the beads recipe, stops the rebase on its next commit, start again from the check for this issue's beads file above.
    On a stack these rules describe bundle 1's branch, and `stack.md` names and creates the later bundles' branches.
 8. Ensure the breakdown exists.
    - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.

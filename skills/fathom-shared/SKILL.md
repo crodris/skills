@@ -1,7 +1,7 @@
 ---
 name: fathom-shared
 description: Internal shared contracts for the Fathom execute and scaffold skills. Never invoke this directly; it holds the tracker, memory, approval, and convention reference files those skills read at runtime. It exists as a skill only so installers that copy skill directories carry these files alongside execute and scaffold.
-version: 2.7.0
+version: 2.7.1
 ---
 
 # Fathom shared contracts
