@@ -9,8 +9,9 @@
 #
 # With no --bot it waits on the checks alone.
 # A GitHub Actions workflow on the SHA that has not finished counts as a pending
-# check, and settling waits up to NO_CHECKS_GRACE seconds for a first check and
-# a first workflow.
+# check, and one that failed before creating any check run counts as a failed
+# check. Settling waits up to NO_CHECKS_GRACE seconds for a first check and a
+# first workflow.
 # --rerequest <bot> implies --bot <bot> and posts the bot's re-request comment
 # once, after a poll finds the pull request open on <head-sha> and the bot not
 # settled; a notice older than that post is then ignored.
@@ -81,7 +82,7 @@ QUERY='query($owner:String!,$repo:String!,$n:Int!,$sha:GitObjectID!){repository(
  object(oid:$sha){... on Commit{committedDate statusCheckRollup{contexts(first:100){pageInfo{hasNextPage} nodes{__typename
   ... on CheckRun{name status conclusion}
   ... on StatusContext{context state description createdAt}}}}
-  checkSuites(first:100){pageInfo{hasNextPage} nodes{status workflowRun{workflow{name}}}}}}}}'
+  checkSuites(first:100){pageInfo{hasNextPage} nodes{status conclusion workflowRun{workflow{name}} checkRuns(first:1){totalCount}}}}}}}'
 
 # Prints the failure text of a response that counts as a failed poll, else nothing.
 ERRORS='
@@ -122,10 +123,14 @@ def body_notice: split("\n")[0] | notice("rate limit exceeded");
 | $repo.pullRequest as $pr
 | ($repo.object.committedDate // null) as $committed
 # Only a GitHub Actions suite has a workflow run; other apps leave theirs QUEUED forever.
-# A finished workflow fails through its check runs.
+# A finished workflow fails through its check runs, or as itself when it failed before creating any.
 | [$repo.object.checkSuites.nodes // [] | .[] | select(.workflowRun != null)] as $workflows
 | [ ($repo.object.statusCheckRollup.contexts.nodes // [] | .[] | . + {kind: kind, label: (.name // .context)}),
-    ($workflows[] | select(.status != "COMPLETED") | {kind: "pending", label: "workflow \(.workflowRun.workflow.name)"})
+    ($workflows[] | "workflow \(.workflowRun.workflow.name)" as $label
+     | if .status != "COMPLETED" then {kind: "pending", label: $label}
+       elif .checkRuns.totalCount == 0 and (.conclusion | IN("SUCCESS", "NEUTRAL", "SKIPPED") | not)
+       then {kind: "failed", label: $label}
+       else empty end)
   ] as $checks
 | def bot($b; $since):
     ([$checks[] | select($b.status != null and .context == $b.status.context)] | last) as $status
