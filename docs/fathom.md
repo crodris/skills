@@ -38,7 +38,7 @@ The design goal is that **nothing is remembered between invocations**.
 Every run reads state from your repository and your tracker, so an interrupted run resumes by being re-invoked, in either agent.
 
 Resuming on a *different* machine works for whatever was committed and pushed.
-The checklist backend travels with each task commit; beads keeps its database out of git by design and shares each issue's tasks through that issue's `.beads/<ref>.jsonl`, so a beads run commits that file with the breakdown and alongside each task for the same reason.
+The checklist backend travels with each task commit; beads keeps its database off your branches and shares each issue's tasks through that issue's `.beads/<ref>.jsonl`, so a beads run commits that file with the breakdown and alongside each task for the same reason.
 
 **Requirements:** an Asana or Linear MCP connected in your agent, and optionally the beads CLI (`bd`) for richer task memory.
 On GitHub, the GitHub CLI (`gh`) authenticated. On another forge, an adapter you write - or nothing at all: the bundled generic-git fallback still pushes the branch and hands the review off to you. See [Forges](#forges).
@@ -136,26 +136,28 @@ Unlike the tracker, an unverified forge does not stop the run - it selects a tie
 ### 3. Optionally install beads
 
 Without beads, task state lives in a markdown checklist committed on your branch, which is fine for solo work and small issues.
-Both backends honor task dependencies, so a task cannot be started before the work it depends on is finished; beads adds atomic claiming, a queryable ready-work view, and a close reason that records each task's commit hash.
+Both backends honor task dependencies, so a task cannot be started before the work it depends on is finished; beads adds atomic claiming, a queryable ready-work view, a close reason that records each task's commit hash, and sharing tasks with teammates through a Dolt remote.
 Installing `bd` alone does not switch a repository to beads: Fathom uses beads only in a repository whose base branch already tracks a bd 1.x `.beads/`, and it never sets beads up itself.
 To opt a repository in, run `bd init -p <prefix> --skip-hooks --skip-agents` on a branch, which commits `.beads/` there, and merge that branch into the base.
 
+```bash
+brew install beads
+bd version
+```
+
 When the repository has a git remote, `bd init` also sets `sync.remote` in `.beads/config.yaml`, which makes your git remote a Dolt remote for the beads database.
 To share tasks through it, run `bd dolt push` once before anyone else runs `bd bootstrap`.
-Their bootstrap then copies your database, while one run before your push starts a separate history that can never pull from yours.
+Their bootstrap then copies your database, while a `bd bootstrap` run before your push starts a separate history that can never pull from yours.
 To keep tasks local to each clone instead, run `bd config unset sync.remote` and commit `.beads/config.yaml`.
 
 With a Dolt remote, Fathom runs `bd dolt pull` before it reads any task, and `bd dolt pull` then `bd dolt push` after the breakdown and after the issue's final close.
 Teammates who use `bd` without Fathom see an issue's tasks while it is in progress.
 Each issue's `.beads/<ref>.jsonl` stays on its branch as the record that resume and the merge sweep read.
 The two copies converge, since `bd import` keeps the newer copy of each row.
-A failed pull stops the run, and a failed push is reported and the run continues.
-Fathom never forces a pull or push, never runs `bd dolt commit`, and never pushes a schema migration, so see [Troubleshooting](#troubleshooting) when a pull fails.
-
-```bash
-brew install beads
-bd version
-```
+A failed pull at the start of a run stops it.
+A failed pull or push after the breakdown or the final close is reported, and the run continues.
+Fathom never forces a pull or push, never runs `bd dolt commit`, and never pushes a schema migration.
+See [Troubleshooting](#troubleshooting) when a pull fails.
 
 ### 4. Answer the first-run questions
 
@@ -349,7 +351,7 @@ In the manual tier the "review merged" line never fires, because nothing can obs
 | `.fathom/forge.md` | Only if you wrote an adapter for a forge Fathom does not ship. See [Forges](#forges). |
 | `.fathom/plans/<ref>.md` | The per-issue plan: issue link, branch, codebase context, approach, tasks, testing strategy. Written for people, never carries status. The branch sits on its own `- Branch:` line, which the merge-closer matches to find this issue. |
 | `.fathom/tasks/<ref>.md` | Task statuses as checkboxes. Only when the checklist backend is active. |
-| `.beads/` | Beads task state, when beads is the backend: one ignored database in `.beads/embeddeddolt/` that the repository's checkouts and worktrees share, plus one committed `.beads/<ref>.jsonl` per issue, which carries only that issue's tasks. |
+| `.beads/` | Beads task state, when beads is the backend: one ignored database in `.beads/embeddeddolt/` that the repository's checkouts and worktrees share, plus one committed `.beads/<ref>.jsonl` per issue, which carries only that issue's tasks. With a Dolt remote, the database also lives on your git remote as `refs/dolt/data`. |
 | `.github/workflows/fathom-close.yml` | Only if you accepted the optional merge-closer Action. GitHub only; never offered on a forge without CI hooks. |
 
 Plans and task files stay after the review merges; they are the record of how the work was broken down.
@@ -468,7 +470,8 @@ Check that `bd config get issue_prefix` prints your prefix.
 Keep the moved directory until runs work again.
 Fathom commits each issue's tasks to `.beads/<ref>.jsonl` on that issue's branch, but anything created with plain `bd` and never exported exists only in the moved directory.
 
-**Execute stops because `bd dolt pull` failed or a schema migration ran.** Fathom pulls from the repository's Dolt remote before it reads tasks, and it never forces a pull or pushes a migration.
+**Execute stops because `bd dolt pull` failed or a schema migration ran.** Fathom pulls from the repository's Dolt remote at the start of every run and stops when that pull fails, and it never forces a pull or pushes a migration.
+A later pull or push that fails is reported with this entry's name, and the run continues.
 Pick one of these by bd's error:
 - "local changes would be stomped by merge", or a note that bd applied schema migrations, means a `bd` upgrade migrated your local database.
   The migration has to reach the remote from exactly one machine.
@@ -478,6 +481,9 @@ Pick one of these by bd's error:
   Keep the remote by moving `.beads/embeddeddolt` out of `.beads/` and running `bd bootstrap`, which copies the remote.
   Fathom recovers this issue's tasks from `.beads/<ref>.jsonl` on its next run.
   Anything created with plain `bd` and never pushed exists only in the moved directory.
+- "no branches found in remote" means `sync.remote` is set but nobody pushed the database yet.
+  Run `bd dolt push` once from the clone whose database holds the tasks, then move `.beads/embeddeddolt` out of `.beads/` and run `bd bootstrap` on every other clone.
+  To keep tasks local instead, run `bd config unset sync.remote` and commit `.beads/config.yaml`.
 - Any other error, such as a network or credential failure, is between bd and the remote, so fix it and rerun.
 
 **A task's recorded commit hash isn't in the base branch's history.** The review was squash-merged, so the base holds one squash commit and the task commits stay on the review's branch.
