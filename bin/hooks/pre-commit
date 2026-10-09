@@ -14,13 +14,24 @@ fi
 
 echo "[pre-commit] Syncing plugin versions..."
 
-if "$SYNC_SCRIPT"; then
+if out=$("$SYNC_SCRIPT"); then
+  printf '%s\n' "$out"
   # Auto-stage only the files the sync writes if they changed
   cd "$REPO_ROOT"
   git diff --quiet .claude-plugin/marketplace.json 2>/dev/null || git add .claude-plugin/marketplace.json
   git diff --quiet README.md 2>/dev/null || git add README.md
-  git diff --quiet -- 'skills/*/SKILL.md' 2>/dev/null || git add -- 'skills/*/SKILL.md'
+  # Stage only the SKILL.md files this sync reported writing, so unrelated
+  # unstaged SKILL.md edits stay out of the commit
+  while IFS= read -r line; do
+    case "$line" in
+      "  skills/"*"/SKILL.md -> version "*)
+        path="${line#  }"
+        git add -- "${path%% -> version *}"
+        ;;
+    esac
+  done <<< "$out"
 else
+  printf '%s\n' "$out"
   echo "[pre-commit] Version sync failed (continuing anyway)"
 fi
 

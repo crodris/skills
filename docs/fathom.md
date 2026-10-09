@@ -168,8 +168,12 @@ If your tracker has no state for a phase, which is common for review states in a
 
 On Claude Code, execute also asks you once per machine which models its subagents should run on: one for the subagent that runs each issue when you name several, and one for the subagent that builds each parallel task.
 Your answer is saved to `~/.config/fathom/models.md` (or `$XDG_CONFIG_HOME/fathom/models.md`), outside the committed profile, so each teammate keeps their own split.
-If you already have `~/.claude/rules/pstack-models.md`, execute reads its `hardest tasks` and `feature, refactoring` lines and skips the question.
-To change your split later, edit `models.md`; the format is in [agents.md](../skills/fathom-shared/agents.md#subagent-models).
+If you already have `~/.claude/rules/pstack-models.md`, execute reads its model lines too.
+Execute asks only for a role neither file names, and only in ask mode.
+In auto mode it uses Sonnet for that role, writes nothing, and says so.
+A value other than `fable`, `opus`, `sonnet`, `haiku`, or `inherit-parent` (or its alias `auto`) is ignored.
+Each subagent's description starts with its model, such as `[opus] Execute TES-250`, so Claude Code's agent list shows it.
+To change your split later, edit `models.md`; the format and the details are in [agents.md](../skills/fathom-shared/agents.md#subagent-models).
 
 ### 5. Pre-approve the commands
 
@@ -274,10 +278,11 @@ Read [Before turning on stacked reviews](#before-turning-on-stacked-reviews) fir
 
 Execute proposes a split only when the breakdown has five or more units of work and at least one clean cut point exists.
 A cut point is clean when the units before it stand on their own and the units after it build on them.
-A proposal has at most three bundles, and each bundle holds at least two units.
+Execute's own proposal has at most three bundles, and each bundle holds at least two units.
+A specific split you ask for can have more bundles.
 The manual forge tier never proposes a split, because it cannot create reviews.
 In ask mode you confirm the proposal before anything is written to the tracker.
-In auto mode execute applies the split and reports the bundles.
+In auto mode execute applies the proposed split without asking for confirmation and reports the bundles.
 Without a confirmed split the issue gets one review.
 
 ### What a stack looks like
@@ -322,7 +327,7 @@ Two modes, and the difference is only how many questions you get.
 **Ask mode**, the default, stops for the issue draft, the handoff, and any genuinely ambiguous choice.
 
 **Auto mode** runs straight through.
-It skips the draft approval, the approach choice, the handoff question, the bundle-split proposal, ties that the documented precedence can settle on its own, and the two first-run answers that are genuinely determinate: exactly one available destination, or state names that match the three phases exactly.
+It skips the draft approval, the approach choice, the handoff question, confirmation of the bundle split, the subagent model question, ties that the documented precedence can settle on its own, and the two first-run answers that are genuinely determinate: exactly one available destination, or state names that match the three phases exactly.
 Everything else is asked even in auto mode.
 
 Auto mode removes friction, not judgment.
@@ -614,6 +619,7 @@ Existing `.fathom/` records that carry a branch and no review id keep working.
 The sweep matches them by branch on every run and leaves the record unchanged.
 
 The first time you run execute on Claude Code after upgrading to 2.6.0, it asks the subagent model question once, unless your pstack model rule already answers it.
+Auto mode runs skip it and use Sonnet until a run in ask mode asks.
 
 If the repo used beads, confirm `.beads/.gitignore` exists, since the beads tooling writes it, and untrack any beads runtime files an earlier version committed.
 

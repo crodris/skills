@@ -47,8 +47,9 @@ Read the Fathom file with the Read tool, since a restricted allowlist refuses a 
    When a line lists several models, use the first.
 3. Ask, at the point `../execute/SKILL.md` step 3 names, as one structured question covering each role still unresolved.
    Offer Sonnet for both, Opus for issues and Sonnet for tasks, Opus for both, and the parent session's model for both.
+   When only one role is unresolved, the options name that role alone: Sonnet, Opus, Haiku, or the parent session's model.
    Accept a typed answer when each role maps to an allowed value below; otherwise ask again, naming the allowed values.
-   Write the answer to the Fathom file, creating its directory, and keep any line already there.
+   Write the answer to the Fathom file, creating its directory, replacing the line for each role the answer covers and keeping every other line.
    In auto mode skip the question, use `sonnet` for each unresolved role, write nothing, and say so in the run's report, so the next run in ask mode asks.
 
 A value is `fable`, `opus`, `sonnet`, or `haiku`; `inherit-parent` or `auto` means omit `model`, so the role runs on the parent session's model.

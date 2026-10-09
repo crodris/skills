@@ -34,6 +34,8 @@ Skipping them changes how much the run interrupts you, not whether it is correct
   Resolve it by that precedence and report the choice rather than asking.
 - Two first-run setup answers, each only when it is unambiguous: the destination when exactly one is available, and the state mapping when tracker state names match the three phases exactly.
   Record the answer, and note in the profile that it was auto-accepted rather than confirmed, so a wrong destination is traceable later.
+- The subagent model question in `execute`.
+  Use `sonnet` for each unresolved role, write nothing, and report it, as Subagent models in `agents.md` says.
 - The bundle-split proposal in `execute`.
   Apply the proposed split and report the bundles rather than asking for confirmation first.
   This belongs here rather than on the safety list because it fires before any commit or review exists, so being wrong destroys nothing and misdirects nothing, which is the shape of every other item on this list.

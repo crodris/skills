@@ -2,7 +2,7 @@
 # test-sync-versions.sh - run bin/sync-versions.sh in a scratch repository and
 # check that plugin versions reach README headings and claimed SKILL.md
 # frontmatter, that standalone SKILL.md versions reach their README headings,
-# and that a skill with no version line fails.
+# and that a skill with no version line or no frontmatter fails.
 set -euo pipefail
 
 SCRIPT="$(cd "$(dirname "$0")" && pwd)/sync-versions.sh"
@@ -18,7 +18,14 @@ skill() {
   printf -- '---\nname: %s\ndescription: Demo.\n%b---\n\n# %s\n' "$1" "$2" "$1" > "$dir/skills/$1/SKILL.md"
 }
 
+fails() {
+  name=$1 file=$2 got=0
+  out=$("$dir/bin/sync-versions.sh" 2>&1) || got=$?
+  if [ "$got" = 1 ] && [[ $out == *"$file has no version: line"* ]]; then echo "ok: $name"; else echo "FAIL: $name (exit $got)"; failures=$((failures + 1)); fi
+}
+
 dir=$(mktemp -d)
+trap 'rm -rf "$dir"' EXIT
 mkdir -p "$dir/bin" "$dir/.claude-plugin"
 cp "$SCRIPT" "$dir/bin/sync-versions.sh"
 cat > "$dir/.claude-plugin/marketplace.json" <<'JSON'
@@ -50,10 +57,16 @@ out=$("$dir/bin/sync-versions.sh")
 if [[ $out == *"All versions already up to date."* ]]; then echo "ok: a second run changes nothing"; else echo "FAIL: a second run changed something"; failures=$((failures + 1)); fi
 
 skill build ''
-got=0
-out=$("$dir/bin/sync-versions.sh" 2>&1) || got=$?
-if [ "$got" = 1 ] && [[ $out == *"skills/build/SKILL.md has no version: line"* ]]; then echo "ok: a claimed skill with no version line fails"; else echo "FAIL: a claimed skill with no version line (exit $got)"; failures=$((failures + 1)); fi
-rm -rf "$dir"
+fails "a claimed skill with no version line fails" skills/build/SKILL.md
+skill build 'version: 2.3.0\n'
+
+skill lint ''
+fails "a standalone skill with no version line fails" skills/lint/SKILL.md
+skill lint 'version: 1.4.2\n'
+
+printf -- '# build\n' > "$dir/skills/build/SKILL.md"
+fails "a claimed skill with no frontmatter fails" skills/build/SKILL.md
+skill build 'version: 2.3.0\n'
 
 [ "$failures" -eq 0 ] || { echo "$failures failure(s)"; exit 1; }
 echo "all passed"
