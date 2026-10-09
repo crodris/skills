@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # sync-versions.sh - marketplace.json is the source of truth for plugin
-# versions; this syncs those versions into README.md and checks that every
-# skill directory is claimed by exactly one plugin entry.
+# versions; this syncs those versions into README.md and into the SKILL.md
+# frontmatter of each skill the plugin claims, syncs each standalone skill's
+# SKILL.md version into its README heading, and checks that every skill
+# directory is claimed by exactly one plugin entry.
 #
 # The repo hosts several plugins out of one marketplace root (source "./"),
 # so each entry scopes itself with a "skills" array instead of relying on the
@@ -9,8 +11,8 @@
 # with source "./" a single root manifest would apply to every entry and its
 # version would silently win over each entry's own.
 #
-# Compatible with Bash 3.2 (macOS default) and BSD sed.
-# Requires python3 for JSON parsing (ships with macOS).
+# Compatible with Bash 3.2 (macOS default).
+# Requires python3 for JSON parsing and the file edits (ships with macOS).
 
 set -euo pipefail
 
@@ -46,7 +48,12 @@ while IFS='	' read -r name version; do
     echo "  README.md: $name already at v$version"
   elif grep -q "^### $name (v" "$README"; then
     echo "  README.md: $name -> v$version"
-    sed -i '' "s/^### $name (v[^)]*)/### $name (v$version)/" "$README"
+    python3 - "$README" "$name" "$version" <<'PY'
+import re, sys
+path, name, version = sys.argv[1:]
+text = open(path).read()
+open(path, 'w').write(re.sub(r'^### %s \(v[^)]*\)' % re.escape(name), '### %s (v%s)' % (name, version), text, flags=re.M))
+PY
     changed=1
   else
     echo "  WARNING: README.md has no section header for '$name' - add it manually"
@@ -58,6 +65,70 @@ data = json.load(sys.stdin)
 for p in data.get('plugins', []):
     print('%s\t%s' % (p.get('name', ''), p.get('version', '')))
 " < "$MARKETPLACE")
+
+# --- Sync SKILL.md frontmatter versions ---
+#
+# A plugin skill's frontmatter takes its plugin's version from marketplace.json.
+# A standalone skill's README heading takes the version from its frontmatter.
+
+skill_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" "$README" <<'PY'
+import json, os, re, sys
+
+marketplace, repo_root, readme = sys.argv[1], sys.argv[2], sys.argv[3]
+data = json.load(open(marketplace))
+VERSION = re.compile(r'^version:[ \t]*(\S*)[ \t]*$', re.M)
+
+def frontmatter(text):
+    return re.match(r'---\n(.*?\n)---\n', text, re.S)
+
+for plugin in data.get('plugins', []):
+    version = plugin.get('version')
+    if not version:
+        continue
+    for path in plugin.get('skills', []) or []:
+        skill_md = os.path.join(repo_root, os.path.normpath(path.lstrip('./')), 'SKILL.md')
+        if not os.path.isfile(skill_md):
+            continue
+        text = open(skill_md).read()
+        fm = frontmatter(text)
+        found = fm and VERSION.search(fm.group(1))
+        if not found:
+            print('noversion\t%s' % os.path.relpath(skill_md, repo_root))
+        elif found.group(1) != version:
+            start = fm.start(1) + found.start(1)
+            open(skill_md, 'w').write(text[:start] + version + text[fm.start(1) + found.end(1):])
+            print('synced\t%s\t%s' % (os.path.relpath(skill_md, repo_root), version))
+
+text = open(readme).read()
+section = re.search(r'^## Standalone Skills\n(.*?)(?=^## |\Z)', text, re.S | re.M)
+if section:
+    body = section.group(1)
+    for name in re.findall(r'^### ([\w-]+) \(v', body, re.M):
+        skill_md = os.path.join(repo_root, 'skills', name, 'SKILL.md')
+        if not os.path.isfile(skill_md):
+            continue
+        fm = frontmatter(open(skill_md).read())
+        found = fm and VERSION.search(fm.group(1))
+        if not found:
+            print('noversion\tskills/%s/SKILL.md' % name)
+            continue
+        body = re.sub(r'^### %s \(v[^)]*\)' % re.escape(name), '### %s (v%s)' % (name, found.group(1)), body, flags=re.M)
+    updated = text[:section.start(1)] + body + text[section.end(1):]
+    if updated != text:
+        open(readme, 'w').write(updated)
+        print('readme')
+PY
+)
+
+if [ -n "$skill_report" ]; then
+  while IFS='	' read -r kind path version; do
+    case "$kind" in
+      synced)    echo "  $path -> version $version"; changed=1 ;;
+      readme)    echo "  README.md: standalone headings synced from SKILL.md"; changed=1 ;;
+      noversion) echo "  WARNING: $path has no version: line in its frontmatter"; problems=$((problems + 1)) ;;
+    esac
+  done <<< "$skill_report"
+fi
 
 # --- Check every skill directory is claimed by exactly one plugin entry ---
 #
