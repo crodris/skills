@@ -121,7 +121,7 @@ If any of these files cannot be found and read, stop immediately and report whic
      When a split was confirmed, create them as `stack.md`'s step 8 section says.
    - After every child task exists, add the parent's dependency edge on each child, so the parent cannot close before its children.
    - Whether the sub-issues were newly created or adopted, write the plan document described in `conventions.md` and commit it with the breakdown.
-     When beads is the backend, run the three export steps in One database per repository in `../fathom-shared/memory/beads.md` before that commit, so it carries `.beads/<ISSUE-REF>.jsonl`.
+     When beads is the backend, run the three export steps in One database per repository in `../fathom-shared/memory/beads.md` before that commit, so it carries `.beads/<ISSUE-REF>.jsonl`, and run the push steps in its Dolt remote section after it.
      A confirmed split adds the `Bundles` section and the `Merge-closer` line that `stack.md` describes.
    - Write `.fathom/tasks/<ISSUE-REF>.md` only when the resolved backend is the checklist adapter.
 9. Call `updateState` to move the issue to the `inProgress` phase.
@@ -191,6 +191,7 @@ If any of these files cannot be found and read, stop immediately and report whic
     Write that line last, after every other closing action has been taken; a line written earlier would make the check at the top of this step skip the rest of it forever.
     It rides this same closing commit.
     Push this closing commit with an ordinary `git push` of the branch even when the adapter declares `pushesForYou`, since that capability governs only the push that opens the review, per `../fathom-shared/forges.md`.
+    When beads is the backend, then run the push steps in Dolt remote in `../fathom-shared/memory/beads.md`.
     On a stacked issue, `stack.md`'s after-bundle-N section says which branch carries this commit and what to say at handoff.
 12. Report a final summary: the issue, the review URL when one was opened, every bundle's review URL in order when the issue was split into a stack, or the resolved tier when no review was opened, the tracker's current phase, and the task counts from `status()`.
 

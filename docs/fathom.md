@@ -138,7 +138,19 @@ Unlike the tracker, an unverified forge does not stop the run - it selects a tie
 Without beads, task state lives in a markdown checklist committed on your branch, which is fine for solo work and small issues.
 Both backends honor task dependencies, so a task cannot be started before the work it depends on is finished; beads adds atomic claiming, a queryable ready-work view, and a close reason that records each task's commit hash.
 Installing `bd` alone does not switch a repository to beads: Fathom uses beads only in a repository whose base branch already tracks a bd 1.x `.beads/`, and it never sets beads up itself.
-To opt a repository in, run `bd init -p <prefix> --skip-hooks --skip-agents` on a branch, which commits `.beads/` there, then run `bd config unset sync.remote` and commit `.beads/config.yaml` when the repository has a remote, and merge that branch into the base.
+To opt a repository in, run `bd init -p <prefix> --skip-hooks --skip-agents` on a branch, which commits `.beads/` there, and merge that branch into the base.
+
+When the repository has a git remote, `bd init` also sets `sync.remote` in `.beads/config.yaml`, which makes your git remote a Dolt remote for the beads database.
+To share tasks through it, run `bd dolt push` once before anyone else runs `bd bootstrap`.
+Their bootstrap then copies your database, while one run before your push starts a separate history that can never pull from yours.
+To keep tasks local to each clone instead, run `bd config unset sync.remote` and commit `.beads/config.yaml`.
+
+With a Dolt remote, Fathom runs `bd dolt pull` before it reads any task, and `bd dolt pull` then `bd dolt push` after the breakdown and after the issue's final close.
+Teammates who use `bd` without Fathom see an issue's tasks while it is in progress.
+Each issue's `.beads/<ref>.jsonl` stays on its branch as the record that resume and the merge sweep read.
+The two copies converge, since `bd import` keeps the newer copy of each row.
+A failed pull stops the run, and a failed push is reported and the run continues.
+Fathom never forces a pull or push, never runs `bd dolt commit`, and never pushes a schema migration, so see [Troubleshooting](#troubleshooting) when a pull fails.
 
 ```bash
 brew install beads
@@ -456,6 +468,18 @@ Check that `bd config get issue_prefix` prints your prefix.
 Keep the moved directory until runs work again.
 Fathom commits each issue's tasks to `.beads/<ref>.jsonl` on that issue's branch, but anything created with plain `bd` and never exported exists only in the moved directory.
 
+**Execute stops because `bd dolt pull` failed or a schema migration ran.** Fathom pulls from the repository's Dolt remote before it reads tasks, and it never forces a pull or pushes a migration.
+Pick one of these by bd's error:
+- "local changes would be stomped by merge", or a note that bd applied schema migrations, means a `bd` upgrade migrated your local database.
+  The migration has to reach the remote from exactly one machine.
+  Agree on that machine with your team, then run `bd dolt commit` and `bd dolt push` there.
+  Every other machine then runs `bd dolt pull`, which brings the migration in.
+- "no common ancestor" means your local database started a separate history from the remote, usually because `bd bootstrap` ran before anyone pushed.
+  Keep the remote by moving `.beads/embeddeddolt` out of `.beads/` and running `bd bootstrap`, which copies the remote.
+  Fathom recovers this issue's tasks from `.beads/<ref>.jsonl` on its next run.
+  Anything created with plain `bd` and never pushed exists only in the moved directory.
+- Any other error, such as a network or credential failure, is between bd and the remote, so fix it and rerun.
+
 **A task's recorded commit hash isn't in the base branch's history.** The review was squash-merged, so the base holds one squash commit and the task commits stay on the review's branch.
 GitHub keeps them on the pull request's `refs/pull/<n>/head` ref after the branch is deleted, so `git fetch origin pull/<n>/head` brings them back, and the pull request's Commits tab shows them.
 
@@ -532,7 +556,7 @@ Do these steps once, from the main checkout:
 1. With nothing staged, move `.beads/beads.db` and the old daemon files (`daemon.*`, `last-touched`, `sync-state.json`, `.local_version`) out of `.beads/`.
 2. Run `bd init -p <your prefix> --skip-hooks --skip-agents --from-jsonl -q`.
    It makes its own commit, and it imports the tracked `issues.jsonl`.
-3. Run `bd config unset sync.remote`.
+3. Run `bd dolt push` to share tasks through a Dolt remote, or `bd config unset sync.remote` to keep them local, as [Optionally install beads](#3-optionally-install-beads) describes.
 4. Delete the `merge=beads` line from `.gitattributes`, and run `git config --remove-section merge.beads`.
 5. Commit and push to the base branch.
 6. Other clones then need only `bd bootstrap`.
