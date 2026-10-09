@@ -270,7 +270,7 @@ When the issue's branch already exists and the base branch has moved on, execute
 A conflict in the issue's own `.beads/<ref>.jsonl` resolves automatically.
 Any other conflict holds the run with the merge or rebase paused where git stopped it, and the report lists each conflicting file.
 Resolve the files, run `git add` on each one, and invoke execute again.
-The run then finishes the paused update.
+The run then resolves the issue's `.beads/<ref>.jsonl` again if it is still conflicted, and finishes the paused update.
 Don't run `git merge --quit` in between, because quitting drops the merge's second parent.
 
 **When tests cannot pass**, the run stops and holds: the work stays, the task stays open, and you get told what failed.
