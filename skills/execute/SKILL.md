@@ -87,9 +87,11 @@ If any of these files cannot be found and read, stop immediately and report whic
    Ask the user to `git add` each file once it is resolved, and leave the choice of resolution to them, recommending neither side.
    When you say what keeping a side would mean, such as which planned tasks it would already cover, say it for both sides or for neither.
    Never resolve a conflict by discarding either side's changes.
-   When step 4 finds an update paused and `git ls-files -u` still lists this issue's beads file, resolve that file first as `../fathom-shared/memory/beads.md` says, since a run that stopped inside that recipe leaves it conflicted.
-   Then hold again while `git ls-files -u` lists a conflicted file or `git diff --cached --check` reports a leftover conflict marker.
-   Otherwise finish it with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`, and hold the same way when the rebase stops on its next commit.
+   When step 4 finds an update paused and `git ls-files -u` still lists this issue's beads file, resolve that file first as `../fathom-shared/memory/beads.md` says.
+   A run that stopped inside that recipe leaves the file conflicted.
+   When the update is still paused after that, hold again while `git ls-files -u` lists a conflicted file or `git diff --cached --check` reports a leftover conflict marker.
+   Otherwise finish it with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`.
+   When the rebase stops on its next commit, apply this resume rule again from the beads file check.
    On a stack these rules describe bundle 1's branch, and `stack.md` names and creates the later bundles' branches.
 8. Ensure the breakdown exists.
    - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.
