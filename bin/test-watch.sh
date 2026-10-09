@@ -37,15 +37,20 @@ status() { jq -cn --arg c "$1" --arg s "$2" --arg d "$3" --arg t "${4:-2020-01-0
   '{__typename: "StatusContext", context: $c, state: $s, description: $d, createdAt: $t}'; }
 review() { jq -cn --arg l "$1" --arg o "$2" --arg b "$3" \
   '{author: {login: $l}, commit: {oid: $o}, submittedAt: "2020-01-01T00:05:00Z", body: $b}'; }
+suite() { jq -cn --arg a "$1" --arg s "$2" --arg w "${3:-}" \
+  '{status: $s, app: {slug: $a}, workflowRun: (if $w == "" then null else {workflow: {name: $w}} end)}'; }
 
 # response <state> <headRefOid> [reviews] <check>...
+# The check suites come from $SUITES, by default one completed CI workflow.
 response() {
-  local state=$1 head=$2 reviews=$3
+  local state=$1 head=$2 reviews=$3 ci_done='[{"status":"COMPLETED","app":{"slug":"github-actions"},"workflowRun":{"workflow":{"name":"CI"}}}]'
   shift 3
-  printf '%s\n' "$@" | jq -s --arg state "$state" --arg head "$head" --argjson reviews "$reviews" '{data: {repository: {
+  printf '%s\n' "$@" | jq -s --arg state "$state" --arg head "$head" --argjson reviews "$reviews" \
+    --argjson suites "${SUITES:-$ci_done}" '{data: {repository: {
     pullRequest: {state: $state, headRefOid: $head, reviews: {nodes: $reviews}, comments: {nodes: []}},
     object: {committedDate: "2020-01-01T00:00:00Z",
-      statusCheckRollup: (if . == [] then null else {contexts: {nodes: .}} end)}}}}'
+      statusCheckRollup: (if . == [] then null else {contexts: {nodes: .}} end),
+      checkSuites: {nodes: $suites}}}}}'
 }
 
 case_dir() { dir=$(mktemp -d "$tmp/case.XXXX"); }
@@ -237,6 +242,45 @@ run 7 $SHA --repo o/r --interval 0 --deadline 1
 expect_exit "an empty rollup with no bots does not settle early" 4
 expect_in "the empty rollup is reported" out "no checks registered"
 
+CR_SKIPPED=$(status CodeRabbit SUCCESS "Review skipped: 574 files exceed the limit of 150")
+CI_QUEUED="[$(suite github-actions QUEUED CI)]"
+CI_RUNNING="[$(suite github-actions IN_PROGRESS CI)]"
+CI_DONE="[$(suite github-actions COMPLETED CI)]"
+
+case_dir
+SUITES=$CI_QUEUED response OPEN $SHA '[]' "$CR_SKIPPED" > "$dir/1.json"
+SUITES=$CI_RUNNING response OPEN $SHA '[]' "$CR_SKIPPED" "$(check_run test IN_PROGRESS)" > "$dir/2.json"
+SUITES=$CI_DONE response OPEN $SHA '[]' "$CR_SKIPPED" "$(check_run test COMPLETED SUCCESS)" > "$dir/3.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a queued workflow with no check runs yet waits, then passes" 0
+expect_in "the queued workflow counts as pending on the first poll" out "checks 1 passed 0 failed 1 pending"
+expect_count "it settles only on the third poll" gh.log "api graphql" 3
+
+case_dir
+SUITES=$CI_QUEUED response OPEN $SHA '[]' "$CR_SKIPPED" > "$dir/1.json"
+SUITES=$CI_RUNNING response OPEN $SHA '[]' "$CR_SKIPPED" "$(check_run test IN_PROGRESS)" > "$dir/2.json"
+SUITES=$CI_DONE response OPEN $SHA '[]' "$CR_SKIPPED" "$(check_run test COMPLETED FAILURE)" > "$dir/3.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a queued workflow whose check run later fails exits 1" 1
+expect_in "the workflow's failed check is printed" out "verdict: failed: test"
+
+case_dir
+SUITES="[$(suite vercel QUEUED),$(suite github-actions QUEUED),$(suite github-actions COMPLETED CI)]" response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a queued suite from another app or with no workflow run is ignored" 0
+
+case_dir
+SUITES='[]' response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a passed check with no workflow registered does not settle early" 4
+expect_in "the missing workflow is reported" out "no GitHub Actions workflow registered"
+
+case_dir
+SUITES=$CI_QUEUED response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a workflow that stays queued exits 4 at the deadline" 4
+expect_in "the queued workflow is printed" out "workflow CI"
+
 case_dir
 echo "HTTP 502: Bad Gateway (https://api.github.com/graphql)" > "$dir/1.err"
 run 7 $SHA --repo o/r --interval 0 --deadline 5
@@ -259,6 +303,12 @@ response OPEN $SHA '[]' "$BUILD" | jq '.data.repository.object.statusCheckRollup
 run 7 $SHA --repo o/r --interval 0 --deadline 5
 expect_exit "more than 100 checks is a failed poll" 5
 expect_in "the check limit is printed" out "more than 100 checks on the SHA; watch.sh reads only the first 100"
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" | jq '.data.repository.object.checkSuites.pageInfo.hasNextPage = true' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "more than 100 check suites is a failed poll" 5
+expect_in "the check suite limit is printed" out "more than 100 check suites on the SHA; watch.sh reads only the first 100"
 
 case_dir
 echo '{"errors": [{"type": "RATE_LIMITED", "message": "API rate limit exceeded for user ID 1."}]}' > "$dir/1.json"
