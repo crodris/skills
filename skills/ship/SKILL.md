@@ -1,7 +1,7 @@
 ---
 name: ship
 description: Use when the user says "ship", "ship it", "/ship", "ship and merge", "take this all the way", "get this merged and released", or asks for the current branch to be carried from working tree to a merged release. Plain "ship" stops at a green pull request, and the merge needs a request that says to merge or a `merge` value of `yes` in the repository's `.ship/config.md`. Also use when the branch is already pushed or already has an open pull request and the user asks to finish it, and when the user asks to babysit, watch, or monitor a pull request or get it green without merging. Not for a single commit or a release cut from an already-merged main.
-version: 2.1.1
+version: 2.1.2
 ---
 
 # Ship
@@ -344,11 +344,20 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Keep the squash subject identical to the pull request title, because release tooling may parse it.
    On a worktree run, leave both deletions to the cleanup step, which removes the worktree first and then deletes the local and remote branch in the right order.
    Record the resulting merge commit's SHA; the next step needs it to know which run is this run's.
+   From the merge through step 9 and the final report, run every command in the foreground and do not end the turn.
+   This replaces step 1's background default for the rest of this ship run, and step 8's repeated calls are the one wait that step 1's ban on polling loops does not cover.
+   Once the pull request has merged, a host may close the agent's session as soon as the turn goes idle, which kills every background command.
+   T3 Code does this when it settles a thread whose linked pull request merged.
 8. Watch the base-branch pipeline after the merge, following the run whose head SHA is the recorded merge commit.
    Whatever the project releases with, that run reaching a successful terminal state is the pass condition, and nothing else is.
    With semantic-release or similar, a landed release commit descending from the recorded merge is necessary but not sufficient: wait for its run to finish successfully too, since a release job can push the commit and then fail on publishing, tagging, or a downstream step.
    A finished-but-failed run is a stop-and-report, never a silent pass.
    Give this wait a deadline of roughly thirty minutes past the run's own typical duration; past it, report that the release did not settle and leave the merge as it stands.
+   Find the release run with `gh run list --branch "$base" --commit <merge-sha>`, and list again until it appears, since it can take a few seconds to start.
+   When no release run appears within 5 minutes, report that the base branch started no run for the merge commit.
+   Wait on it with `gh run watch <run-id> --exit-status` under a time limit below the tool's timeout: `timeout <seconds>` on Linux, or `perl -e 'alarm <seconds>; exec @ARGV'` on macOS, which has no `timeout`.
+   After each call, read `gh run view <run-id> --json status,conclusion`: a release run whose status is not `completed` means call again, and a completed one with any conclusion but `success` is a failed release run.
+   The deadline counts across every call, and once it passes, stop calling and report that the release did not settle.
    Never push anything to the base branch while its release job may still be running.
 9. Run the resolved `post-merge` command when there is one, and let it define its own scope.
    Otherwise the cleanup depends on whether preflight made a worktree.
