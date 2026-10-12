@@ -1,7 +1,7 @@
 ---
 name: ship
 description: Use when the user says "ship", "ship it", "/ship", "ship and merge", "take this all the way", "get this merged and released", or asks for the current branch to be carried from working tree to a merged release. Plain "ship" stops at a green pull request, and the merge needs a request that says to merge or a `merge` value of `yes` in the repository's `.ship/config.md`. Also use when the branch is already pushed or already has an open pull request and the user asks to finish it, and when the user asks to babysit, watch, or monitor a pull request or get it green without merging. Not for a single commit or a release cut from an already-merged main.
-version: 2.1.1
+version: 2.1.2
 ---
 
 # Ship
@@ -349,6 +349,9 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    With semantic-release or similar, a landed release commit descending from the recorded merge is necessary but not sufficient: wait for its run to finish successfully too, since a release job can push the commit and then fail on publishing, tagging, or a downstream step.
    A finished-but-failed run is a stop-and-report, never a silent pass.
    Give this wait a deadline of roughly thirty minutes past the run's own typical duration; past it, report that the release did not settle and leave the merge as it stands.
+   Run this wait in the foreground, in the same turn as the merge, and end the turn only after the run reaches a terminal state or the deadline passes.
+   A host may close the agent's session once the pull request has merged and the turn goes idle, and closing it kills every background command; T3 Code does this when it settles a thread whose linked pull request merged.
+   When one foreground call cannot outlast the run, repeat the call with a timeout below the tool's limit until the run finishes.
    Never push anything to the base branch while its release job may still be running.
 9. Run the resolved `post-merge` command when there is one, and let it define its own scope.
    Otherwise the cleanup depends on whether preflight made a worktree.
