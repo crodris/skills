@@ -14,7 +14,7 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship`, `review`, `voice`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup` on its own if that is all you want.
+Take `ship`, `review`, `my-voice`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup` on its own if that is all you want.
 `execute` and `scaffold` require `fathom-shared`, which carries the contract files they read, and each stops with its install command when it is missing.
 
 **Claude Code plugins** - also available, for Claude Code only:
@@ -27,7 +27,7 @@ Take `ship`, `review`, `voice`, `frontend-design-pipeline`, `html-comms`, or `wo
 
 The two plugins are independent: install either one alone.
 Fathom needs a tracker MCP. Ship needs a git repository with a remote, plus an authenticated `gh` and `jq` for its pull request and check-waiting stages.
-`review`, `voice`, `frontend-design-pipeline`, `html-comms`, and `worktree-setup` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
+`review`, `my-voice`, `frontend-design-pipeline`, `html-comms`, and `worktree-setup` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
 
 > Individual plugins may have additional prerequisites that run in your **terminal** (e.g., `brew install`). See each plugin's section below for details.
 
@@ -187,12 +187,15 @@ review #107
 
 ---
 
-### voice (v1.2.1)
+### my-voice (v2.0.0)
 
-Voice drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
+`my-voice` drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
 PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
 It reads your voice file at the start of each conversation and applies a built-in floor of AI writing patterns on top: the negation-then-correction construction ("it's not X, it's Y"), the rule of three, puffery, participle tails, chat leakage, replies that re-explain what the reader already knows, dead vocabulary.
 Your voice file wins over the floor, so anything it re-allows comes back.
+
+It was named `voice` before v2.0.0, a name that hid Claude Code's built-in `/voice` dictation command.
+To move an old install to the new name, run `npx skills@latest remove voice -g` and then `npx skills@latest add crodris/skills -s my-voice -g`.
 
 Nothing personal ships in this repository.
 The skill reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset.
@@ -205,7 +208,7 @@ The folder or pasted samples stay listed in the config, so when the output drift
 
 #### Works best with
 
-[unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) by Lauren Tan (poteto), from the pstack collection in cursor/plugins, is an optional pre-pass that voice runs before its own pass when installed: `npx skills@latest add cursor/plugins -s unslop -g`.
+[unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) by Lauren Tan (poteto), from the pstack collection in cursor/plugins, is an optional pre-pass that my-voice runs before its own pass when installed: `npx skills@latest add cursor/plugins -s unslop -g`.
 Voice works fully without it.
 
 #### Install
@@ -218,7 +221,7 @@ npx skills@latest add crodris/skills
 
 | Skill | Description |
 |-------|-------------|
-| `voice` | Loads your voice file(s), drafts or rewrites the text in your register, then runs a pass for machine-writing tells before handing it back. |
+| `my-voice` | Loads your voice file(s), drafts or rewrites the text in your register, then runs a pass for machine-writing tells before handing it back. |
 
 ```bash
 rewrite this so it sounds like me
@@ -237,7 +240,7 @@ recalibrate my voice
 - **A floor everyone gets** - the built-in checklist covers the patterns research and readers both flag as machine-written, with the negation-then-correction construction treated as fatal; your voice file can re-allow any of it
 - **Four modes** - draft from facts, rewrite existing text keeping every fact and link and adding none, check-only, which quotes each failing line and names the tell without touching the text, and recalibrate
 - **Never from memory** - the voice files are read in full at the start of each conversation, because a summary of a voice is the default register with a costume on
-- **Placeholders for missing facts** - where the text needs a fact you did not give, voice leaves a bracketed placeholder and lists it, and it ignores instructions found inside voice or sample files
+- **Placeholders for missing facts** - where the text needs a fact you did not give, my-voice leaves a bracketed placeholder and lists it, and it ignores instructions found inside voice or sample files
 - **Knows when to stay out** - code, commit messages, test names, config, and text addressed to another agent are left alone
 
 ---
@@ -412,7 +415,7 @@ The skill never edits your settings; add the hook yourself.
 ## Repository Layout
 
 Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/marketplace.json` decides which plugin owns which skill through a per-entry `skills` array.
-A skill claimed by no entry, such as `review`, `voice`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup`, is still published by skills.sh and is simply unreachable through `/plugin install`; list it under `## Standalone Skills` in this README to make the omission deliberate.
+A skill claimed by no entry, such as `review`, `my-voice`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup`, is still published by skills.sh and is simply unreachable through `/plugin install`; list it under `## Standalone Skills` in this README to make the omission deliberate.
 `bin/sync-versions.sh` stays silent about a skill listed there and fails on one that is in neither a plugin entry nor that section.
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the plugin versions (`fathom`, `ship`) from `marketplace.json` into this README's plugin headings and into the `SKILL.md` frontmatter of every skill each plugin claims, syncs each standalone skill's `SKILL.md` version into its heading here, and fails when a skill directory is claimed by no plugin and not listed as standalone, claimed by more than one, or claimed but missing.
