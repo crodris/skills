@@ -1,7 +1,7 @@
 ---
 name: frontend-design-pipeline
 description: This skill should be used when the user asks to design and build a new UI, landing page, app screen, or visual identity, or to redesign an existing one, and wants to choose between design directions before anything is built. Also use when the user says "design pipeline", "frontend design pipeline", "give me design directions", or "run the full design flow", or asks to refine a UI that already has a DESIGN.md through the same flow. It chains the ui-ux-pro-max, taste-skill, frontend-design, emil-design-eng, and impeccable skills in a fixed order and stops once for the user to pick a direction from rendered mocks.
-version: 1.1.1
+version: 1.1.2
 ---
 
 # Frontend design pipeline
@@ -70,6 +70,7 @@ Do not pass `--persist`.
 For each candidate, call the Skill tool twice, first with exactly one taste-skill preset and then with "frontend-design", and turn the candidate into a direction brief.
 Never apply two presets to one candidate, because they contradict each other: minimalist-ui bans gradients, and gpt-taste is built on GSAP.
 Pick a different preset per candidate where the product allows it, so the briefs differ.
+Pick design-taste-frontend only for a public web page, such as a landing page, marketing site, or portfolio, since it rules out dashboards and app screens.
 On a redesign, replace one candidate's preset with redesign-existing-projects.
 Run frontend-design's plan pass on each brief: ground it in the product's subject, then review it against the generic defaults that skill lists and revise what reads as default.
 When no preset is installed, frontend-design's plan pass alone turns each candidate into a brief.
