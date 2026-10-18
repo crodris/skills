@@ -294,6 +294,7 @@ run the full design flow
 - **One source of truth** - after your pick, DESIGN.md beats the generated candidates, any ui-ux-pro-max MASTER.md, and taste-skill hard bans; when a DESIGN.md already exists, the pick question says it replaces it and the old file stays unless you confirm
 - **Existing looks skip ahead** - a new page or a refinement inside the current look goes straight to motion or build
 - **Works outside Claude Code** - ui-ux-pro-max's search script is resolved from its own skill directory instead of the Claude Code-only `${CLAUDE_PLUGIN_ROOT}` path its SKILL.md uses
+- **Upstream check** - `bin/check-pipeline-skills.sh` diffs each installed skill named in the pipeline's Companion skills table against a fresh clone of the repository the skills CLI lock file records for it, ignores `__pycache__`, and exits 1 when any skill differs or is missing; it needs network access, and `bin/test-check-pipeline-skills.sh` checks it against scratch repositories
 
 ---
 
@@ -421,7 +422,7 @@ Both plugins therefore share one marketplace root (`source: "./"`), and there is
 `bin/sync-versions.sh` syncs the plugin versions (`fathom`, `ship`) from `marketplace.json` into this README's plugin headings and into the `SKILL.md` frontmatter of every skill each plugin claims, syncs each standalone skill's `SKILL.md` version into its heading here, and fails when a skill directory is claimed by no plugin and not listed as standalone, claimed by more than one, or claimed but missing.
 `bin/hooks/pre-commit` runs the sync before each commit and never blocks one; enable it with `git config core.hooksPath bin/hooks`.
 `claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
-CI has four workflows: `skillspector.yml` (the scan, plus `bin/test-scan-skills.sh`, `bin/test-worktree-setup.sh`, and `bin/test-watch.sh`), `frontmatter.yml` (the frontmatter check and a check that `bin/sync-versions.sh` leaves no diff, each with its test), `prose.yml` (the dash check and its test), and `plugin-validate.yml`.
+CI has four workflows: `skillspector.yml` (the scan, plus `bin/test-scan-skills.sh`, `bin/test-worktree-setup.sh`, `bin/test-watch.sh`, and `bin/test-check-pipeline-skills.sh`), `frontmatter.yml` (the frontmatter check and a check that `bin/sync-versions.sh` leaves no diff, each with its test), `prose.yml` (the dash check and its test), and `plugin-validate.yml`.
 `bin/check-dashes.sh` fails on any em or en dash in `skills/`, `bin/`, this README, `CODING_STANDARDS.md`, and `docs/fathom.md`, and CI runs it and its test on every pull request.
 The dated records in `docs/plans/` and `docs/superpowers/` are not checked.
 `bin/check-frontmatter.sh` parses the frontmatter of every `skills/*/SKILL.md` with a pinned `yaml` package, the parser the skills CLI uses.

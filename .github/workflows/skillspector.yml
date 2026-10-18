@@ -10,6 +10,8 @@ on:
       - "bin/test-scan-skills.sh"
       - "bin/test-worktree-setup.sh"
       - "bin/test-watch.sh"
+      - "bin/check-pipeline-skills.sh"
+      - "bin/test-check-pipeline-skills.sh"
       - ".github/workflows/skillspector.yml"
   pull_request:
     paths:
@@ -19,6 +21,8 @@ on:
       - "bin/test-scan-skills.sh"
       - "bin/test-worktree-setup.sh"
       - "bin/test-watch.sh"
+      - "bin/check-pipeline-skills.sh"
+      - "bin/test-check-pipeline-skills.sh"
       - ".github/workflows/skillspector.yml"
   workflow_dispatch:
 
@@ -40,6 +44,9 @@ jobs:
 
       - name: Check ship's watch.sh against fake gh responses
         run: bin/test-watch.sh
+
+      - name: Check check-pipeline-skills.sh against scratch repositories
+        run: bin/test-check-pipeline-skills.sh
 
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
