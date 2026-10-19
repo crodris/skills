@@ -1,7 +1,7 @@
 ---
 name: frontend-design-pipeline
 description: This skill should be used when the user asks to design and build a new UI, landing page, app screen, or visual identity, or to redesign an existing one, and wants to choose between design directions before anything is built. Also use when the user says "design pipeline", "frontend design pipeline", "give me design directions", or "run the full design flow", or asks to refine a UI that already has a DESIGN.md through the same flow. It chains the ui-ux-pro-max, taste-skill, frontend-design, emil-design-eng, and impeccable skills in a fixed order and stops once for the user to pick a direction from rendered mocks.
-version: 1.1.2
+version: 1.2.0
 ---
 
 # Frontend design pipeline
@@ -16,7 +16,7 @@ Every stage invokes another skill when one is installed and follows that skill's
 | Stage | Skill | Install |
 |-------|-------|---------|
 | 1 | `ui-ux-pro-max` | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
-| 2 | one of `minimalist-ui`, `high-end-visual-design`, `industrial-brutalist-ui`, `gpt-taste`, `design-taste-frontend`, `redesign-existing-projects` | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend redesign-existing-projects -g` |
+| 2 | one of `minimalist-ui`, `high-end-visual-design`, `industrial-brutalist-ui`, `gpt-taste`, `design-taste-frontend` | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend -g` |
 | 2 | `frontend-design` | `npx skills@latest add anthropics/skills -s frontend-design -g` |
 | 3 | `html-comms` | `npx skills@latest add crodris/skills -s html-comms -g` |
 | 4 | `emil-design-eng` | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
@@ -70,8 +70,7 @@ Do not pass `--persist`.
 For each candidate, call the Skill tool twice, first with exactly one taste-skill preset and then with "frontend-design", and turn the candidate into a direction brief.
 Never apply two presets to one candidate, because they contradict each other: minimalist-ui bans gradients, and gpt-taste is built on GSAP.
 Pick a different preset per candidate where the product allows it, so the briefs differ.
-Pick design-taste-frontend only for a public web page, such as a landing page, marketing site, or portfolio, since it rules out dashboards and app screens.
-On a redesign, replace one candidate's preset with redesign-existing-projects.
+On a redesign, give one candidate design-taste-frontend, since it covers redesigns.
 Run frontend-design's plan pass on each brief: ground it in the product's subject, then review it against the generic defaults that skill lists and revise what reads as default.
 When no preset is installed, frontend-design's plan pass alone turns each candidate into a brief.
 Take only the rules in this stage, since stage 3 builds the mocks.

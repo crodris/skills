@@ -245,7 +245,7 @@ recalibrate my voice
 
 ---
 
-### frontend-design-pipeline (v1.1.2)
+### frontend-design-pipeline (v1.2.0)
 
 Frontend design pipeline takes a UI from product idea to finished build by chaining five design skills in a fixed order, and adds one stop for you to pick a direction from rendered mocks.
 It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with one taste-skill preset and frontend-design, builds each brief as a mock beside your current screen when there is one, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
@@ -264,7 +264,7 @@ When one is missing, the pipeline skips its part or falls back, says so once wit
 | Skill | Role | Install |
 |-------|-------|---------|
 | [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Candidate design systems (needs `python3` or `python`) | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
-| [taste-skill](https://github.com/Leonxlnx/taste-skill) presets | Direction briefs, one preset per candidate | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend redesign-existing-projects -g` |
+| [taste-skill](https://github.com/Leonxlnx/taste-skill) presets | Direction briefs, one preset per candidate | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend -g` |
 | [frontend-design](https://github.com/anthropics/skills) | Grounds each brief in your product and revises generic defaults out of it | `npx skills@latest add anthropics/skills -s frontend-design -g` |
 | `html-comms`, from this repo | Publishes the mocks side by side on one page, privately when the harness has a private publisher | `npx skills@latest add crodris/skills -s html-comms -g` |
 | [emil-design-eng](https://github.com/emilkowalski/skills) | Motion and interaction decisions | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
@@ -294,6 +294,7 @@ run the full design flow
 - **One source of truth** - after your pick, DESIGN.md beats the generated candidates, any ui-ux-pro-max MASTER.md, and taste-skill hard bans; when a DESIGN.md already exists, the pick question says it replaces it and the old file stays unless you confirm
 - **Existing looks skip ahead** - a new page or a refinement inside the current look goes straight to motion or build
 - **Works outside Claude Code** - ui-ux-pro-max's search script is resolved from its own skill directory instead of the Claude Code-only `${CLAUDE_PLUGIN_ROOT}` path its SKILL.md uses
+- **Upstream check** - `bin/check-pipeline-skills.sh` diffs each installed skill named in the pipeline's Companion skills table against a fresh clone of the repository and branch or tag the skills CLI lock file records for it, ignores `__pycache__`, and exits 1 when any skill differs or is missing; it needs network access, and `bin/test-check-pipeline-skills.sh` checks it against scratch repositories
 
 ---
 
@@ -421,7 +422,7 @@ Both plugins therefore share one marketplace root (`source: "./"`), and there is
 `bin/sync-versions.sh` syncs the plugin versions (`fathom`, `ship`) from `marketplace.json` into this README's plugin headings and into the `SKILL.md` frontmatter of every skill each plugin claims, syncs each standalone skill's `SKILL.md` version into its heading here, and fails when a skill directory is claimed by no plugin and not listed as standalone, claimed by more than one, or claimed but missing.
 `bin/hooks/pre-commit` runs the sync before each commit and never blocks one; enable it with `git config core.hooksPath bin/hooks`.
 `claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
-CI has four workflows: `skillspector.yml` (the scan, plus `bin/test-scan-skills.sh`, `bin/test-worktree-setup.sh`, and `bin/test-watch.sh`), `frontmatter.yml` (the frontmatter check and a check that `bin/sync-versions.sh` leaves no diff, each with its test), `prose.yml` (the dash check and its test), and `plugin-validate.yml`.
+CI has four workflows: `skillspector.yml` (the scan, plus `bin/test-scan-skills.sh`, `bin/test-worktree-setup.sh`, `bin/test-watch.sh`, and `bin/test-check-pipeline-skills.sh`), `frontmatter.yml` (the frontmatter check and a check that `bin/sync-versions.sh` leaves no diff, each with its test), `prose.yml` (the dash check and its test), and `plugin-validate.yml`.
 `bin/check-dashes.sh` fails on any em or en dash in `skills/`, `bin/`, this README, `CODING_STANDARDS.md`, and `docs/fathom.md`, and CI runs it and its test on every pull request.
 The dated records in `docs/plans/` and `docs/superpowers/` are not checked.
 `bin/check-frontmatter.sh` parses the frontmatter of every `skills/*/SKILL.md` with a pinned `yaml` package, the parser the skills CLI uses.

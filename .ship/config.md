@@ -5,7 +5,7 @@ touches the working tree. Edit it directly; ship rewrites it only when one of
 these commands stops resolving.
 
 ```markdown
-verify: bin/test-watch.sh && bin/test-worktree-setup.sh && bin/test-scan-skills.sh && bin/scan-skills.sh && bin/test-sync-versions.sh && bin/sync-versions.sh && bin/test-check-dashes.sh && bin/check-dashes.sh && bin/test-check-frontmatter.sh && bin/check-frontmatter.sh && claude plugin validate --strict .   # asked
+verify: bin/test-watch.sh && bin/test-check-pipeline-skills.sh && bin/test-worktree-setup.sh && bin/test-scan-skills.sh && bin/scan-skills.sh && bin/test-sync-versions.sh && bin/sync-versions.sh && bin/test-check-dashes.sh && bin/check-dashes.sh && bin/test-check-frontmatter.sh && bin/check-frontmatter.sh && claude plugin validate --strict .   # asked
 base: main
 release: none
 post-merge: none
@@ -22,3 +22,6 @@ left to be rediscovered. `claude plugin validate --strict .` gates
 `bin/check-frontmatter.sh` fails when a skill's frontmatter does not parse as
 YAML or its description is cut short, and `bin/test-check-frontmatter.sh`
 proves it; CI runs both in `frontmatter.yml`.
+`bin/test-check-pipeline-skills.sh` proves `bin/check-pipeline-skills.sh`, and
+CI runs it in `skillspector.yml`. The check itself stays out of verify, because
+it needs network access and checks this machine's installed skills.
