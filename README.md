@@ -245,7 +245,7 @@ recalibrate my voice
 
 ---
 
-### frontend-design-pipeline (v1.1.2)
+### frontend-design-pipeline (v1.2.0)
 
 Frontend design pipeline takes a UI from product idea to finished build by chaining five design skills in a fixed order, and adds one stop for you to pick a direction from rendered mocks.
 It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with one taste-skill preset and frontend-design, builds each brief as a mock beside your current screen when there is one, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
@@ -264,7 +264,7 @@ When one is missing, the pipeline skips its part or falls back, says so once wit
 | Skill | Role | Install |
 |-------|-------|---------|
 | [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Candidate design systems (needs `python3` or `python`) | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
-| [taste-skill](https://github.com/Leonxlnx/taste-skill) presets | Direction briefs, one preset per candidate | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend redesign-existing-projects -g` |
+| [taste-skill](https://github.com/Leonxlnx/taste-skill) presets | Direction briefs, one preset per candidate | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend -g` |
 | [frontend-design](https://github.com/anthropics/skills) | Grounds each brief in your product and revises generic defaults out of it | `npx skills@latest add anthropics/skills -s frontend-design -g` |
 | `html-comms`, from this repo | Publishes the mocks side by side on one page, privately when the harness has a private publisher | `npx skills@latest add crodris/skills -s html-comms -g` |
 | [emil-design-eng](https://github.com/emilkowalski/skills) | Motion and interaction decisions | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
