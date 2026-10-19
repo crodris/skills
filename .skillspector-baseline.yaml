@@ -25,7 +25,7 @@ rules:
       this rule suppresses ANY "without asking" EA2 hit in any SKILL.md of
       this plugin, including future ones this reason does not cover; when
       adding that phrase to a skill, re-review whether the suppression still
-      only hides benign uses. Re-reviewed for my-voice: "the one place this skill
+      only hides benign uses. Re-reviewed for rewrite: "the one place this skill
       writes without asking" limits unprompted writes to the user's own voice
       config directory, refuses symlinks out of it, and requires approval of
       each specific change for any other write. Re-reviewed for html-comms:
@@ -180,27 +180,27 @@ rules:
 
   - id: "RA2"
     path: "SKILL.md"
-    message: "*sounds like me*"
+    message: "*asks to draft, write, rewrite, or polish prose*"
     reason: >-
       Reviewed, intentional: the "Session Persistence" pattern for writes
-      into a hidden home directory matched in my-voice, starting at the "write"
-      inside the description's "rewrite this so it sounds like me" and
+      into a hidden home directory matched in rewrite, starting at the "write"
+      inside the skill's own name on the frontmatter `name:` line and
       running across lines to the `~/.config` path in the config example
-      under "Resolving the voice files". That path is my-voice's config
+      under "Resolving the voice files". That path is rewrite's config
       directory (`$XDG_CONFIG_HOME/voice`, falling back to `~/.config/voice`),
-      which persists across sessions by design. Voice creates it with the
+      which persists across sessions by design. rewrite creates it with the
       user during first-run setup, the user can read every file in it, and
       it holds only the config's path lists, voice rules, and samples.
       Unprompted writes stay inside it, other writes need the user's approval
-      of the specific change, and voice defines no cron jobs or startup
+      of the specific change, and rewrite defines no cron jobs or startup
       scripts. Caution: path "SKILL.md" matches every skill's SKILL.md, so
       this hides any RA2 hit repo-wide whose first 200 characters contain
-      "sounds like me". The pattern's match also spans newlines up to the
+      the opening of rewrite's description. The pattern's match also spans newlines up to the
       first `|` in the file (the tells table), and the reported finding text
       is only those first 200 characters, so any new "write/create/mkdir ...
-      ~/.<dir>" line added to my-voice's SKILL.md above that table is swallowed
+      ~/.<dir>" line added to rewrite's SKILL.md above that table is swallowed
       into this same match and stays suppressed; re-review this rule
-      whenever my-voice gains a new hidden-directory path.
+      whenever rewrite gains a new hidden-directory path.
 
   - id: "AS1"
     path: "setup.sh"
