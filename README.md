@@ -195,8 +195,8 @@ It reads your voice file at the start of each conversation and applies a built-i
 Your voice file wins over the floor, so anything it re-allows comes back.
 
 It was named `voice` before v2.0.0, a name that hid Claude Code's built-in `/voice` dictation command.
-It was named `my-voice` before v3.0.0, and `rewrite` now names what the skill does instead of whose voice it writes in.
-To move an old install to the new name, run `npx skills@latest remove my-voice -g` (or `remove voice` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
+It was named `my-voice` before v3.0.0, and `rewrite` names what the skill does.
+To move an old install to the new name, run `npx skills@latest remove my-voice -g` (or `npx skills@latest remove voice -g` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
 
 Nothing personal ships in this repository.
 The skill reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset.
