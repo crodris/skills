@@ -294,7 +294,7 @@ run the full design flow
 - **One source of truth** - after your pick, DESIGN.md beats the generated candidates, any ui-ux-pro-max MASTER.md, and taste-skill hard bans; when a DESIGN.md already exists, the pick question says it replaces it and the old file stays unless you confirm
 - **Existing looks skip ahead** - a new page or a refinement inside the current look goes straight to motion or build
 - **Works outside Claude Code** - ui-ux-pro-max's search script is resolved from its own skill directory instead of the Claude Code-only `${CLAUDE_PLUGIN_ROOT}` path its SKILL.md uses
-- **Upstream check** - `bin/check-pipeline-skills.sh` diffs each installed skill named in the pipeline's Companion skills table against a fresh clone of the repository the skills CLI lock file records for it, ignores `__pycache__`, and exits 1 when any skill differs or is missing; it needs network access, and `bin/test-check-pipeline-skills.sh` checks it against scratch repositories
+- **Upstream check** - `bin/check-pipeline-skills.sh` diffs each installed skill named in the pipeline's Companion skills table against a fresh clone of the repository and branch or tag the skills CLI lock file records for it, ignores `__pycache__`, and exits 1 when any skill differs or is missing; it needs network access, and `bin/test-check-pipeline-skills.sh` checks it against scratch repositories
 
 ---
 
