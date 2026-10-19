@@ -9,6 +9,7 @@ verify: bin/test-watch.sh && bin/test-check-pipeline-skills.sh && bin/test-workt
 base: main
 release: none
 post-merge: none
+merge: yes
 ```
 
 Detection alone would find only `bin/scan-skills.sh`, because that is the sole

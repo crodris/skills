@@ -1,10 +1,10 @@
 ---
-name: my-voice
+name: rewrite
 description: This skill should be used when the user asks to draft, write, rewrite, or polish prose they will post under their own name, such as a pull request description or review comment, a reply on a PR thread, a GitHub issue, a Slack or Discord message, an email, a README or other human-facing doc, a blog post, a LinkedIn post, a cover letter, or release notes. Also use when the user says "rewrite this so it sounds like me", "this sounds too AI", "make this sound human", "does this sound like me", "in my voice", or mentions their voice DNA, voice file, or writing style, including asking to change, loosen, or tighten a rule in one. Also use when the user says "voice setup", "set up my voice", "recalibrate my voice", "my voice is drifting", or asks where their voice file lives. Do not use for code, commit messages, test names, identifiers, config files, or text another agent will parse.
-version: 2.0.0
+version: 3.0.0
 ---
 
-# Voice
+# Rewrite
 
 Write prose the user will sign as their own, in their voice, with none of the tells that mark text as machine-written.
 
@@ -287,7 +287,7 @@ Run this pass on the whole draft, every time, in this order.
 4. Read it once against the voice file's rules.
 5. Read it aloud in your head for rhythm. Three sentences the same length in a row is a hit.
 6. Cut the first paragraph if the second paragraph is where it starts.
-7. In rewrite mode, read it once against the user's original text, from before unslop ran, for the facts rule under Rewrite. A fact the draft lost is a hit, including one from a merged fragment row, unless it was the negated half of a negation-then-correction.
+7. In rewrite mode, read it once against the user's original text, from before unslop ran, for the facts rule in the Rewrite mode under Modes. A fact the draft lost is a hit, including one from a merged fragment row, unless it was the negated half of a negation-then-correction.
 
 One hit means rewrite the sentence.
 A patched word in a machine-shaped sentence is still a machine-shaped sentence.
