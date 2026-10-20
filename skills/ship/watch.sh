@@ -10,8 +10,8 @@
 # With no --bot it waits on the checks alone.
 # A GitHub Actions workflow on the SHA that has not finished counts as a pending
 # check, and one that failed before creating any check run counts as a failed
-# check. Settling waits up to NO_CHECKS_GRACE seconds for a first check and a
-# first workflow.
+# check. It never settles in its first SETTLE_GRACE seconds, so a check or
+# workflow that registers late is still waited on.
 # --rerequest <bot> implies --bot <bot> and posts the bot's re-request comment
 # once, after a poll finds the pull request open on <head-sha> and the bot not
 # settled; a notice older than that post is then ignored.
@@ -51,11 +51,10 @@ finish() {
 
 { command -v gh && command -v jq; } >/dev/null || finish usage "watch.sh needs gh and jq on PATH"
 
-# A fresh push may have no checks and no GitHub Actions workflow registered yet,
-# so settling waits for both or for this many seconds; a repo with no workflows,
-# or whose workflows all skip by paths filters, therefore waits this long before
-# settling.
-NO_CHECKS_GRACE=120
+# After a fresh push, workflows register over many seconds, and a fast one can
+# pass before a slow one exists, so settling waits this long in every run.
+# WATCH_GRACE overrides it for tests.
+SETTLE_GRACE=${WATCH_GRACE:-120}
 MAX_FAILED_POLLS=3
 
 # Mirrors the table in bots.md; change both together.
@@ -96,8 +95,7 @@ else empty end'
 
 # Reduces one GraphQL response to a verdict. Inputs: $sha, $bots (ids in order),
 # $registry, $rerequested (bot id -> epoch seconds of this run's re-request),
-# and $grace_over (whether NO_CHECKS_GRACE has passed, so settling no longer
-# needs a first check and a first workflow).
+# and $grace_over (whether SETTLE_GRACE has passed, so it may settle).
 REDUCE='
 def epoch: sub("\\.[0-9]+"; "") | fromdateiso8601;
 def fresh($since): $since == null or (. != null and epoch >= $since);
@@ -166,15 +164,14 @@ def body_notice: split("\n")[0] | notice("rate limit exceeded");
       failed_names: [$checks[] | select(.kind == "failed") | .label],
       pending_names: [$checks[] | select(.kind == "pending") | .label]
     },
-    no_workflow: ($workflows == [] and ($grace_over | not)),
+    grace_over: $grace_over,
     bots: ($botstates | map({(.id): .state}) | add // {}),
     notices: ($botstates | map(select(.notice != null) | {(.id): .notice}) | add // {})
   }
 | .outcome = (
     if .pr != "open" then .pr
     elif any(.bots[]; . == "refused") then "refused"
-    elif all(.bots[]; . == "settled") and .checks.pending == 0
-         and (.checks.passed + .checks.failed > 0 or $grace_over) and (.no_workflow | not)
+    elif all(.bots[]; . == "settled") and .checks.pending == 0 and $grace_over
     then (if .checks.failed > 0 then "failed" else "passed" end)
     else "waiting" end)'
 
@@ -185,8 +182,7 @@ STILL_PENDING='[
   (if .checks.pending > 0 then "checks \(.checks.pending_names | join(", "))"
    elif .checks.passed + .checks.failed == 0 then "no checks registered"
    else empty end),
-  (if .no_workflow and (.checks.pending > 0 or .checks.passed + .checks.failed > 0)
-   then "no GitHub Actions workflow registered" else empty end),
+  (if .grace_over | not then "the \($grace)-second wait for late checks" else empty end),
   (.bots | to_entries[] | select(.value != "settled") | "\(.key) \(.value)")
 ] | join("; ")'
 
@@ -235,7 +231,7 @@ trap 'rm -f "$errfile"' EXIT
 # Sets $verdict on success; sets $error and returns 1 on a failed poll.
 poll() {
   local out rc=0 grace_over=false reduced
-  [ $((SECONDS - start)) -lt "$NO_CHECKS_GRACE" ] || grace_over=true
+  [ $((SECONDS - start)) -lt "$SETTLE_GRACE" ] || grace_over=true
   out=$(gh api graphql -f query="$QUERY" -f owner="${repo%%/*}" -f repo="${repo#*/}" -F n="$pr" -f sha="$sha" 2>"$errfile") || rc=$?
   if [ "$rc" != 0 ]; then
     error=$(cat "$errfile")
@@ -296,7 +292,7 @@ while :; do
   fi
   [ "$failures" -lt "$MAX_FAILED_POLLS" ] || finish forge "${error//$'\n'/ }"
   if [ $((SECONDS - start)) -ge "$deadline" ]; then
-    if [ -n "$verdict" ]; then finish deadline "still pending: $(v "$STILL_PENDING")"; fi
+    if [ -n "$verdict" ]; then finish deadline "still pending: $(v --argjson grace "$SETTLE_GRACE" "$STILL_PENDING")"; fi
     finish deadline "no poll succeeded"
   fi
   sleep "$interval"
