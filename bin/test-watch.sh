@@ -4,7 +4,9 @@
 # logs every call. A poll's fixture is N.json, or N.err to fail with that
 # stderr text, and comment.err makes every `gh pr comment` fail the same way.
 # Each case checks the exit code and, where it matters, stdout or the gh call log.
+# WATCH_GRACE is 0 unless a case sets it, so a case settles on its first poll.
 set -euo pipefail
+export WATCH_GRACE=0
 
 WATCH="$(cd "$(dirname "$0")/.." && pwd)/skills/ship/watch.sh"
 SHA=1111111111111111111111111111111111111111
@@ -241,8 +243,8 @@ expect_in "the pending check is printed" out "still pending: checks test"
 expect_count "an unchanged status is printed once" out "checks 1 passed" 1
 
 case_dir
-response OPEN $SHA '[]' > "$dir/1.json"
-run 7 $SHA --repo o/r --interval 0 --deadline 1
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+WATCH_GRACE=60 run 7 $SHA --repo o/r --interval 0 --deadline 1
 expect_exit "an empty rollup with no bots does not settle early" 4
 expect_in "the empty rollup is reported" out "no checks registered"
 
@@ -286,9 +288,19 @@ expect_exit "a skipped workflow with no check runs passes" 0
 
 case_dir
 SUITES='[]' response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
-run 7 $SHA --repo o/r --interval 0 --deadline 1
+WATCH_GRACE=60 run 7 $SHA --repo o/r --interval 0 --deadline 1
 expect_exit "a passed check with no workflow registered does not settle early" 4
-expect_in "the missing workflow is reported" out "no GitHub Actions workflow registered"
+expect_in "the grace window is reported" out "60-second wait for late checks"
+
+GUARD_DONE=$(suite github-actions COMPLETED Guard)
+case_dir
+SUITES="[$GUARD_DONE]" response OPEN $SHA '[]' "$(check_run guard COMPLETED SUCCESS)" > "$dir/1.json"
+SUITES="[$GUARD_DONE,$CI_QUEUED]" response OPEN $SHA '[]' "$(check_run guard COMPLETED SUCCESS)" > "$dir/2.json"
+SUITES="[$GUARD_DONE,$(suite github-actions COMPLETED CI)]" response OPEN $SHA '[]' \
+  "$(check_run guard COMPLETED SUCCESS)" "$(check_run test COMPLETED FAILURE)" > "$dir/3.json"
+WATCH_GRACE=2 run 7 $SHA --repo o/r --interval 0 --deadline 10
+expect_exit "a workflow that registers after another one passed is still waited on" 1
+expect_in "the late workflow's failed check is printed" out "verdict: failed: test"
 
 case_dir
 SUITES=$CI_QUEUED response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
