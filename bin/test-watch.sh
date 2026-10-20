@@ -369,6 +369,10 @@ run 7 $SHA --interval 0
 expect_exit "a missing --repo is a usage error" 2
 
 case_dir
+WATCH_GRACE=soon run 7 $SHA --repo o/r --interval 0
+expect_exit "a WATCH_GRACE that is not whole seconds is a usage error" 2
+
+case_dir
 run 7 $SHA --repo o/r --bot coderabbitai
 expect_exit "an unknown bot is a usage error" 2
 

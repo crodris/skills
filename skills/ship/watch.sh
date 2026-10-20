@@ -224,6 +224,7 @@ done
 [[ $repo =~ ^[^/[:space:]]+/[^/[:space:]]+$ ]] || usage "--repo <owner/name> is required"
 [[ $deadline =~ ^[0-9]+$ ]] || usage "--deadline must be whole seconds"
 [[ $interval =~ ^[0-9]+$ ]] || usage "--interval must be whole seconds"
+[[ $SETTLE_GRACE =~ ^[0-9]+$ ]] || usage "WATCH_GRACE must be whole seconds"
 
 errfile=$(mktemp)
 trap 'rm -f "$errfile"' EXIT
