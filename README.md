@@ -246,10 +246,10 @@ recalibrate my voice
 
 ---
 
-### frontend-design-pipeline (v1.2.0)
+### frontend-design-pipeline (v1.3.0)
 
 Frontend design pipeline takes a UI from product idea to finished build by chaining five design skills in a fixed order, and adds one stop for you to pick a direction from rendered mocks.
-It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with one taste-skill preset and frontend-design, builds each brief as a mock beside your current screen when there is one, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
+It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with its own design-taste-frontend direction and frontend-design, builds each brief as a mock beside your current screen when there is one, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
 It ships no design knowledge of its own and never copies the skills it calls.
 Only impeccable is required; the rest improve the result when installed.
 
@@ -265,7 +265,7 @@ When one is missing, the pipeline skips its part or falls back, says so once wit
 | Skill | Role | Install |
 |-------|-------|---------|
 | [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Candidate design systems (needs `python3` or `python`) | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
-| [taste-skill](https://github.com/Leonxlnx/taste-skill) presets | Direction briefs, one preset per candidate | `npx skills@latest add Leonxlnx/taste-skill -s minimalist-ui high-end-visual-design industrial-brutalist-ui gpt-taste design-taste-frontend -g` |
+| [taste-skill](https://github.com/Leonxlnx/taste-skill) | Direction briefs, one dealt direction per candidate | `npx skills@latest add Leonxlnx/taste-skill -s design-taste-frontend -g` |
 | [frontend-design](https://github.com/anthropics/skills) | Grounds each brief in your product and revises generic defaults out of it | `npx skills@latest add anthropics/skills -s frontend-design -g` |
 | `html-comms`, from this repo | Publishes the mocks side by side on one page, privately when the harness has a private publisher | `npx skills@latest add crodris/skills -s html-comms -g` |
 | [emil-design-eng](https://github.com/emilkowalski/skills) | Motion and interaction decisions | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
@@ -291,7 +291,7 @@ run the full design flow
 #### Features
 
 - **Mocks, not descriptions** - every direction is built as a real styled mock of the screen you asked about, shown beside your current screen when there is one
-- **One preset per candidate** - taste-skill presets contradict each other, so each candidate gets exactly one
+- **One direction per candidate** - design-taste-frontend deals the directions, and each candidate gets a different one
 - **One source of truth** - after your pick, DESIGN.md beats the generated candidates, any ui-ux-pro-max MASTER.md, and taste-skill hard bans; when a DESIGN.md already exists, the pick question says it replaces it and the old file stays unless you confirm
 - **Existing looks skip ahead** - a new page or a refinement inside the current look goes straight to motion or build
 - **Works outside Claude Code** - ui-ux-pro-max's search script is resolved from its own skill directory instead of the Claude Code-only `${CLAUDE_PLUGIN_ROOT}` path its SKILL.md uses
