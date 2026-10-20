@@ -3,15 +3,6 @@ version: 2
 # Reviewed findings accepted as false positives.
 # Docs: https://github.com/NVIDIA/SkillSpector/blob/main/docs/SUPPRESSION.md
 rules:
-  - id: "RA2"
-    path: "SKILL.md"
-    message: "*hand off to the execute skill*"
-    reason: >-
-      False positive: the "Session Persistence" pattern matched the scaffold
-      skill description's hand-off phrasing ("offers to hand off to the
-      execute skill"). The skill defines no cron jobs, startup scripts, or
-      cross-session state.
-
   - id: "EA2"
     path: "SKILL.md"
     message: "*without asking*"
@@ -70,24 +61,6 @@ rules:
       run straight through without asking"). It is literally a
       human-in-the-loop prompt; "without asking" names the option offered,
       not behavior taken unilaterally.
-
-  - id: "AS3"
-    path: "SKILL.md"
-    message: "skills/ship/SKILL.md"
-    reason: >-
-      False positive: "Skill Enumeration" matched ship's precedence
-      paragraph, which checks the CURRENT REPOSITORY for a project-local ship
-      skill (`.claude/skills/ship/SKILL.md` and the Kiro and agents
-      equivalents) and defers to it. It reads one known path for a skill of
-      the same name inside the user's own project; it never lists the
-      installed-skills directory, never reads a peer skill's instructions,
-      and never reports what it found anywhere but to the user. The override
-      is the point of the skill being global: a repository with a specialized
-      pipeline keeps it instead of silently getting the generic one.
-      Caution: the message field matches the finding string, which for AS3 is
-      only the file path, so this rule suppresses ANY AS3 hit in
-      skills/ship/SKILL.md, including future ones this reason does not cover;
-      re-review it whenever that file gains new cross-skill wording.
 
   - id: "PE3"
     path: "conventions.md"
