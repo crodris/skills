@@ -14,7 +14,7 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship`, `review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup` on its own if that is all you want.
+Take `ship`, `review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, `worktree-setup`, or `verification-audit` on its own if that is all you want.
 `execute` and `scaffold` require `fathom-shared`, which carries the contract files they read, and each stops with its install command when it is missing.
 
 **Claude Code plugins** - also available, for Claude Code only:
@@ -27,7 +27,7 @@ Take `ship`, `review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, or `
 
 The two plugins are independent: install either one alone.
 Fathom needs a tracker MCP. Ship needs a git repository with a remote, plus an authenticated `gh` and `jq` for its pull request and check-waiting stages.
-`review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, and `worktree-setup` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
+`review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, `worktree-setup`, and `verification-audit` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
 
 > Individual plugins may have additional prerequisites that run in your **terminal** (e.g., `brew install`). See each plugin's section below for details.
 
@@ -406,6 +406,40 @@ The skill never edits your settings; add the hook yourself.
 - **Used by Fathom** - the fan-out installs each task worktree's dependencies through this skill when it is installed
 - **Checked** - `bin/test-worktree-setup.sh` runs the script against scratch repositories and stub package managers, and CI runs it
 
+### verification-audit (v1.0.0)
+
+Verification audit checks how well a repository proves that agent work is correct, then closes each gap.
+It checks six things in order: static gates in CI, a `verify-<app>` skill, its feature map, a formal check on the riskiest code, a scheduled drive, and risk-scaled review in `.ship/config.md`.
+Each fix comes from a pstack verification skill, read from its `SKILL.md`.
+
+#### Prerequisites
+
+- The [pstack](https://github.com/crodris/pstack-claude) plugin, for `create-verification-skill`, `maintain-verification-skill`, `create-formal-verification-skill`, and `maintain-formal-verification-skill`; without it, the skill reports the gaps and does not fix them
+
+#### Install
+
+```bash
+npx skills@latest add crodris/skills -s verification-audit -g
+```
+
+#### Skills
+
+| Skill | Description |
+|-------|-------------|
+| `verification-audit` | Reports each verification check as present, partial, outdated, missing, or blocked, with evidence, then closes the gaps in order, one pull request each. |
+
+```bash
+audit verification in this repo
+how verified is this repo
+```
+
+#### Features
+
+- **Strongest layer first** - a gap closes as a type, lint, or test before it becomes prose
+- **Report before fixing** - every check runs first, and one table shows state, evidence, and fix
+- **Judges the target** - the formal check names the riskiest code first, so a check on easy code does not count as covered
+- **Several repositories** - checks all of them first, then fixes one at a time
+
 ## Workflow
 
 1. **Scaffold requirements**: talk to the scaffold skill, for example "scaffold these requirements"
@@ -417,7 +451,7 @@ The skill never edits your settings; add the hook yourself.
 ## Repository Layout
 
 Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/marketplace.json` decides which plugin owns which skill through a per-entry `skills` array.
-A skill claimed by no entry, such as `review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, or `worktree-setup`, is still published by skills.sh and is simply unreachable through `/plugin install`; list it under `## Standalone Skills` in this README to make the omission deliberate.
+A skill claimed by no entry, such as `review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, `worktree-setup`, or `verification-audit`, is still published by skills.sh and is simply unreachable through `/plugin install`; list it under `## Standalone Skills` in this README to make the omission deliberate.
 `bin/sync-versions.sh` stays silent about a skill listed there and fails on one that is in neither a plugin entry nor that section.
 Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
 `bin/sync-versions.sh` syncs the plugin versions (`fathom`, `ship`) from `marketplace.json` into this README's plugin headings and into the `SKILL.md` frontmatter of every skill each plugin claims, syncs each standalone skill's `SKILL.md` version into its heading here, and fails when a skill directory is claimed by no plugin and not listed as standalone, claimed by more than one, or claimed but missing.
