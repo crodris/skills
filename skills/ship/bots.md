@@ -35,8 +35,8 @@ A setting made only in the bot's web dashboard is invisible here, so a repositor
 A bot has settled on the captured SHA when the table's signal says so for that SHA and no other.
 `watch.sh` in this skill's folder implements the table's settle signals and the notice rules.
 Pass it `--bot coderabbit` for CodeRabbit and `--bot greptile` for Greptile, once for each present bot that the current pass waits on.
-A bot this run must re-request on a head, as `lanes.md` asks, is passed with `--rerequest` instead of `--bot`.
-A first-push-only bot's skipped notice on a head after the one it reviewed is expected: outside the light lane, do not pass that bot on that head, and never re-request it.
+A bot this run must re-request on a head, as stage 3's step 5 or `lanes.md` asks, is passed with `--rerequest` instead of `--bot`.
+A first-push-only bot's skipped notice on a head after the one it reviewed is expected: outside the light lane, do not pass that bot on that head unless stage 3's step 5 re-requests it.
 A bot that will not review at all, such as after an ended trial or a spent plan quota, is a stop-and-report at once, since waiting cannot change it and merging without that bot is the user's call.
 
 ## Red flag
