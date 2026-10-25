@@ -4,7 +4,8 @@
 # logs every call. A poll's fixture is N.json, or N.err to fail with that
 # stderr text, and comment.err makes every `gh pr comment` fail the same way.
 # `gh api --paginate` of a pull request's review comments or reviews prints
-# pr-comments.json or pr-reviews.json, else an empty list.
+# pr-comments.json or pr-reviews.json, else an empty list, and pr-comments.err
+# makes it fail with that stderr text.
 # Each case checks the exit code and, where it matters, stdout or the gh call log.
 # WATCH_GRACE is 0 unless a case sets it, so a case settles on its first poll.
 set -euo pipefail
@@ -26,6 +27,7 @@ set -euo pipefail
 printf '%s\n' "$*" >> "$FIXTURES/gh.log"
 if [ "$1 $2" = "pr comment" ] && [ -e "$FIXTURES/comment.err" ]; then cat "$FIXTURES/comment.err" >&2; exit 1; fi
 if [ "$1 $2" = "api --paginate" ]; then
+  if [ -e "$FIXTURES/pr-comments.err" ]; then cat "$FIXTURES/pr-comments.err" >&2; exit 1; fi
   case $3 in */comments) f=pr-comments.json ;; */reviews) f=pr-reviews.json ;; *) f=none ;; esac
   if [ -e "$FIXTURES/$f" ]; then cat "$FIXTURES/$f"; else echo '[]'; fi
   exit 0
@@ -72,7 +74,6 @@ case_dir() { dir=$(mktemp -d "$tmp/case.XXXX"); }
 finding() { jq -n --arg l "$2" --arg b "$3" '[{user: {login: $l}, body: ($b + "\n\n**Fix the thing.**")}]' > "$dir/$1"; }
 CR_MAJOR='**<picture><img src="x.svg" alt=""></picture> Major** · **Functional Correctness**'
 CR_MINOR='**<picture><img src="x.svg" alt=""></picture> Minor** · **Functional Correctness**'
-
 
 # A case still running after this many seconds is killed and gets exit 124, so
 # a broken deadline fails the suite instead of hanging CI.
@@ -209,6 +210,46 @@ run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
 expect_exit "--rerequest accepts the older emoji Major label in a review body" 0
 expect_count "the emoji-labelled re-request posts once" gh.log "pr comment 7 --repo o/r --body @coderabbitai review" 1
 
+case_dir
+finding pr-comments.json "coderabbitai[bot]" "_⚠️ Potential issue_ | _🟠 Major_"
+response OPEN $SHA '[]' "$BUILD" "$CR_DONE" > "$dir/1.json"
+run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
+expect_exit "--rerequest accepts the italic Major label" 0
+
+case_dir
+finding pr-comments.json "coderabbitai[bot]" "_🟡 Minor_ | _⚡ Quick win_"
+response OPEN $SHA '[]' "$BUILD" "$CR_DONE" > "$dir/1.json"
+run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
+expect_exit "--rerequest refuses the italic Minor label" 2
+
+case_dir
+finding pr-comments.json "coderabbitai[bot]" "$CR_MINOR"
+response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review skipped: incremental reviews are disabled")" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "--bot refuses a skipped notice's re-request when the bot labeled Minor at most" 2
+expect_count "a refused --bot re-request posts nothing" gh.log "pr comment" 0
+
+case_dir
+finding pr-comments.json "coderabbitai[bot]" "$CR_MAJOR"
+response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review skipped: incremental reviews are disabled")" > "$dir/1.json"
+response OPEN $SHA '[]' "$BUILD" "$CR_DONE" > "$dir/2.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "--bot re-requests a skipped notice when the bot labeled a Major" 0
+expect_count "the labelled --bot re-request posts once" gh.log "pr comment 7 --repo o/r --body @coderabbitai review" 1
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
+response OPEN $SHA '[]' "$BUILD" "$(check_run "Greptile Review" COMPLETED SUCCESS)" > "$dir/2.json"
+run 7 $SHA --repo o/r --rerequest greptile --interval 0 --deadline 5
+expect_exit "--rerequest greptile needs no label, since Greptile labels nothing" 0
+expect_count "--rerequest greptile posts once" gh.log "pr comment 7 --repo o/r --body @greptileai" 1
+
+case_dir
+echo "HTTP 502: Bad Gateway" > "$dir/pr-comments.err"
+response OPEN $SHA '[]' "$BUILD" "$CR_DONE" > "$dir/1.json"
+run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
+expect_exit "a failed read of the bot's findings exits 5" 5
+expect_in "the failed read's stderr is printed" out "reading coderabbit findings failed: HTTP 502"
 
 case_dir
 finding pr-comments.json "coderabbitai[bot]" "$CR_MAJOR"

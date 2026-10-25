@@ -46,7 +46,8 @@ A bot that will not review at all, such as after an ended trial or a spent plan 
 A bot that labels its own findings is re-requested only when the push fixed a finding the bot itself labeled critical or major.
 Ship's triage may grade one of its findings higher, and that grade still decides whether the finding blocks, but it never spends a re-review.
 CodeRabbit labels its own findings (Critical, Major, Minor, Trivial); Greptile does not, so a Greptile re-request still follows triage's severity.
-`watch.sh` enforces this: `--rerequest coderabbit` exits 2 before any poll unless one of CodeRabbit's review comments or reviews on the pull request carries its own Critical or Major label.
+`watch.sh` checks part of this: `--rerequest coderabbit` exits 2 before any poll, and `--bot coderabbit` exits 2 instead of answering a skipped notice, unless one of CodeRabbit's review comments or reviews on the pull request carries its own Critical or Major label.
+It does not check that this push fixed that finding, so stage 3 still decides that before it passes `--rerequest`.
 Why: on Storkie PR 442 (2026-10-25) triage raised a CodeRabbit Minor to major and re-requested CodeRabbit for that fix, which spent a review the owner did not want spent.
 
 ## Red flag

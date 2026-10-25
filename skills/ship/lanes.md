@@ -8,7 +8,7 @@ Project paths belong in that file and never in this skill.
 
 Resolve the lane in stage 0, from every file this run will ship: whatever differs from `origin/<base>`, committed or not, plus the untracked files that belong to the change.
 
-- Light: EVERY changed file matches `light-paths`. Stage 3 skips the subagent review, and the review bots are the only reviewers.
+- Light: EVERY changed file matches `light-paths`. Stage 3 skips the subagent review, and the review bots are the only reviewers of the full diff; the subagents read fix commits only when no bot may be re-requested (see Stage 3 confirmation pass).
 - Security: ANY changed file matches `security-paths`. Stage 3's subagent round also runs a security review of the diff.
 - Standard: neither, which is every run in a repository with no lane slots.
 
