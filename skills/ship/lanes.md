@@ -26,9 +26,10 @@ That third subagent never spends a round of its own: it shares the code reviewer
 
 ## Stage 3 confirmation pass
 
-The light lane confirms with the bots alone, since that lane has no subagent to confirm with.
-In this lane, stage 3's step 5 runs `watch.sh` as step 1 does, and re-requests every first-push-only bot whose confirmed critical or major the push fixed, as step 5 says for every lane.
-When that is none and no present bot reviews every push, pass one first-push-only bot with `--rerequest`, in `bots.md` table order, so a bot reads every fix.
+The light lane confirms with the bots when one can read the fix, since that lane has no subagent of its own.
+In this lane, stage 3's step 5 runs `watch.sh` as step 1 does, and re-requests every first-push-only bot whose confirmed critical or major the push fixed, as step 5 and `bots.md`'s Re-request rule say for every lane.
+When that is none and no present bot reviews every push, pass with `--rerequest` the first first-push-only bot, in `bots.md` table order, that the Re-request rule allows, so a bot reads every fix.
+When the rule allows none, the code reviewer's Standards and Spec subagents read the fix commits for that pass, as in the standard lane, so no fix goes unread.
 In the security lane the security subagent reads the fix commits in the same pass, and a drive does not stand in for it: a blocking fix can land inside `security-paths` as easily as the change did.
 
 ## Red flag

@@ -15,12 +15,16 @@
 # --rerequest <bot> implies --bot <bot> and posts the bot's re-request comment
 # once, after a poll finds the pull request open on <head-sha> and the bot not
 # settled; a notice older than that post is then ignored.
+# A bot that labels its own findings (own_severity in BOTS) is re-requested only
+# when one of its comments or reviews on the pull request carries its own
+# Critical or Major label; otherwise --rerequest exits 2 before any poll.
 #
 # | Exit | Meaning                                                              |
 # | ---- | -------------------------------------------------------------------- |
 # | 0    | settled, every check passed                                          |
 # | 1    | settled, one or more checks failed; prints each failed check's name  |
-# | 2    | usage error, or gh or jq missing                                     |
+# | 2    | usage error, gh or jq missing, or a --rerequest the bot's own        |
+# |      | finding labels do not allow                                          |
 # | 3    | head moved: it is no longer <head-sha>                               |
 # | 4    | deadline passed before settling; prints what is still pending        |
 # | 5    | forge error: 3 consecutive failed polls, or a failed re-request      |
@@ -60,10 +64,13 @@ MAX_FAILED_POLLS=3
 # Mirrors the table in bots.md; change both together.
 # login is the GraphQL login, which has no [bot] suffix.
 # A bot settles on whichever of status, check_run, or review_on_sha it defines.
+# own_severity matches the bot's own Critical or Major label in a comment body,
+# in both CodeRabbit formats: "</picture> Major**" and "**🟠 Major**".
 BOTS='{
   "coderabbit": {
     "login": "coderabbitai",
     "rerequest": "@coderabbitai review",
+    "own_severity": "(</picture>|🔴|🟠) (Critical|Major)\\*\\*",
     "status": {"context": "CodeRabbit", "settled": "Review completed", "notice": "rate limit(ed)?|Review skipped"}
   },
   "greptile": {
@@ -228,6 +235,34 @@ done
 
 errfile=$(mktemp)
 trap 'rm -f "$errfile"' EXIT
+
+# Exits 2 for a --rerequest of a bot with own_severity when none of that bot's
+# review comments or reviews on the pull request carries its own Critical or
+# Major label. Ship's triage may grade a finding higher than the bot did, but
+# only the bot's label spends a re-review (bots.md, Re-request).
+allow_rerequests() {
+  local bot login pattern path out rc labeled
+  for bot in $(jq -r '.[]' <<<"$forced"); do
+    pattern=$(jq -r --arg b "$bot" '.[$b].own_severity // empty' <<<"$BOTS")
+    [ -n "$pattern" ] || continue
+    login=$(jq -r --arg b "$bot" '.[$b].login' <<<"$BOTS")
+    labeled=false
+    for path in "pulls/$pr/comments" "pulls/$pr/reviews"; do
+      rc=0
+      out=$(gh api --paginate "repos/$repo/$path" 2>"$errfile") || rc=$?
+      [ "$rc" = 0 ] || finish forge "reading $bot findings failed: $(tr '\n' ' ' <"$errfile")"
+      if jq -se --arg l "$login" --arg p "$pattern" 'add // [] | any(.[];
+        (.user.login // "" | sub("\\[bot\\]$"; "")) == $l and (.body // "" | test($p)))' \
+        <<<"$out" >/dev/null; then
+        labeled=true
+        break
+      fi
+    done
+    [ "$labeled" = true ] ||
+      finish usage "--rerequest $bot: no $bot finding on pull request $pr carries its own Critical or Major label"
+  done
+}
+allow_rerequests
 
 # Sets $verdict on success; sets $error and returns 1 on a failed poll.
 poll() {

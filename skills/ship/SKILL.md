@@ -1,7 +1,7 @@
 ---
 name: ship
 description: Use when the user says "ship", "ship it", "/ship", "ship and merge", "take this all the way", "get this merged and released", or asks for the current branch to be carried from working tree to a merged release. Plain "ship" stops at a green pull request, and the merge needs a request that says to merge or a `merge` value of `yes` in the repository's `.ship/config.md`. Also use when the branch is already pushed or already has an open pull request and the user asks to finish it, and when the user asks to babysit, watch, or monitor a pull request or get it green without merging. Not for a single commit or a release cut from an already-merged main.
-version: 2.1.3
+version: 2.1.4
 ---
 
 # Ship
@@ -322,6 +322,7 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Standards checks the fix commits against the documented conventions, and Spec checks that each one resolves the finding it was pushed for and adds nothing else; a fix that does not resolve its finding leaves that finding open under step 6, whether or not a bot repeats it.
    A base merge is confirmed on its conflict resolutions alone (`git show --remerge-diff <merge-sha>`), and one with no conflicts needs verify and the checks, not a subagent read.
    A first-push-only bot is re-requested here when the push fixed a confirmed critical or major that bot raised.
+   For a bot that labels its own findings, such as CodeRabbit, that finding must carry the bot's own Critical or Major label; triage's higher grade does not count, and watch.sh refuses the re-request, as the Re-request section of `bots.md` says.
    Run step 1's watch.sh command with `--rerequest <bot>` for that bot instead of `--bot`, so the script posts its review command once and waits on that review.
    Otherwise its first review was its pass, and the code reviewer's subagents confirm every fix, including fixes for that bot's other findings.
    A pass with no bot to wait on settles on the code reviewer alone.
