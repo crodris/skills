@@ -153,7 +153,7 @@ The segments are equal widths. Fathom doesn't record a size for each task yet.
 
 Beads doesn't have it. Fathom creates its epic with the bare ref as the title, and gives it no description. The band reads the title from the plan document, `.fathom/plans/<ref>.md`, in its first heading, written as `# PHA-368: Home page: Restrict actions and CTAs, add video`. Everything after the first colon and space is the title, so a title with colons in it stays whole. A checklist has the title in its own first line, in the same form, and the band reads that one first.
 
-Three of the four plans I read in my own repository have that heading. Fathom's conventions don't fix it the way they fix the `Issue`, `Ref` and `Branch` lines, so the band can find no title:
+Three of the four plans I read in my own repository have that heading. Fathom's conventions require it on the plan's first line since fathom 2.7.3, but a plan written before that may lack it, and the band can find no title:
 
 - **While Fathom is making the tasks.** The plan document is written after the last task, so the band shows the ref alone until then.
 - **A plan whose heading has no title.** The fourth plan I read had `# PHA-186 plan`. The band shows the ref alone for it.
@@ -272,8 +272,10 @@ mods/fathom-progress/
     bar.ts                      splits the bar's cells across segments
     cmux.ts                     pure: a snapshot to the cmux row's pill and bar
     fixtures.ts                 real bd output, captured by the seed script
+    contract.fixtures.ts        the Fathom formats the band reads, copied from the skills by bin/sync-contract.sh
     *.test.ts, *.test.tsx       unit and render tests
   bin/seed-fathom-fixture.sh    drives a scratch Beads repo and writes fixtures.ts
+  bin/sync-contract.sh          copies the Fathom formats the band reads into contract.fixtures.ts
   bench/                        drives the band through checklist runs in tmux (see bench/README.md)
 ```
 
@@ -371,6 +373,8 @@ claude plugin test mods/fathom-progress
 ```
 
 It runs every `*.test.ts` and `*.test.tsx` under the folder you give it, each in a child process that is set up like the mod's hooks. A test imports its kit from `claude-code/testing`, and the sandbox allows relative imports and `claude-code` only, so a test can't read a file from disk. That is why the captured `bd` output is a TypeScript module (`fixtures.ts`) and not a JSON file. The render tests mount the band on both the terminal and Desktop surfaces.
+
+`contract.test.ts` parses the plan document lines, the example checklist, the `bd create` commands and the skill names as Fathom's skill files state them today. `bin/sync-contract.sh` copies them into `contract.fixtures.ts`, and `skills/fathom-shared/progress.md` lists them. Run the script before the tests after a change to Fathom's skills. CI runs it and fails when the copy it writes differs from the committed one.
 
 Validate the manifest and hooks.
 

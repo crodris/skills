@@ -6,11 +6,17 @@ on:
     paths:
       - ".claude-plugin/**"
       - "mods/**"
+      - "skills/execute/SKILL.md"
+      - "skills/scaffold/SKILL.md"
+      - "skills/fathom-shared/**"
       - ".github/workflows/plugin-validate.yml"
   pull_request:
     paths:
       - ".claude-plugin/**"
       - "mods/**"
+      - "skills/execute/SKILL.md"
+      - "skills/scaffold/SKILL.md"
+      - "skills/fathom-shared/**"
       - ".github/workflows/plugin-validate.yml"
   workflow_dispatch:
 
@@ -35,6 +41,9 @@ jobs:
 
       - name: Validate the fathom-progress mod
         run: claude plugin validate --strict mods/fathom-progress
+
+      - name: Check the Fathom formats the mod reads are up to date
+        run: mods/fathom-progress/bin/sync-contract.sh && git diff --exit-code
 
       - name: Test the fathom-progress mod
         run: claude plugin test mods/fathom-progress

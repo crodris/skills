@@ -50,7 +50,7 @@ It does carry structure, which is a different thing: the branch, the review ids,
 
 Include these sections:
 
-- **Issue** - the title, the tracker URL, the ref, and the branch, each on its own labeled line.
+- **Issue** - the heading `# <ISSUE-REF>: <title>` on the document's first line, with the issue's title, then the tracker URL, the ref, and the branch, each on its own labeled line.
   Use these exact labels: `- Issue: <tracker url>`, `- Ref: <issue ref>`, and `- Branch: <branch>`.
   The labels are load-bearing rather than cosmetic.
   The merge-closer Action finds this issue's record by matching the `Branch` line exactly, then reads the tracker id only from a line labeled `Tracker`, `Issue`, or `Ref`.
