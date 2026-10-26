@@ -30,8 +30,8 @@
 # |      | labels do not allow                                                  |
 # | 3    | head moved: it is no longer <head-sha>                               |
 # | 4    | deadline passed before settling; prints what is still pending        |
-# | 5    | forge error: 3 consecutive failed polls, or a failed re-request      |
-# |      | comment; prints the last error text                                  |
+# | 5    | forge error: 3 consecutive failed polls, a failed re-request         |
+# |      | comment, or a failed read of a bot's findings; prints the error text |
 # | 6    | a bot will not review (trial or plan quota notice); prints the notice |
 # | 7    | pull request is no longer open (MERGED or CLOSED); prints its state  |
 #
