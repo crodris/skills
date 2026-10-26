@@ -42,11 +42,13 @@ Each one ends with a result line that the next one reads.
 | Skill | Does | Runs on its own when you ask to |
 | --- | --- | --- |
 | `ship` | Settles the mode and the branch, calls the others in order, and reports | ship |
-| `prove` | Runs the project's own verify gates until clean, then commits | prove or verify a change |
+| `prove` | Runs the project's own verify gates until clean, then commits when the caller asks it to | prove or verify a change |
 | `file-pr` | Opens or updates the pull request, with its title, body, and secrets check | file a pull request |
 | `babysit` | Runs each pass: CI and the review bots, `review-loop`, one push, base updates | babysit, watch, or monitor a pull request |
 | `review-loop` | Reviews with Standards and Spec subagents, triages every finding into a ledger, and fixes the blocking ones in one batch | run one review-and-fix pass |
 | `land` | Checks the merge gate, merges with the repository's merge method, watches the release, and cleans up | land a ready pull request |
+
+`review-loop` follows `cross-review: cursor` as its Review section says, and gets that second opinion through the `cursor` skill.
 
 Plain "ship" stops at a green pull request.
 It merges only when you ask it to, or when `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
@@ -77,15 +79,17 @@ It reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~
 It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when that is installed, and keeps a short fallback floor for installs without it.
 To move from an old name, run `npx skills@latest remove my-voice -g` (or `npx skills@latest remove voice -g` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
 
-### frontend-design-pipeline (v1.3.0)
+### frontend-design-pipeline (v1.3.1)
 
 `frontend-design-pipeline` takes a UI from idea to build: candidate design systems, direction briefs, rendered mocks for you to pick from, motion, then the build.
-It needs [impeccable](https://github.com/pbakaus/impeccable), and its `SKILL.md` lists the optional companion skills with their install commands.
+It needs [impeccable](https://github.com/pbakaus/impeccable), and its `SKILL.md` lists the companion skills and the install command format.
 
-### html-comms (v1.0.1)
+### html-comms (v1.1.0)
 
-`html-comms` turns a plan, report, comparison, or set of UI mocks into one HTML page and publishes it to a private link.
-It needs a private publisher, such as the Artifact tool in Claude Code or [here-now](https://github.com/heredotnow/skill).
+`html-comms` turns a plan, report, comparison, or set of UI mocks into one HTML page and publishes it to a private link, or with the `local` publisher writes it as an unpublished file.
+It asks once which publisher to use, the harness's private one such as the Artifact tool in Claude Code or a local file, and saves the answer in `$XDG_CONFIG_HOME/html-comms/config.md`.
+A run with no user to answer, such as a delegate or headless run, uses the harness's publisher and saves nothing.
+When `XDG_CONFIG_HOME` is unset, empty, or not an absolute path, that file is `~/.config/html-comms/config.md`.
 
 ### worktree-setup (v1.0.2)
 
@@ -116,7 +120,7 @@ npx skills@latest add crodris/skills -s worktree-setup -g
 }
 ```
 
-### verification-audit (v1.0.0)
+### verification-audit (v1.1.0)
 
 `verification-audit` checks how well a repository proves agent work is correct, layer by layer, then closes each gap.
 It uses the verification skills from [pstack](https://github.com/crodris/pstack-claude) to fix gaps, and only reports them without it.

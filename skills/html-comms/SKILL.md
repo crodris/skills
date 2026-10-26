@@ -1,19 +1,17 @@
 ---
 name: html-comms
 description: Readable HTML documents about the work, published to a private link. Use when the user wants a plan, spec, write-up, findings, summary, report, comparison, or set of UI mocks to read outside the terminal, even when the word "plan" never comes up, or says "HTML" with no other context. Not for HTML that ships in the product.
-version: 1.0.1
+version: 1.1.0
 ---
 
 # HTML comms
 
-Write one self-contained HTML file about the work, publish it privately, and report the link.
-The page is about the work and stays out of the product: app templates, components, and marketing pages belong to the codebase.
+Write one self-contained HTML file about the work, publish it with the configured publisher, and report the link, or the unpublished path with the `local` publisher.
 
 ## Document
 
 - Make it as dense and scannable as a spec: short sections, tables, and plain statements, with no hero banner, ornament, sales tone, or em dashes.
-- Inline all CSS and SVG, use HTTPS or data-URL images, and stay under 100 KB.
-  Simplify SVG and drop images to get there.
+- Inline all CSS and SVG, use HTTPS or data-URL images, and stay under 100 KB by simplifying SVG and dropping images.
 - Make it mobile-readable: a responsive viewport meta, fluid widths, and wide tables inside a horizontal-scroll wrapper.
 - Support dark mode through `prefers-color-scheme`, and keep callout and tint backgrounds readable in both schemes.
 - Use `<details>` for optional depth.
@@ -23,54 +21,45 @@ The page is about the work and stays out of the product: app templates, componen
 
 ## Charts
 
-Choose a visual for each section that carries data.
-Tables carry relationships and charts carry magnitudes and trends, so default to a chart when the data has shape.
+Default to a chart for each section whose data has shape, and to a table for relationships.
+Pick the chart by content:
 
-| Content | Visual |
-|---|---|
-| 2-8 quantities to compare | Bar chart |
-| 2-4 series across the same categories | Grouped or stacked bar chart |
-| A value changing over time | Line chart |
-| Cumulative volume over time | Area chart |
-| Correlation between two variables | Scatter plot |
-| Parts of a whole | Donut chart |
-| Magnitude across two categorical axes | Heatmap |
-| Events in order, or phases with dates | Timeline |
-| A process with steps or branches | Flow diagram |
-| 3 or more headline metrics | Stat row |
+- Bar chart for 2-8 quantities to compare.
+- Grouped or stacked bar chart for 2-4 series across the same categories.
+- Line chart for a value changing over time.
+- Area chart for cumulative volume over time.
+- Scatter plot for correlation between two variables.
+- Donut chart for parts of a whole.
+- Heatmap for magnitude across two categorical axes.
+- Timeline for events in order, or phases with dates.
+- Flow diagram for a process with steps or branches.
+- Stat row for 3 or more headline metrics.
 
 Draw each chart as inline SVG with a `viewBox` and no fixed size.
 Give it `role="img"` and `aria-labelledby` pointing at its own `<title>` and `<desc>`, with IDs unique to that figure.
 
 ## UI mocks
 
-- Render real styled variants, not descriptions of them.
-- Label them `A`, `B`, `C` and lay them side by side in one file, stacking on narrow screens.
+Render real styled variants, labeled with letters from `A`, side by side in one file and stacked on narrow screens.
 
 ## Publish
 
-Publish every page you create or update, in auto mode too, without asking and without stopping at the local file.
-Write the file outside the repository, in the scratchpad directory or a temp directory, unless the user names a location.
-Use the first publisher available:
+The publisher is the `publisher` line in `$XDG_CONFIG_HOME/html-comms/config.md`, or in `~/.config/html-comms/config.md` when that variable is unset, empty, or not an absolute path.
+When the file or the line is missing, or its value is neither `harness` nor `local`, ask the user once which publisher to use, and save the answer there as `publisher: <value>`:
 
-1. The harness's own private publisher.
-   In Claude Code that is the Artifact tool; call the Skill tool with "artifact-design" first, since it owns page mechanics (theme tokens, allowed CDNs, title) wherever it differs from the rules above.
-   In Codex or any other harness, use the private publisher it designates.
-2. here.now, by calling the Skill tool with "here-now", when `$HERENOW_API_KEY` or `$HOME/.herenow/credentials` holds a key.
-   Check before publishing, because without a key `publish.sh` creates an anonymous Site that anyone with the link can open and that cannot be made private.
-   here.now publishes as anyone-with-link, so lock a new Site before the page goes up.
-   Publish a one-line placeholder `index.html`, then `PATCH /api/v1/publish/{slug}/access` with `{"mode":"restricted","allowedEmails":[],"allowedDomains":[]}`, which makes the Site owner-only.
-   The lock holds once a `GET` of the policy reads `restricted` and a logged-out request to the URL returns 401, so poll both for up to 2 minutes.
-   Then publish the page with `--slug <slug>`.
-   Give the placeholder and the page each their own directory outside the repository, holding only `index.html`, and run `publish.sh .` from inside it, so its `.herenow/` state file stays out of the repository.
-   If the lock does not hold, delete the placeholder Site and fall through to step 3, and if the delete fails, report the URL as public so the user can remove it.
-   An update with `--slug` keeps the Site's access, so `GET` the policy first, and when anyone beyond the owner can open the Site, say who and ask before uploading.
-   When the skill is missing, tell the user to run `npx skills@latest add heredotnow/skill -s here-now -g` and continue with step 3.
-3. The local path, reported as unpublished.
+- `harness`: the harness's own private publisher, which in Claude Code is the Artifact tool, and in Codex or any other harness the private publisher it designates.
+- `local`: write the file and report its path as unpublished.
 
-When an available publisher fails, report its error and the local path as unpublished.
+With no user to answer, as in a delegate or headless run, use `harness` and save nothing.
 
-Update in place: the same file path redeploys to the same Artifact URL, and `--slug <slug>` updates the same here.now Site.
+Once the publisher is set, publish every page you create or update, in auto mode too, without asking.
+With `harness`, a page is done only when it has a link.
+Write the file in the scratchpad or a temp directory outside the repository, unless the user names a location.
+With the Artifact tool, call the Skill tool with "artifact-design" first, whose page rules win where they differ from the rules above.
+When the harness has no private publisher, or a publisher fails, report its error and the local path as unpublished.
+
+Update an existing page in place, at its current URL with `harness` and at the same file path with `local`.
+With the Artifact tool, publishing the same file path again updates the same URL.
 Create a new URL only when the user asks for a separate page.
 
 Report a link only after the publisher confirms the upload, and say when it opens only for the owner's signed-in account.

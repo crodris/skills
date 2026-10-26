@@ -1,122 +1,67 @@
 ---
 name: frontend-design-pipeline
 description: This skill should be used when the user asks to design and build a new UI, landing page, app screen, or visual identity, or to redesign an existing one, and wants to choose between design directions before anything is built. Also use when the user says "design pipeline", "frontend design pipeline", "give me design directions", or "run the full design flow", or asks to refine a UI that already has a DESIGN.md through the same flow. It chains the ui-ux-pro-max, taste-skill, frontend-design, emil-design-eng, and impeccable skills in a fixed order and stops once for the user to pick a direction from rendered mocks.
-version: 1.3.0
+version: 1.3.1
 ---
 
 # Frontend design pipeline
 
 Take a UI from product idea to finished build through installed design skills, in a fixed order, with one added stop where the user picks a direction from rendered mocks.
-
-This skill carries no design knowledge of its own.
-Every stage invokes another skill when one is installed and follows that skill's instructions, except where this file overrides them.
+Every stage invokes its skill and follows that skill's instructions, except where this file overrides them.
 
 ## Companion skills
 
-| Stage | Skill | Install |
-|-------|-------|---------|
-| 1 | `ui-ux-pro-max` | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
-| 2 | `design-taste-frontend` | `npx skills@latest add Leonxlnx/taste-skill -s design-taste-frontend -g` |
-| 2 | `frontend-design` | `npx skills@latest add anthropics/skills -s frontend-design -g` |
-| 3 | `html-comms` | `npx skills@latest add crodris/skills -s html-comms -g` |
-| 4 | `emil-design-eng` | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
-| 5 | `impeccable` | `npx skills@latest add pbakaus/impeccable -s impeccable -g` |
+| Stage | Skill | Source |
+|-------|-------|--------|
+| 1 | `ui-ux-pro-max` | nextlevelbuilder/ui-ux-pro-max-skill |
+| 2 | `design-taste-frontend` | Leonxlnx/taste-skill |
+| 2 | `frontend-design` | anthropics/skills |
+| 3 | `html-comms` | crodris/skills |
+| 4 | `emil-design-eng` | emilkowalski/skills |
+| 5 | `impeccable` | pbakaus/impeccable |
 
-Check for impeccable before routing, since it is required.
-When it is missing, stop and give its install command.
-
-The others are optional.
-When one is missing, skip its part, say so once with its install command, and continue.
+A skill's install command is `npx skills@latest add <source> -s <skill> -g`.
 Never run an install command yourself.
-Stage 2 runs when design-taste-frontend or frontend-design is installed.
-Without ui-ux-pro-max, stage 2 starts from 2-3 distinct candidates drawn from PRODUCT.md.
-When stage 2 cannot run, condense each stage 1 candidate into the brief shape stage 2 defines.
-When neither stage 1 nor stage 2 can run, skip stage 3, and skip stage 4 too, since there is no direction to decide motion for yet.
-Without html-comms, publish the stage 3 mock page with the harness's private publisher, or report its local path when there is none.
+
+Check for impeccable before routing.
+When it is missing, stop and give its install command.
+When another skill is missing, skip its part, give its install command once, and continue.
 
 ## Precedence
 
 User instructions beat DESIGN.md.
 DESIGN.md beats everything the earlier stages produced: ui-ux-pro-max candidates, any `design-system/` MASTER.md, frontend-design guidance, and taste-skill rules including their hard bans.
-A preset that says "never Inter" loses to a DESIGN.md that picked Inter.
-Within a stage 2 brief, the preset's rules beat frontend-design's list of generic defaults, since the preset is the direction that brief pinned.
-Impeccable builds last and makes the final call on anything DESIGN.md leaves open.
+Impeccable builds last and decides anything DESIGN.md leaves open.
 
 ## Routing
 
-After the impeccable check, pick the entry stage before any stage runs.
+After the impeccable check, pick the entry stage.
 
-- **No visual world yet, or a redesign that replaces the current look:** start at stage 1.
+- **No visual world yet, or a redesign that replaces the current look:** take the stage 1 route.
+  When PRODUCT.md is missing, call the Skill tool with "impeccable" and run its `init` first.
+  Then read `directions.md` in this folder and run its stages 1-3.
 - **Work inside the current look, whether a new page or a refinement:** skip stages 1-3.
   Start at stage 4 when the change touches motion or interaction, otherwise at stage 5.
 
 The current look is DESIGN.md when it exists, and otherwise the incumbent code.
 When the request does not say whether the current look stays, ask once.
 
-On the stage 1 route, call the Skill tool with "impeccable" and run its `init` first when PRODUCT.md is missing, whether or not stage 1 itself runs, since impeccable's new-work flow requires one.
-Feed PRODUCT.md into the stage 1 queries and the stage 2 briefs.
-
-## 1. Options (ui-ux-pro-max)
-
-Call the Skill tool with "ui-ux-pro-max" and generate 2-3 candidate design systems for the product type with `--design-system`.
-Vary the query keywords or the `--variance`, `--motion`, and `--density` sliders between runs so the candidates differ.
-
-Its SKILL.md builds the script path from `${CLAUDE_PLUGIN_ROOT}`, which exists only inside Claude Code plugins.
-Resolve the script as `scripts/search.py` inside the directory that holds ui-ux-pro-max's own SKILL.md instead, and run it with `python3`, or `python` where `python3` is missing.
-Do not pass `--persist`.
-
-## 2. Direction (taste-skill, frontend-design)
-
-For each candidate, call the Skill tool with "design-taste-frontend" and then with "frontend-design", and turn the candidate into a direction brief.
-Deal directions with design-taste-frontend's `draw.mjs --options 3`, passing `--keep palette,type` when the candidate already fixes them, and give each candidate a different direction, so the briefs differ.
-The classic taste presets (minimalist-ui, high-end-visual-design, industrial-brutalist-ui, gpt-taste) run only when the user invokes one, so give a candidate a classic only when the user ran it in this session, and give that candidate no dealt direction, since the two contradict each other.
-Run frontend-design's plan pass on each brief: ground it in the product's subject, then review it against the generic defaults that skill lists and revise what reads as default.
-When design-taste-frontend is missing, frontend-design's plan pass alone turns each candidate into a brief.
-Take only the rules in this stage, since stage 3 builds the mocks.
-
-Each brief states palette, type, layout, and motion stance in a few lines.
-
-## 3. Mock and pick (html-comms, user)
-
-Build each brief as a static styled HTML mock of the screen the request is about, in its palette, type, and layout, with the product's real content, and label the mocks with letters.
-When the screen already exists, add a Current panel beside the mocks: a screenshot of that screen from the running app, or a rebuild from its code when the app cannot run.
-Capture the screenshot without browser chrome, with demo data in place of real user data.
-Render each mock and the Current rebuild in its own `<iframe srcdoc>` at the screen's real viewport width, scaled with a CSS `transform` to fit its column, so each keeps its own palette, theme, and breakpoints.
-Call the Skill tool with "html-comms" and put everything on one page through it, since it owns the side-by-side layout and publishing.
-Its Document rules govern the page around the mocks, and the mocks and the screenshot are exempt from its 100 KB cap.
-Report the link with one line per brief.
-
-Then wait for the user to pick one brief or combine them, as in "B's type with A's palette".
-When a combined pick names no layout, ask in the same question which brief's layout to keep.
-This is the only stop the pipeline adds, and the skills it invokes still ask their own questions.
-When DESIGN.md already exists, say in the same question that the pick replaces it, and keep the old file unless the user confirms.
-If they decline, stop before stage 4.
-
-Write the result to DESIGN.md at the project root, in the seed format that impeccable's `reference/document.md` defines under Seed mode, SEED marker included.
-DESIGN.md takes only what holds on every screen.
-The pick's page-specific layout goes to impeccable in stage 5, for its surface brief.
-From here on DESIGN.md is the authority, and the candidates and any MASTER.md are not read again.
-
 ## 4. Motion (emil-design-eng)
 
-Call the Skill tool with "emil-design-eng" for the picked direction or the current look.
-Decide what animates and what does not, the easing, and the durations.
-After stage 3, add the decisions to the Overview section of DESIGN.md, since the seed format has no motion section and omits Components.
+Call the Skill tool with "emil-design-eng" for the picked direction or the current look, and decide what animates, the easing, and the durations.
+After stage 3, add the decisions to the Overview section of DESIGN.md, since the seed format has no motion section.
 When stage 3 did not run, pass them to stage 5 instead, and change DESIGN.md only when the user asks for a system-wide change.
 
 ## 5. Build and finish (impeccable)
 
 Call the Skill tool with "impeccable" last, every time.
 
-After stage 3, build to DESIGN.md.
-Tell it DESIGN.md is an established world the user pinned, so its new-work flow creates the surface inside that world instead of creating or replacing one.
-Pass the pick's layout as the user-pinned structure for this surface, so it skips its surface structure round.
-On a redesign, also tell it the DESIGN.md world replaces the incumbent look in the code.
-
-When routing skipped stages 1-3, tell it to work inside the current look, and whether the change is a refinement or a new page.
-
-When stage 3 did not run because nothing was installed to produce briefs, let impeccable's new-work flow choose the world with the user, and on a redesign tell it the current look is being replaced.
+- **After stage 3:** tell it DESIGN.md is an established world the user pinned, so its new-work flow builds the surface inside that world.
+  Pass the pick's layout as the user-pinned structure for this surface, so it skips its surface structure round.
+  On a redesign, also tell it the DESIGN.md world replaces the incumbent look in the code.
+- **When routing skipped stages 1-3:** tell it to work inside the current look, and whether the change is a refinement or a new page.
+- **When the stage 1 route produced no briefs:** let its new-work flow choose the world with the user, and on a redesign say the current look is being replaced.
 
 Then run impeccable's `critique` and `polish` on the result.
-When stage 3 wrote the seed, finish with impeccable's `document` in scan mode after `polish`, so the built tokens replace the seed.
-Tell it to merge: the scanned tokens replace the seed, the SEED marker and placeholders are dropped, and the stage 4 motion decisions in Overview carry over.
+When stage 3 wrote the seed, finish with impeccable's `document` in scan mode, told to merge.
+The scanned tokens replace the seed, the SEED marker and placeholders are dropped, and the stage 4 motion decisions in Overview carry over.

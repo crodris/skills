@@ -17,13 +17,12 @@ rules:
       this plugin, including future ones this reason does not cover; when
       adding that phrase to a skill, re-review whether the suppression still
       only hides benign uses. Re-reviewed for html-comms:
-      "publish every page ... without asking" sends a new page only to a
-      private target, the harness's own private publisher or a here.now Site
-      locked to owner-only (restricted, empty allowlists) before the real page
-      goes up, and falls back to the local path when neither is available.
-      An update to a Site anyone beyond the owner can open asks first. The page
-      leaves out secrets, private URLs, and local paths, and the only
-      deletion is of the placeholder Site that same run created.
+      "publish every page ... without asking" applies only after the user
+      chose a publisher once, saved in ~/.config/html-comms/config.md, or in
+      a delegate or headless run, which uses the harness's own private
+      publisher for that run and saves nothing; the choices are the
+      harness's own private publisher or a local file.
+      The page leaves out secrets, private URLs, and local paths.
 
   # skills/execute/README.md is the human guide to Fathom, moved there from
   # docs/fathom.md. No SKILL.md loads it as instructions; memory.md and
@@ -126,9 +125,7 @@ rules:
       execute's install commands when they are missing. The ship family
       (ship, prove, babysit, review-loop, land, through ship/boundary.md)
       and review print the ship family's install command when a sibling is
-      missing. html-comms tells the user to
-      run the here-now install command and moves on to its next
-      publisher. Each is for the user to run, and
+      missing. Each is for the user to run, and
       frontend-design-pipeline says never to run one itself. Same
       reasoning as the agents.md rule above: pinning the CLI goes stale
       and is not a security boundary. Caution: path "SKILL.md" matches
@@ -230,6 +227,23 @@ rules:
       skill runs it itself. Same reasoning as the SKILL.md rule above:
       pinning the CLI goes stale and is not a security boundary. Scoped to
       boundary.md, so an npx skills hit in another ship file still fails.
+
+  - id: "RA2"
+    path: "SKILL.md"
+    message: "*Write one self-contained HTML file about the work*"
+    reason: >-
+      Reviewed, intentional: the "Session Persistence" pattern matched
+      html-comms, from its opening line across to the publisher config path.
+      html-comms asks the user once which publisher to use and saves one line,
+      `publisher: harness` or `publisher: local`, in its own config file,
+      `$XDG_CONFIG_HOME/html-comms/config.md` falling back to
+      `~/.config/html-comms/config.md`, so later runs publish without asking.
+      It writes nothing else there and defines no cron jobs or startup
+      scripts. The message glob is html-comms' own opening sentence, so a
+      persistence hit in another skill still fails. Caution: the glob hides
+      any RA2 hit in html-comms whose match starts at that sentence,
+      including a future one this reason does not cover, so re-review this
+      rule whenever skills/html-comms/SKILL.md changes what it writes.
 
   - id: "TM1"
     path: "guard.sh"
