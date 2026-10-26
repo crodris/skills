@@ -46,7 +46,7 @@ jobs:
       - name: Check worktree-setup against scratch repositories
         run: bin/test-worktree-setup.sh
 
-      - name: Check ship's watch.sh against fake gh responses
+      - name: Check babysit's watch.sh against fake gh responses
         run: bin/test-watch.sh
 
       - name: Check ship's guard.sh against scratch repositories

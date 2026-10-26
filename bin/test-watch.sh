@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
-# test-watch.sh - run skills/ship/watch.sh against a fake gh that replays
+# test-watch.sh - run skills/babysit/watch.sh against a fake gh that replays
 # fixture responses in order, one per poll with the last one repeating, and
 # logs every call. A poll's fixture is N.json, or N.err to fail with that
 # stderr text, and comment.err makes every `gh pr comment` fail the same way.
 # `gh api --paginate` of a pull request's review comments or reviews prints
 # pr-comments.json or pr-reviews.json, else an empty list, and pr-comments.err
 # makes it fail with that stderr text.
+# `gh api` of the base's rulesets prints rules.json, else an empty list; of its
+# branch protection prints protection.json, else fails with HTTP 404; and of a
+# compare prints compare.json, else no files.
 # Each case checks the exit code and, where it matters, stdout or the gh call log.
 # WATCH_GRACE is 0 unless a case sets it, so a case settles on its first poll.
 set -euo pipefail
 export WATCH_GRACE=0
 
-WATCH="$(cd "$(dirname "$0")/.." && pwd)/skills/ship/watch.sh"
+WATCH="$(cd "$(dirname "$0")/.." && pwd)/skills/babysit/watch.sh"
 SHA=1111111111111111111111111111111111111111
 OLD=2222222222222222222222222222222222222222
+BASE_A=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+BASE_B=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 # shellcheck disable=SC2016 # the backticks are part of Greptile's notice text.
 CREDIT='`crodris` has reached the 50-credit limit for trial accounts. Upgrade to keep reviewing.'
 failures=0
@@ -32,6 +37,15 @@ if [ "$1 $2" = "api --paginate" ]; then
   if [ -e "$FIXTURES/$f" ]; then cat "$FIXTURES/$f"; else echo '[]'; fi
   exit 0
 fi
+if [ "$1" = api ]; then
+  case $2 in
+    repos/*/rules/branches/*) if [ -e "$FIXTURES/rules.json" ]; then cat "$FIXTURES/rules.json"; else echo '[]'; fi; exit 0 ;;
+    repos/*/protection/required_status_checks)
+      if [ -e "$FIXTURES/protection.json" ]; then cat "$FIXTURES/protection.json"; exit 0; fi
+      echo "HTTP 404: Branch not protected" >&2; exit 1 ;;
+    repos/*/compare/*) if [ -e "$FIXTURES/compare.json" ]; then cat "$FIXTURES/compare.json"; else echo '{"files": []}'; fi; exit 0 ;;
+  esac
+fi
 [ "$1 $2" = "api graphql" ] || exit 0
 n=$(( $(cat "$FIXTURES/polls" 2>/dev/null || echo 0) + 1 ))
 echo "$n" > "$FIXTURES/polls"
@@ -42,8 +56,9 @@ STUB
 chmod +x "$tmp/bin/gh"
 PATH="$tmp/bin:$PATH"
 
-check_run() { jq -cn --arg n "$1" --arg s "$2" --arg c "${3:-}" \
-  '{__typename: "CheckRun", name: $n, status: $s, conclusion: (if $c == "" then null else $c end)}'; }
+check_run() { jq -cn --arg n "$1" --arg s "$2" --arg c "${3:-}" --arg title "${4:-}" --arg at "${5:-2020-01-01T00:05:00Z}" \
+  '{__typename: "CheckRun", name: $n, status: $s, conclusion: (if $c == "" then null else $c end),
+    title: (if $title == "" then null else $title end), completedAt: $at}'; }
 status() { jq -cn --arg c "$1" --arg s "$2" --arg d "$3" --arg t "${4:-2020-01-01T00:05:00Z}" \
   '{__typename: "StatusContext", context: $c, state: $s, description: $d, createdAt: $t}'; }
 review() { jq -cn --arg l "$1" --arg o "$2" --arg b "$3" \
@@ -57,12 +72,16 @@ suite() { jq -cn --arg a "$1" --arg s "$2" --arg w "${3:-}" --arg c "${4:-}" --a
 
 # response <state> <headRefOid> [reviews] <check>...
 # The check suites come from $SUITES, by default one completed CI workflow.
+# The base branch main is at $BASE, by default BASE_A, and the pull request
+# changes the paths in the JSON array $FILES, by default none.
 response() {
   local state=$1 head=$2 reviews=$3 ci_done='[{"status":"COMPLETED","conclusion":"SUCCESS","app":{"slug":"github-actions"},"workflowRun":{"workflow":{"name":"CI"}},"checkRuns":{"totalCount":1}}]'
   shift 3
   printf '%s\n' "$@" | jq -s --arg state "$state" --arg head "$head" --argjson reviews "$reviews" \
-    --argjson suites "${SUITES:-$ci_done}" '{data: {repository: {
-    pullRequest: {state: $state, headRefOid: $head, reviews: {nodes: $reviews}, comments: {nodes: []}},
+    --argjson suites "${SUITES:-$ci_done}" --arg base "${BASE:-$BASE_A}" --argjson files "${FILES:-[]}" '{data: {repository: {
+    pullRequest: {state: $state, headRefOid: $head, baseRefName: "main", baseRef: {target: {oid: $base}},
+      files: {pageInfo: {hasNextPage: false}, nodes: [$files[] | {path: .}]},
+      reviews: {nodes: $reviews}, comments: {nodes: []}},
     object: {committedDate: "2020-01-01T00:00:00Z",
       statusCheckRollup: (if . == [] then null else {contexts: {nodes: .}} end),
       checkSuites: {nodes: $suites}}}}}'
@@ -150,6 +169,54 @@ expect_exit "a closed pull request exits 7" 7
 expect_in "the closed state is printed" out "pull request is CLOSED"
 
 case_dir
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED SUCCESS)" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "a completed CodeRabbit check run settles with no status" 0
+
+case_dir
+finding pr-comments.json "coderabbitai[bot]" "$CR_MAJOR"
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED SKIPPED)" > "$dir/1.json"
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED SUCCESS)" > "$dir/2.json"
+run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
+expect_exit "a skipped CodeRabbit check run is re-requested, then a success settles" 0
+expect_count "a skipped CodeRabbit check run posts one re-request" gh.log "pr comment 7 --repo o/r --body @coderabbitai review" 1
+
+case_dir
+finding pr-comments.json "coderabbitai[bot]" "$CR_MINOR"
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED SKIPPED)" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "a skipped CodeRabbit check run asks for a re-request and exits 2 when nothing is Critical or Major" 2
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit IN_PROGRESS)" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 1
+expect_exit "an in-progress CodeRabbit check run does not settle" 4
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "a rate-limited CodeRabbit check run exits 6" 6
+expect_in "a rate-limited check run names the bot, the reason, and the notice" out "verdict: unavailable: coderabbit rate-limited: Review rate limited"
+expect_count "a rate-limited check run under --bot posts nothing" gh.log "pr comment" 0
+
+case_dir
+finding pr-comments.json "coderabbitai[bot]" "$CR_MAJOR"
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" > "$dir/1.json"
+cp "$dir/1.json" "$dir/2.json"
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED SUCCESS "Review completed")" > "$dir/3.json"
+run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
+expect_exit "a rate limit from before the re-request is ignored, then a completed review settles" 0
+expect_count "a rate-limited check run posts one re-request" gh.log "pr comment 7 --repo o/r --body @coderabbitai review" 1
+
+case_dir
+finding pr-comments.json "coderabbitai[bot]" "$CR_MAJOR"
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" > "$dir/1.json"
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited" 2099-01-01T00:00:00Z)" > "$dir/2.json"
+run 7 $SHA --repo o/r --rerequest coderabbit --interval 0 --deadline 5
+expect_exit "a fresh rate-limited CodeRabbit check run after the re-request exits 6" 6
+expect_count "a fresh rate limit after the re-request posts one re-request" gh.log "pr comment 7 --repo o/r --body @coderabbitai review" 1
+
+case_dir
 response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review paused")" > "$dir/1.json"
 run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 1
 expect_exit "a CodeRabbit success without Review completed never settles" 4
@@ -157,22 +224,34 @@ expect_in "CodeRabbit is reported pending" out "still pending: coderabbit pendin
 
 case_dir
 response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review rate limited")" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "a rate-limited CodeRabbit exits 6 at once" 6
+expect_in "the bot, the reason, and the notice are printed" out "verdict: unavailable: coderabbit rate-limited: Review rate limited"
+expect_count "a rate limit under --bot posts nothing" gh.log "pr comment" 0
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review rate limited")" > "$dir/1.json"
 cp "$dir/1.json" "$dir/2.json"
 cp "$dir/1.json" "$dir/3.json"
 response OPEN $SHA '[]' "$BUILD" "$CR_DONE" > "$dir/4.json"
-run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
-expect_exit "a rate-limited CodeRabbit success is re-requested, then settles" 0
-expect_count "exactly one re-request comment is posted" gh.log "pr comment 7 --repo o/r --body @coderabbitai review" 1
-expect_count "no other comment is posted" gh.log "pr comment" 1
+run 7 $SHA --repo o/r --retry coderabbit --interval 0 --deadline 5
+expect_exit "--retry re-requests a rate-limited CodeRabbit, then settles" 0
+expect_count "--retry posts exactly one re-request comment" gh.log "pr comment 7 --repo o/r --body @coderabbitai review" 1
+expect_count "--retry posts no other comment" gh.log "pr comment" 1
 expect_in "a notice older than the re-request reads as pending" out "| coderabbit pending"
 
 case_dir
 response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review rate limited")" > "$dir/1.json"
 response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review rate limited" 2099-01-01T00:00:00Z)" > "$dir/2.json"
-response OPEN $SHA '[]' "$BUILD" "$CR_DONE" > "$dir/3.json"
-run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
-expect_exit "a second rate limit after the re-request still settles" 0
+run 7 $SHA --repo o/r --retry coderabbit --interval 0 --deadline 5
+expect_exit "a second rate limit after the --retry post exits 6" 6
 expect_count "a second rate limit is never re-requested" gh.log "pr comment" 1
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review rate limited")" > "$dir/1.json"
+run 7 $SHA --repo o/r --retry coderabbit --retry-in 30 --interval 0 --deadline 1
+expect_exit "--retry waits out --retry-in before posting" 4
+expect_count "--retry posts nothing before --retry-in" gh.log "pr comment" 0
 
 case_dir
 finding pr-comments.json "coderabbitai[bot]" "$CR_MAJOR"
@@ -276,7 +355,7 @@ expect_count "--rerequest posts nothing on a moved head" gh.log "pr comment" 0
 case_dir
 response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit SUCCESS "Review rate limited")" > "$dir/1.json"
 echo "HTTP 502: Bad Gateway" > "$dir/comment.err"
-run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+run 7 $SHA --repo o/r --retry coderabbit --interval 0 --deadline 5
 expect_exit "a failed re-request comment exits 5" 5
 expect_in "the failed comment's stderr is printed" out "re-request for coderabbit failed: HTTP 502"
 expect_count "a failed re-request comment is never retried" gh.log "pr comment" 1
@@ -308,9 +387,16 @@ expect_count "a Greptile summary triggers no re-request" gh.log "pr comment" 0
 
 case_dir
 response OPEN $SHA "[$(review greptile-apps $SHA "Rate limit exceeded, try again later.")]" "$BUILD" > "$dir/1.json"
-run 7 $SHA --repo o/r --bot greptile --interval 0 --deadline 1
-expect_exit "a Greptile rate-limit review never settles" 4
-expect_count "a Greptile rate-limit review is re-requested once" gh.log "pr comment 7 --repo o/r --body @greptileai" 1
+run 7 $SHA --repo o/r --bot greptile --interval 0 --deadline 5
+expect_exit "a Greptile rate-limit review exits 6" 6
+expect_in "the Greptile rate limit is printed" out "verdict: unavailable: greptile rate-limited: Rate limit exceeded"
+expect_count "a Greptile rate limit under --bot posts nothing" gh.log "pr comment" 0
+
+case_dir
+response OPEN $SHA "[$(review greptile-apps $SHA "<h3>Greptile Summary</h3>
+The new rate limiter looks right.")]" "$BUILD" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot greptile --interval 0 --deadline 5
+expect_exit "a review that names a rate limiter is not a rate limit" 0
 
 case_dir
 response OPEN $SHA '[]' "$BUILD" "$(check_run "Greptile Review" COMPLETED SUCCESS)" |
@@ -431,7 +517,58 @@ case_dir
 response OPEN $SHA "[$(review greptile-apps $SHA "$CREDIT")]" "$BUILD" > "$dir/1.json"
 run 7 $SHA --repo o/r --bot greptile --interval 0 --deadline 5
 expect_exit "a Greptile credit-limit review on the SHA exits 6" 6
-expect_in "the bot and its notice are printed" out "greptile: \`crodris\` has reached the 50-credit limit"
+expect_in "the bot, the reason, and its notice are printed" out "greptile out-of-credits: \`crodris\` has reached the 50-credit limit"
+
+case_dir
+response OPEN $SHA "[$(review greptile-apps $SHA "$CREDIT")]" "$BUILD" "$(status CodeRabbit SUCCESS "Review rate limited")" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --bot greptile --interval 0 --deadline 5
+expect_exit "two unavailable bots exit 6" 6
+expect_in "the first unavailable bot is named" out "coderabbit rate-limited: Review rate limited"
+expect_in "the second unavailable bot is named too" out "greptile out-of-credits:"
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --bot greptile --interval 0 --deadline 1
+expect_exit "a rate-limited CodeRabbit beside a Greptile that never posts exits 6" 6
+expect_in "the verdict names the rate-limited CodeRabbit" out "coderabbit rate-limited: Review rate limited"
+expect_in "the verdict names the silent Greptile" out "greptile silent: no status, check, review, or comment on $SHA within 1s"
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --bot greptile --silent-after 0 --interval 0 --deadline 30
+expect_exit "a rate-limited CodeRabbit beside a silent Greptile exits 6" 6
+expect_in "the verdict names the rate-limited CodeRabbit" out "coderabbit rate-limited: Review rate limited"
+expect_in "the verdict names the silent Greptile" out "greptile silent: no status, check, review, or comment on $SHA within 0s"
+expect_count "it ends on the first poll" gh.log "api graphql" 1
+
+case_dir
+SUITES='[]' response OPEN $SHA "[$(review greptile-apps $SHA "Rate limit exceeded")]" > "$dir/1.json"
+WATCH_GRACE=60 run 7 $SHA --repo o/r --bot greptile --interval 0 --deadline 1
+expect_exit "a rate-limited bot inside the grace window with no checks registered does not exit 6" 4
+expect_in "no checks are registered" out "no checks registered"
+expect_in "the grace window is still open" out "60-second wait for late checks"
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" > "$dir/1.json"
+response OPEN $SHA '[]' "$BUILD" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" \
+  "$(check_run "Greptile Review" COMPLETED SUCCESS)" > "$dir/2.json"
+run 7 $SHA --repo o/r --bot coderabbit --bot greptile --interval 0 --deadline 5
+expect_exit "a rate-limited CodeRabbit exits 6 once Greptile settles" 6
+expect_count "it waits out the pending Greptile before exit 6" gh.log "api graphql" 2
+expect_in "the rate-limited CodeRabbit is named once Greptile settles" out "verdict: unavailable: coderabbit rate-limited: Review rate limited"
+
+case_dir
+response OPEN $SHA '[]' "$(check_run test IN_PROGRESS)" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 1
+expect_exit "a rate-limited bot with a check in progress does not exit 6 before the deadline" 4
+expect_in "the check in progress reaches the deadline" out "verdict: deadline:"
+
+case_dir
+response OPEN $SHA '[]' "$(check_run test IN_PROGRESS)" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" > "$dir/1.json"
+response OPEN $SHA '[]' "$(check_run test COMPLETED SUCCESS)" "$(check_run CodeRabbit COMPLETED NEUTRAL "Review rate limited")" > "$dir/2.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "a rate-limited bot exits 6 once the check finishes" 6
+expect_count "it waits until the check finishes before exit 6" gh.log "api graphql" 2
 
 case_dir
 response OPEN $SHA "[$(review greptile-apps $OLD "$CREDIT")]" "$BUILD" "$(check_run "Greptile Review" COMPLETED SUCCESS)" > "$dir/1.json"
@@ -442,6 +579,82 @@ case_dir
 response OPEN $SHA "[$(review greptile-apps $SHA "Looks good. One rate limiter comment inline.")]" "$BUILD" > "$dir/1.json"
 run 7 $SHA --repo o/r --bot greptile --interval 0 --deadline 5
 expect_exit "Greptile settles on a review of the SHA with no check run" 0
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot greptile --interval 0 --deadline 1
+expect_exit "a bot that shows nothing on the SHA by the deadline exits 6" 6
+expect_in "the silent bot is named" out "verdict: unavailable: greptile silent: no status, check, review, or comment on $SHA"
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot greptile --silent-after 0 --interval 0 --deadline 30
+expect_exit "a bot that shows nothing by --silent-after exits 6 before the deadline" 6
+expect_in "the silent wait is named" out "greptile silent: no status, check, review, or comment on $SHA within 0s"
+expect_count "it ends on the first poll" gh.log "api graphql" 1
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(check_run test IN_PROGRESS)" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot greptile --interval 0 --deadline 1
+expect_exit "a silent bot beside a pending check is a plain deadline" 4
+
+case_dir
+response OPEN $SHA '[]' "$BUILD" "$(status CodeRabbit PENDING "Review in progress")" > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 1
+expect_exit "a bot whose review is in progress is not silent" 4
+
+case_dir
+echo '[{"type": "required_status_checks", "parameters": {"required_status_checks": [{"context": "lint"}]}}]' > "$dir/rules.json"
+response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
+WATCH_GRACE=60 run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a required check that never reports keeps it waiting" 4
+expect_in "the missing required check is printed" out "required checks not reported: lint"
+
+case_dir
+echo '[{"type": "required_status_checks", "parameters": {"required_status_checks": [{"context": "lint"}]}}]' > "$dir/rules.json"
+response OPEN $SHA '[]' "$BUILD" "$(check_run lint COMPLETED SUCCESS)" > "$dir/1.json"
+WATCH_GRACE=60 run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "every required check finished settles without the grace period" 0
+expect_count "it settles on the first poll" gh.log "api graphql" 1
+
+case_dir
+echo '{"contexts": ["build"], "checks": [{"context": "e2e"}]}' > "$dir/protection.json"
+response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
+WATCH_GRACE=60 run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "branch protection's required checks count too" 4
+expect_in "a protection check that never reports is printed" out "required checks not reported: e2e"
+
+case_dir
+FILES='["src/a.ts"]' response OPEN $SHA '[]' "$BUILD" "$(check_run test IN_PROGRESS)" > "$dir/1.json"
+FILES='["src/a.ts"]' BASE=$BASE_B response OPEN $SHA '[]' "$BUILD" > "$dir/2.json"
+echo '{"files": [{"filename": "README.md"}, {"filename": "src/a.ts"}]}' > "$dir/compare.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a base that moved onto this pull request's files exits 8" 8
+expect_in "the moved base and the shared file are printed" out "base moved: aaaaaaa..bbbbbbb touches src/a.ts"
+expect_in "it compares the first base with the new one" gh.log "api repos/o/r/compare/$BASE_A...$BASE_B"
+
+case_dir
+FILES='["src/a.ts"]' response OPEN $SHA '[]' "$BUILD" "$(check_run test IN_PROGRESS)" > "$dir/1.json"
+FILES='["src/a.ts"]' BASE=$BASE_B response OPEN $SHA '[]' "$BUILD" > "$dir/2.json"
+echo '{"files": [{"filename": "README.md"}]}' > "$dir/compare.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a base that moved elsewhere still passes" 0
+
+case_dir
+FILES='["src/a.ts"]' response OPEN $SHA '[]' "$BUILD" "$(check_run test IN_PROGRESS)" > "$dir/1.json"
+FILES='["src/a.ts"]' BASE=$BASE_B response OPEN $SHA '[]' "$BUILD" > "$dir/2.json"
+jq -n '{files: [range(300) | {filename: "other/\(.).ts"}]}' > "$dir/compare.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a moved base at the compare file limit counts as touching" 8
+expect_in "a capped compare names the file limit" out "the base changed 300 or more files"
+
+case_dir
+FILES='["src/a.ts"]' response OPEN $SHA '[]' "$BUILD" "$(check_run test IN_PROGRESS)" > "$dir/1.json"
+FILES='["src/a.ts"]' BASE=$BASE_B response OPEN $SHA '[]' "$(check_run test COMPLETED FAILURE)" > "$dir/2.json"
+echo '{"files": [{"filename": "src/a.ts"}]}' > "$dir/compare.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a failed check beside a moved base still exits 1" 1
+expect_in "the moved base is printed beside the failure" out "base moved: aaaaaaa..bbbbbbb touches src/a.ts"
 
 case_dir
 run 7 abc123 --repo o/r --interval 0
