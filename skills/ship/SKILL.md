@@ -1,7 +1,7 @@
 ---
 name: ship
 description: Use when the user says "ship", "ship it", "/ship", "ship and merge", "take this all the way", "get this merged and released", or asks for the current branch to be carried from working tree to a merged release. Plain "ship" stops at a green pull request, and the merge needs a request that says to merge or a `merge` value of `yes` in the repository's `.ship/config.md`. Also use when the branch is already pushed or already has an open pull request and the user asks to finish it, and when the user asks to babysit, watch, or monitor a pull request or get it green without merging. Not for a single commit or a release cut from an already-merged main.
-version: 2.2.0
+version: 3.0.0
 ---
 
 # Ship
@@ -229,26 +229,9 @@ Each round:
    Between the guard's checks and the push, a branch that has never been pushed and is behind the base gets `git fetch origin "$base"` and a rebase onto `origin/$base`; resolve any conflict the way the change intends, re-run stage 1, and commit its fixes under steps 1 and 2 before the push.
    An already-pushed branch is brought up to date only under stage 3, step 4.
 
-4. Open the review, ready rather than `--draft`, because a draft-to-ready flip does not reliably trigger CI.
-   Look for an open pull request from this branch into `base` first, with `gh pr list --head "$settled" --base "$base" --state open`, and reuse it when there is one; the run may well be finishing work that was pushed earlier, and `gh pr create` simply fails on a branch that already has one.
-   Reusing it means updating its body, not leaving it stale: replace this run's own delimited section with the new summary, evidence, and dispositions, and leave everything outside it untouched, including the summaries review bots write into the description.
-   Otherwise create it with every value named explicitly - `gh pr create --base "$base" --head "$settled" --title "..." --body-file <path>` - so that a repository whose default branch is not this run's base cannot silently retarget the review, and so that `gh` never drops into its interactive prompt.
-   When creating it, title it the way the repository titles its merged pull requests (`gh pr list --state merged --limit 10`), naming the outcome for the user:
-
-   > Mechanism: `perf(server): negotiate permessage-deflate on the websocket`
-   > Outcome: `perf(server): cut websocket frame size by 70%+ with gzipping`
-
-   Open a new pull request's body, above this run's section, with the problem as the user described it, then the fix in a sentence or two, and put any list of changes after that:
-
-   > Inventory: Removed implicit workspace carry-over from every "new thread" entry point and deleted the v1 sidebar's seed-context machinery.
-   > Problem first: My "new worktree" default was ignored when starting new threads on existing worktrees. Now your preferences always apply.
-
-   Close that opening with a merge-danger line: a two-way door when it is cheap to roll back, a one-way door when it is destructive or hard to reverse, such as deleting data, migrating a schema, or publishing something others depend on, and the blast radius, meaning who or what breaks if the change is wrong.
-
-   The body carries the summary and the verification evidence, with the path of the drive's evidence when stage 1 ran one, inside a delimited section this run owns; stage 3 adds the review outcome to that section once there is one.
-   Lead the summary with the smallest visual that makes the change clear, next to the sentence it supports, and skip it when one sentence already does: pseudocode for logic, a call tree for control flow, a component tree for UI structure, a shallow file tree for a refactor, Mermaid for interaction between parts, or a `diff` sketch of that same shape when the point is what changed.
-   Show the evidence as before and after when a before exists: for a visual change, the drive's screenshot, paired with a before screenshot only when one was captured from the base; otherwise the test or command output that failed before and passes now; with no before, show the after result alone.
-   Without a working `gh`, push the branch, print the compare URL the remote host expects, and hand the review off to the user; the run then ends after reporting, with no merge and no release watch.
+4. Read `../file-pr/SKILL.md` and follow it with the settled branch, `base`, and this run's section.
+   That section carries the summary and the verification evidence, with the path of the drive's evidence when stage 1 ran one; stage 3 adds the review outcome to it once there is one.
+   It returns `OPEN <number> <url>`, or `HANDOFF <url>` without a working `gh`, which ends the run after reporting, with no merge and no release watch.
 
 ## Stage 3 - Review, fix each pass in one batch, confirm, merge, release, cleanup
 

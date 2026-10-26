@@ -1,14 +1,14 @@
 # Word budgets read by bin/check-skill-size.sh. AGENTS.md says when to change them.
 skills/execute/fan-out.md 1346
 skills/execute/README.md 7936
-skills/execute/SKILL.md 4468
+skills/execute/SKILL.md 4415
 skills/execute/stack.md 3641
 skills/fathom-shared/agents.md 1076
 skills/fathom-shared/approval.md 1527
 skills/fathom-shared/conventions.md 2829
 skills/fathom-shared/forges.md 2932
 skills/fathom-shared/forges/generic-git.md 843
-skills/fathom-shared/forges/github.md 1275
+skills/fathom-shared/forges/github.md 1143
 skills/fathom-shared/forges/TEMPLATE.md 1280
 skills/fathom-shared/memory.md 1401
 skills/fathom-shared/memory/beads.md 2647
@@ -18,6 +18,7 @@ skills/fathom-shared/SKILL.md 128
 skills/fathom-shared/trackers.md 5704
 skills/fathom-shared/trackers/asana.md 3317
 skills/fathom-shared/trackers/linear.md 3107
+skills/file-pr/SKILL.md 805
 skills/frontend-design-pipeline/SKILL.md 1447
 skills/html-comms/SKILL.md 854
 skills/review/SKILL.md 6302
@@ -28,6 +29,6 @@ skills/ship/bots.md 958
 skills/ship/config.md 520
 skills/ship/drive.md 502
 skills/ship/lanes.md 623
-skills/ship/SKILL.md 8094
+skills/ship/SKILL.md 7641
 skills/verification-audit/SKILL.md 911
 skills/worktree-setup/SKILL.md 249
