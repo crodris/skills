@@ -3,7 +3,7 @@
 A stack is one issue delivered as several dependent reviews, one per bundle, on chained branches.
 Read the section that a step in `SKILL.md` points to.
 Step numbers refer to the procedure in `SKILL.md`.
-The `Bundles` section, the pending marker, the `none confirmed` line, the `Merge-closer` line, per-bundle reconciliation, and stacked review bodies are defined in `../fathom-shared/conventions.md`.
+The `Bundles` section, the pending marker, the `none confirmed` line, the `Merge-closer` line, per-bundle reconciliation, and stacked review bodies are defined in `conventions.md`.
 
 ## Step 2: restack check
 
@@ -50,14 +50,14 @@ Produce at most three bundles, each holding at least two units, so five units yi
 Exceed the cap only when the user asked for a specific larger split; never exceed it on the heuristic's own judgment.
 
 Then present the proposed split before anything is written to the tracker: the bundles, which units fall in each, and the resolved forge's `stackedReviews` value with what it means for this run.
-This is a skip-list stop per `../fathom-shared/approval.md`, so `ask` mode waits for an answer and `auto` mode applies the split and reports it.
+This is a skip-list stop per `approval.md`, so `ask` mode waits for an answer and `auto` mode applies the split and reports it.
 
 ### Creating a confirmed stack
 
 When a split was confirmed, take the same create-versus-adopt decision as step 8's single-review branches: create a sub-issue for each planned unit when the issue has no existing children, and adopt the existing children when it has them, skipping `createSubIssue` for each adopted one.
 A split never changes whether the sub-issues already exist, so an issue that arrived with children never gets a duplicate set alongside them.
 Create them strictly one at a time in the planned order, from the first unit to the last, rather than in whatever order the bundle records suggest.
-Chain every task in the issue sequentially, so each task deps on its predecessor across bundle boundaries as well as within them, per the `createTask` row in `../fathom-shared/memory.md`.
+Chain every task in the issue sequentially, so each task deps on its predecessor across bundle boundaries as well as within them, per the `createTask` row in `memory.md`.
 
 With the plan document, write the `Bundles` section recording each bundle's index, branch, and sub-issue refs, and the `- Merge-closer: suppressed` line, both per `conventions.md`.
 Write them at breakdown time, not when the first review opens.
@@ -127,7 +127,7 @@ Otherwise call `getReviewState` on the recorded review of every bundle from 1 to
    When the rebase conflicts, note the conflicting files from `git ls-files -u`, run `git rebase --abort`, then stop and hold naming them.
 3. A rebase, this run's or an interrupted earlier one's, leaves recorded commits that no longer exist.
    For every closed task in bundle k whose recorded commit is not in `origin/<base>..<branch k>`, find its new commit with `git log --format=%h --grep "^Task: <id>$" origin/<base>..<branch k>`, and call `close` on that task again with that commit.
-   When that re-recorded any task, commit the task-state files it changed as `chore(<issue-ref>): re-record bundle k commits after rebase`, naming no task in the body and staging them by explicit path as step 11's closing commit does; on beads that means the three export steps in One database per repository in `../fathom-shared/memory/beads.md`.
+   When that re-recorded any task, commit the task-state files it changed as `chore(<issue-ref>): re-record bundle k commits after rebase`, naming no task in the body and staging them by explicit path as step 11's closing commit does; on beads that means the three export steps in One database per repository in `memory/beads.md`.
    When branch k is on the remote and differs from the local branch, push it with `--force-with-lease`, never a bare force push.
    When the lease is rejected, stop and hold: another commit reached that branch, and overwriting it discards someone's work.
 4. Use the resolved base branch as bundle k's base for the rest of this routine: the reconciliation range, `resolveBase`, `openReview`, and the pending-marker lookup.
@@ -176,7 +176,7 @@ The state decides continuation and never whether the record is written: a merged
 
 When more than one candidate survives, stop and hold naming them.
 
-When no candidate matches, do not call `openReview`: stop and hold, since a bounded lookup that finds nothing does not prove that nothing exists, per `../fathom-shared/forges.md`.
+When no candidate matches, do not call `openReview`: stop and hold, since a bounded lookup that finds nothing does not prove that nothing exists, per `forges.md`.
 Say in the hold report that bundle k carries a pending marker, that a review may already exist for this bundle, that this run could not find one and cannot prove there is none, and that the user should confirm whether a review exists for that bundle before the run continues.
 Say with it what unblocks the next run.
 When the user confirms that no review exists, replace bundle k's marker with a `- Review: none confirmed (bundle k/N)` line, committed and pushed on the branch this run is on as the same bookkeeping commit the backfill makes, and the next run opens that bundle's review.

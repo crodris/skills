@@ -374,7 +374,7 @@ claude plugin test mods/fathom-progress
 
 It runs every `*.test.ts` and `*.test.tsx` under the folder you give it, each in a child process that is set up like the mod's hooks. A test imports its kit from `claude-code/testing`, and the sandbox allows relative imports and `claude-code` only, so a test can't read a file from disk. That is why the captured `bd` output is a TypeScript module (`fixtures.ts`) and not a JSON file. The render tests mount the band on both the terminal and Desktop surfaces.
 
-`contract.test.ts` parses the plan document lines, the example checklist, the `bd create` commands and the skill names as Fathom's skill files state them today. `bin/sync-contract.sh` copies them into `contract.fixtures.ts`, and `skills/fathom-shared/progress.md` lists them. Run the script before the tests after a change to Fathom's skills. CI runs it and fails when the copy it writes differs from the committed one.
+`contract.test.ts` parses the plan document lines, the example checklist, the `bd create` commands and the skill names as Fathom's skill files state them today. `bin/sync-contract.sh` copies them into `contract.fixtures.ts`, and `skills/execute/progress.md` lists them. Run the script before the tests after a change to Fathom's skills. CI runs it and fails when the copy it writes differs from the committed one.
 
 Validate the manifest and hooks.
 

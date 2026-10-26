@@ -6,17 +6,27 @@ on:
     paths:
       - ".claude-plugin/**"
       - "mods/**"
-      - "skills/execute/SKILL.md"
+      - "skills/execute/**"
       - "skills/scaffold/SKILL.md"
-      - "skills/fathom-shared/**"
+      - "skills/ship/**"
+      - "skills/prove/**"
+      - "skills/file-pr/**"
+      - "skills/babysit/**"
+      - "skills/review-loop/**"
+      - "skills/land/**"
       - ".github/workflows/plugin-validate.yml"
   pull_request:
     paths:
       - ".claude-plugin/**"
       - "mods/**"
-      - "skills/execute/SKILL.md"
+      - "skills/execute/**"
       - "skills/scaffold/SKILL.md"
-      - "skills/fathom-shared/**"
+      - "skills/ship/**"
+      - "skills/prove/**"
+      - "skills/file-pr/**"
+      - "skills/babysit/**"
+      - "skills/review-loop/**"
+      - "skills/land/**"
       - ".github/workflows/plugin-validate.yml"
   workflow_dispatch:
 

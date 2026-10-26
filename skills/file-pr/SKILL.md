@@ -11,7 +11,7 @@ When it does not, as in an execute install without the ship skills, follow the c
 
 Inputs: a pushed branch, its base, and the body parts the caller supplies, such as ship's run section or execute's `Closes <ref>` and task list.
 An optional title and a complete body may come with them.
-When the caller supplies that title and body, as `../fathom-shared/forges/github.md` does, skip the Title section and Body steps 1 to 4, and do not add that body again in Body step 5.
+When the caller supplies that title and body, as `../execute/forges/github.md` does, skip the Title section and Body steps 1 to 4, and do not add that body again in Body step 5.
 
 ## Run section
 

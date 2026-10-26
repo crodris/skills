@@ -12,7 +12,8 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill, so take only the ones you want.
-`execute` and `scaffold` also need `fathom-shared`, which carries the files they read, and `execute` opens its pull requests through `file-pr` from the ship plugin.
+`scaffold` reads its contract files from `execute`, and `execute` opens its pull requests through `file-pr` from the ship plugin, so take all three.
+Upgrading from Fathom 2, delete the old `fathom-shared` directory from your skills folder, since its files now live in `execute`.
 The ship skills need each other, so take all six: `ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`.
 
 On Claude Code, Fathom and ship also install as plugins, and so does the fathom-progress mod:
@@ -53,7 +54,7 @@ It merges with the `merge-method` in `.ship/config.md` (`squash`, `rebase`, or `
 When a review bot is rate limited, out of credits, or silent, `babysit` goes on without it on a low-risk pull request, and on a high-risk one runs a stand-in review and waits only for a short rate limit.
 The skills need a git remote, an authenticated GitHub CLI, and `jq`.
 
-### fathom-progress (v0.2.0)
+### fathom-progress (v0.2.1)
 
 Ryan Uesato built `fathom-progress`, a Claude Code mod that draws a progress band above the prompt while `execute` or `scaffold` runs.
 It reads the run's tasks from beads or the committed checklist, and never changes them.

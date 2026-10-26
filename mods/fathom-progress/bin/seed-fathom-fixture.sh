@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Drives one Fathom run through a scratch beads repo with the commands the beads
-# adapter runs (fathom 2.2.0, skills/fathom-shared/memory/beads.md), and writes what
+# adapter runs (fathom 2.2.0, skills/execute/memory/beads.md), and writes what
 # bd prints at each stage to mods/fathom-progress/hooks/fixtures.ts.
 #
 # Run it with bash, no chmod needed:

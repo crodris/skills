@@ -8,8 +8,7 @@ import { startScaffold } from './scaffold'
 // The skills that start a Fathom run, and which of the two one is. The engine reports
 // a skill as `plugin:skill` (`fathom:execute`, seen in the probe,
 // claude-mods-fathom-5l2.2); a bare name is accepted too, since the Skill tool takes
-// whatever the model passes. `review` and `ship` do not start a run, and the plugin's
-// internal `fathom-shared` is never invoked.
+// whatever the model passes. `review` and `ship` do not start a run.
 //
 // Only execute writes beads, so only execute has a run to find: scaffold arms no poll,
 // which also keeps the band from showing some older open run as if scaffold had started
