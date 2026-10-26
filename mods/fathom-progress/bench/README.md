@@ -17,14 +17,13 @@ The band reads the checklist from disk about every 10 seconds. `play-checklist.s
 ## Quick start
 
 ```sh
-WORK=$(bash scripts/bench/make-bench-repo.sh | tail -n 1)
-bash scripts/bench/start-session.sh --bench "$WORK" --bd shim --trust -- --model haiku
-bash scripts/bench/watch-band.sh --bench "$WORK" --target fathom-bench --arm --timeline chain
+WORK=$(bash mods/fathom-progress/bench/make-bench-repo.sh --destination "<your default-destination line>" | tail -n 1)
+bash mods/fathom-progress/bench/start-session.sh --bench "$WORK" --bd shim --trust -- --model haiku
+bash mods/fathom-progress/bench/watch-band.sh --bench "$WORK" --target fathom-bench --arm --timeline chain
 tmux kill-session -t fathom-bench
 ```
 
-- `make-bench-repo.sh` takes its tracker destination and state mapping from this repository's `.fathom/config.md`, which names the Claude Mods and Tools project. For the Fathom bench project, pass `--destination "Ruesato / Fathom bench (team 8dc97a9b-f60c-4803-886c-d79009ad9b2b, project dd7e6ad4-6946-42ab-a29f-d7b692906f85)"`. Pass `--config-from` to use another profile.
-- The persistent bench repo is `~/code/fathom-bench/work`; its README lists the Linear issues for real Fathom runs.
+- `make-bench-repo.sh` takes its tracker destination and state mapping from `.fathom/config.md` at the repository root. This repository has none, so pass `--destination "<your default-destination line>"`, or `--config-from` with the path to another repository's `.fathom/config.md`.
 - The mod must be installed and on the branch under test. It loads from the working tree of the marketplace you installed it from.
 - `--arm` types `/fathom:execute BENCH-1` and presses Esc after 3 seconds. Typing the command arms the band, and Esc stops Claude before it does Fathom's work. It still costs one started model turn, so `-- --model haiku` keeps it small. A finished run stops polling, so pass `--arm` again for each timeline.
 - Each step takes about 10 seconds to show, because of the poll. A nine-step timeline runs about two minutes.

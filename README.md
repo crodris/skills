@@ -14,12 +14,13 @@ npx skills@latest add crodris/skills
 The installer lists every skill, so take only the ones you want.
 `execute` and `scaffold` also need `fathom-shared`, which carries the files they read.
 
-On Claude Code, Fathom and ship also install as plugins:
+On Claude Code, Fathom and ship also install as plugins, and so does the fathom-progress mod:
 
 ```text
 /plugin marketplace add crodris/skills
 /plugin install fathom@crodris
 /plugin install ship@crodris
+/plugin install fathom-progress@crodris
 ```
 
 ## Plugins
@@ -36,6 +37,12 @@ The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacke
 `ship` carries the current branch to a ready pull request: verify until clean, commit, push, open the pull request, review it with subagents and any review bots, and fix until nothing blocking remains.
 It merges, watches the release, and cleans up only when you ask it to merge, or when the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
 It needs a git remote, an authenticated GitHub CLI, and `jq`.
+
+### fathom-progress (v0.2.0)
+
+Ryan Uesato built `fathom-progress`, a Claude Code mod that draws a progress band above the prompt while `execute` or `scaffold` runs.
+It reads the run's tasks from beads or the committed checklist, and never changes them.
+Its [README](./mods/fathom-progress/README.md) covers setup, what the band shows, and working on the mod.
 
 ## Standalone Skills
 
@@ -110,6 +117,8 @@ bin/scan-skills.sh
 ## License
 
 MIT
+
+Ryan Uesato built the `fathom-progress` mod in `mods/fathom-progress/`.
 
 Some rules are adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including ship's merge-danger line, the summary visuals and before-and-after evidence in ship's pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
 Ship's hold mode, CI, and pull request title and body rules, and execute's title and body rules, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.

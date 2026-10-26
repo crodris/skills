@@ -365,7 +365,7 @@ test('a file that is not a checklist is followed as one, and the band says so in
   )
 })
 
-// The text scripts/bench/play-checklist.sh writes, step 6 of the chain timeline and step 4 of
+// The text mods/fathom-progress/bench/play-checklist.sh writes, step 6 of the chain timeline and step 4 of
 // the parallel one, copied as it is. The band's live checks lean on these reading as the run
 // they stand for, so a change to the parser that broke them would fail here first.
 const BENCH_CHAIN_6 = [
@@ -377,7 +377,7 @@ const BENCH_CHAIN_6 = [
   '',
   '## Plan',
   '',
-  'Written by scripts/bench/play-checklist.sh, not by Fathom.',
+  'Written by mods/fathom-progress/bench/play-checklist.sh, not by Fathom.',
   '',
   '## Tasks',
   '',

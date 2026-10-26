@@ -3,7 +3,7 @@
 # Written for bash 3.2, the one macOS ships: no associative arrays, no mapfile.
 
 BENCH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-BENCH_ROOT="$(cd "$BENCH_DIR/../.." && pwd -P)"
+BENCH_ROOT="$(cd "$BENCH_DIR/../../.." && pwd -P)"
 
 die() { echo "${PROG:-bench}: $*" >&2; exit 1; }
 
@@ -160,7 +160,7 @@ write_step() {
         printf -- '- Issue: https://example.test/%s\n' "$ref"
         printf -- '- Branch: %s\n' "$branch"
         printf -- '- Review: (id and url, filled at open)\n\n'
-        printf '## Plan\n\nWritten by scripts/bench/play-checklist.sh, not by Fathom.\n\n## Tasks\n\n'
+        printf '## Plan\n\nWritten by mods/fathom-progress/bench/play-checklist.sh, not by Fathom.\n\n## Tasks\n\n'
         if [ "$tasks" != header ]; then task_lines "$tasks" "$extras"; fi
         if [[ ",$extras," == *,footer,* ]]; then printf -- '\n- Closed: 2026-10-20\n'; fi
       } | write_atomic "$tfile"
@@ -174,7 +174,7 @@ write_step() {
       printf -- '- Issue: https://example.test/%s\n' "$ref"
       printf -- '- Ref: %s\n' "$ref"
       printf -- '- Branch: %s\n\n' "$branch"
-      printf '## Tasks\n\nWritten by scripts/bench/play-checklist.sh, not by Fathom.\n'
+      printf '## Tasks\n\nWritten by mods/fathom-progress/bench/play-checklist.sh, not by Fathom.\n'
     } | write_atomic "$pfile"
   else
     rm -f "$pfile"

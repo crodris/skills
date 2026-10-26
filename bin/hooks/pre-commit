@@ -20,11 +20,11 @@ if out=$("$SYNC_SCRIPT"); then
   cd "$REPO_ROOT"
   git diff --quiet .claude-plugin/marketplace.json 2>/dev/null || git add .claude-plugin/marketplace.json
   git diff --quiet README.md 2>/dev/null || git add README.md
-  # Stage only the SKILL.md files this sync reported writing, so unrelated
-  # unstaged SKILL.md edits stay out of the commit
+  # Stage only the SKILL.md and plugin.json files this sync reported writing,
+  # so unrelated unstaged edits stay out of the commit
   while IFS= read -r line; do
     case "$line" in
-      "  skills/"*"/SKILL.md -> version "*)
+      "  skills/"*"/SKILL.md -> version "* | "  "*"/.claude-plugin/plugin.json -> version "*)
         path="${line#  }"
         git add -- "${path%% -> version *}"
         ;;

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check-dashes.sh - fail when an em or en dash appears in skills/, bin/, the
+# check-dashes.sh - fail when an em or en dash appears in skills/, mods/, bin/, the
 # README, or AGENTS.md. Write a plain hyphen instead.
 # Untracked files count too, so verify catches a new file before it is committed.
 # Requires python3 for UTF-8 matching (ships with macOS).
@@ -8,7 +8,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-git ls-files -z --cached --others --exclude-standard -- skills bin README.md AGENTS.md |
+git ls-files -z --cached --others --exclude-standard -- skills mods bin README.md AGENTS.md |
   python3 -c '
 import sys
 hits = 0

@@ -2,7 +2,7 @@
 # Plays a timeline into a bench repo one step at a time and checks that the band, read off
 # a tmux pane, shows what the step should look like. No model tokens go to the run itself.
 #
-#   bash scripts/bench/watch-band.sh --bench <work> --target <tmux target>
+#   bash mods/fathom-progress/bench/watch-band.sh --bench <work> --target <tmux target>
 #        [--timeline chain] [--ref BENCH-1] [--arm] [--timeout 30] [--out <dir>]
 #
 #   --target     a tmux session or pane running Claude Code in the bench repo

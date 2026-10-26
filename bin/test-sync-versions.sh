@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # test-sync-versions.sh - run bin/sync-versions.sh in a scratch repository and
 # check that plugin versions reach README headings and claimed SKILL.md
-# frontmatter, that standalone SKILL.md versions reach their README headings,
-# and that a skill with no version line or no frontmatter fails. Then run
-# bin/hooks/pre-commit in a scratch git repository and check that it stages
-# only the SKILL.md files the sync wrote.
+# frontmatter, that a mod's version reaches its plugin.json, that standalone
+# SKILL.md versions reach their README headings, and that a skill with no
+# version line or no frontmatter fails. Then run bin/hooks/pre-commit in a
+# scratch git repository and check that it stages only the files the sync wrote.
 set -euo pipefail
 
 BIN="$(cd "$(dirname "$0")" && pwd)"
@@ -27,7 +27,12 @@ fails() {
 }
 
 marketplace() {
-  printf -- '{"plugins": [{"name": "kit", "version": "%s", "skills": ["./skills/build"]}]}\n' "$1" > "$dir/.claude-plugin/marketplace.json"
+  printf -- '{"plugins": [{"name": "kit", "version": "%s", "source": "./", "skills": ["./skills/build"]}, {"name": "band", "version": "%s", "source": "./mods/band"}]}\n' "$1" "${2:-0.3.0}" > "$dir/.claude-plugin/marketplace.json"
+}
+
+manifest() {
+  mkdir -p "$dir/mods/band/.claude-plugin"
+  printf -- '{\n  "name": "band",\n%b  "description": "Demo."\n}\n' "$1" > "$dir/mods/band/.claude-plugin/plugin.json"
 }
 
 fixture() {
@@ -41,6 +46,8 @@ fixture() {
 
 ### kit (v2.2.0)
 
+### band (v0.2.0)
+
 ## Standalone Skills
 
 ### lint (v0.9.0)
@@ -49,6 +56,7 @@ fixture() {
 MD
   skill build 'version: 1.0.0\n'
   skill lint 'version: 1.4.2\n'
+  manifest '  "version": "0.2.0",\n'
 }
 
 root=$(mktemp -d)
@@ -60,6 +68,7 @@ fixture
 "$dir/bin/sync-versions.sh" > /dev/null
 check "plugin heading takes the marketplace version" README.md '### kit (v2.3.0)'
 check "claimed skill frontmatter takes the plugin version" skills/build/SKILL.md 'version: 2.3.0'
+check "a mod's plugin.json takes the marketplace version" mods/band/.claude-plugin/plugin.json '  "version": "0.3.0",'
 check "standalone heading takes the SKILL.md version" README.md '### lint (v1.4.2)'
 check "standalone frontmatter is left alone" skills/lint/SKILL.md 'version: 1.4.2'
 
@@ -78,6 +87,12 @@ printf -- '# build\n' > "$dir/skills/build/SKILL.md"
 fails "a claimed skill with no frontmatter fails" skills/build/SKILL.md
 skill build 'version: 2.3.0\n'
 
+manifest ''
+got=0
+out=$("$dir/bin/sync-versions.sh" 2>&1) || got=$?
+if [ "$got" = 1 ] && [[ $out == *'mods/band/.claude-plugin/plugin.json has no "version" field'* ]]; then echo "ok: a mod's plugin.json with no version fails"; else echo "FAIL: a mod's plugin.json with no version (exit $got)"; failures=$((failures + 1)); fi
+manifest '  "version": "0.3.0",\n'
+
 dir="$root/hook"
 fixture
 mkdir -p "$dir/bin/hooks"
@@ -88,13 +103,14 @@ git -C "$dir" config user.name test
 git -C "$dir" config user.email test@example.com
 git -C "$dir" add -A
 git -C "$dir" commit -q --no-verify --no-gpg-sign -m fixture
-marketplace 2.4.0
+marketplace 2.4.0 0.4.0
 printf -- 'Unrelated edit.\n' >> "$dir/skills/lint/SKILL.md"
 got=0
 "$dir/bin/hooks/pre-commit" > /dev/null 2>&1 || got=$?
 staged=$(git -C "$dir" diff --cached --name-only)
 if [ "$got" = 0 ]; then echo "ok: the hook exits 0"; else echo "FAIL: the hook exited $got"; failures=$((failures + 1)); fi
 if grep -qxF skills/build/SKILL.md <<< "$staged"; then echo "ok: the hook stages the SKILL.md the sync wrote"; else echo "FAIL: the hook did not stage skills/build/SKILL.md"; failures=$((failures + 1)); fi
+if grep -qxF mods/band/.claude-plugin/plugin.json <<< "$staged"; then echo "ok: the hook stages the plugin.json the sync wrote"; else echo "FAIL: the hook did not stage mods/band/.claude-plugin/plugin.json"; failures=$((failures + 1)); fi
 if ! grep -qxF skills/lint/SKILL.md <<< "$staged"; then echo "ok: the hook leaves an unrelated SKILL.md edit unstaged"; else echo "FAIL: the hook staged skills/lint/SKILL.md"; failures=$((failures + 1)); fi
 
 [ "$failures" -eq 0 ] || { echo "$failures failure(s)"; exit 1; }

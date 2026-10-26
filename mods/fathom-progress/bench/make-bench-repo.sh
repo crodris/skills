@@ -3,7 +3,7 @@
 # `origin`, a working copy on `main` with a Fathom profile already committed (so Fathom
 # asks no first-run questions), and a tiny test that costs a model nothing to satisfy.
 #
-#   bash scripts/bench/make-bench-repo.sh [dir] [--destination "<default-destination line>"]
+#   bash mods/fathom-progress/bench/make-bench-repo.sh [dir] [--destination "<default-destination line>"]
 #        [--config-from <path to a .fathom/config.md>]
 #
 # dir      must not exist or be empty, and must be outside this repository. The default is

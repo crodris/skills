@@ -41,6 +41,12 @@ git -C "$dir" add AGENTS.md
 expect "AGENTS.md with a dash fails" 1 "$dir"
 
 dir=$(scratch)
+mkdir -p "$dir/mods/demo"
+printf 'Mod notes %s here.\n' "$DASH" > "$dir/mods/demo/README.md"
+git -C "$dir" add mods
+expect "a mod file with a dash fails" 1 "$dir"
+
+dir=$(scratch)
 mkdir -p "$dir/notes"
 printf 'Outside %s scope.\n' "$DASH" > "$dir/notes/old.md"
 git -C "$dir" add notes

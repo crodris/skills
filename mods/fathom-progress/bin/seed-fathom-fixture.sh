@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Drives one Fathom run through a scratch beads repo with the commands the beads
 # adapter runs (fathom 2.2.0, skills/fathom-shared/memory/beads.md), and writes what
-# bd prints at each stage to plugins/fathom-progress/hooks/fixtures.ts.
+# bd prints at each stage to mods/fathom-progress/hooks/fixtures.ts.
 #
 # Run it with bash, no chmod needed:
-#   bash scripts/seed-fathom-fixture.sh [scratch-dir] [out-file]
+#   bash mods/fathom-progress/bin/seed-fathom-fixture.sh [scratch-dir] [out-file]
 #
 # The scratch repo is never this one. The script refuses a scratch dir inside this
 # repo or one that is not empty, and checks that bd resolves to the scratch repo
@@ -12,9 +12,9 @@
 # mktemp dir that the OS reaps.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 SCRATCH="${1:-$(mktemp -d "${TMPDIR:-/tmp}/fathom-fixture.XXXXXX")}"
-OUT="${2:-$ROOT/plugins/fathom-progress/hooks/fixtures.ts}"
+OUT="${2:-$ROOT/mods/fathom-progress/hooks/fixtures.ts}"
 
 die() { echo "seed-fathom-fixture: $*" >&2; exit 1; }
 
@@ -153,7 +153,7 @@ emit_run() { # name
 }
 
 {
-  echo "// Captured from $(bd version | head -n 1) by scripts/seed-fathom-fixture.sh. Do not edit:"
+  echo "// Captured from $(bd version | head -n 1) by mods/fathom-progress/bin/seed-fathom-fixture.sh. Do not edit:"
   echo "// run the script again. Real bd output, so ids and times differ between runs; the"
   echo "// tests lean on the shape, not on the values."
   echo "//"

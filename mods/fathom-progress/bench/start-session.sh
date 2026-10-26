@@ -2,7 +2,7 @@
 # Starts Claude Code in a detached tmux session inside a bench repo, ready for
 # watch-band.sh. It does not type anything into Claude.
 #
-#   bash scripts/bench/start-session.sh --bench <work> [--session fathom-bench]
+#   bash mods/fathom-progress/bench/start-session.sh --bench <work> [--session fathom-bench]
 #        [--bd real|shim] [--trust] [--width 140] [--height 42] [-- <extra claude args>]
 #
 #   --bd shim   put a fake bd first on PATH that fails with "command not found" (exit
@@ -80,4 +80,4 @@ fi
 echo "started tmux session '$SESSION' in $BENCH_WORK (bd: $BD)"
 echo "debug log: $LOG"
 echo "attach:    tmux attach -t $SESSION"
-echo "then:      bash scripts/bench/watch-band.sh --bench $BENCH_WORK --target $SESSION --arm"
+echo "then:      bash mods/fathom-progress/bench/watch-band.sh --bench $BENCH_WORK --target $SESSION --arm"

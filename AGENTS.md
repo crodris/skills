@@ -38,6 +38,12 @@ A trim lowers the budget in the same pull request, and raising one needs a reaso
 
 Credit adapted outside work in the README's License section.
 
+## Mods
+
+A Claude Code mod lives in `mods/<name>/`, with its own `plugin.json` and its own marketplace entry.
+Its version is the marketplace entry's, and `bin/sync-versions.sh` copies it into the mod's `plugin.json`.
+Add each new mod to the verify line in `.ship/config.md` and to `.github/workflows/plugin-validate.yml`, which run `claude plugin validate --strict` and `claude plugin test` on it.
+
 ## Security scanning
 
 Change the SkillSpector commit pin in the README and in `.github/workflows/skillspector.yml` together, so a local scan and CI run the same scanner.
