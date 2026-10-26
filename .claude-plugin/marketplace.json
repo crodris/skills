@@ -52,7 +52,7 @@
         "./skills/review-loop",
         "./skills/land"
       ],
-      "description": "One agent skill that carries the current branch from working tree to merged release: it resolves the project's own verification pipeline, runs verify until clean, then commits, pushes, opens a pull request, reviews it with Standards and Spec subagents and any CodeRabbit or Greptile review bots in parallel, lands each pass's blocking fixes in one batched push and confirms it until nothing blocking remains, then stops at a green pull request unless told to merge, in which case it merges with the repository's merge method, watches the release, and cleans up. No tracker required.",
+      "description": "Six agent skills that carry the current branch from working tree to merged release: ship calls prove to run the project's own verify gates and commit, file-pr to open the pull request, babysit to run CI, CodeRabbit or Greptile, and review-loop's Standards and Spec subagents on each pass with one batched fix push, and in merge mode land to merge with the repository's merge method, watch the release, and clean up. Plain ship stops at a green pull request. No tracker required.",
       "version": "3.0.0",
       "author": {
         "name": "crodris"

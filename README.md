@@ -13,6 +13,7 @@ npx skills@latest add crodris/skills
 
 The installer lists every skill, so take only the ones you want.
 `execute` and `scaffold` also need `fathom-shared`, which carries the files they read, and `execute` opens its pull requests through `file-pr` from the ship plugin.
+The ship skills need each other, so take all six: `ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`.
 
 On Claude Code, Fathom and ship also install as plugins, and so does the fathom-progress mod:
 
@@ -34,14 +35,23 @@ The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacke
 
 ### ship (v3.0.0)
 
-`ship` carries the current branch to a ready pull request: verify until clean, commit, push, open the pull request, review it with subagents and any review bots, and fix until nothing blocking remains.
-It merges, watches the release, and cleans up only when you ask it to merge, or when the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
-It merges with the `merge-method` in `.ship/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one or its settings are unreadable.
-It verifies and commits through `prove`, opens the pull request through `file-pr`, and watches it through `babysit`, which runs `review-loop` on each pass.
-In merge mode it merges through `land`, which checks the merge gate, merges, watches the release, and cleans up.
-Each also runs on its own: ask to prove a change, file a pull request, babysit one, or land a ready one.
+Six skills that carry the current branch to a green pull request, and on to a merged release when you ask to merge.
+Each one ends with a result line that the next one reads.
+
+| Skill | Does | Runs on its own when you ask to |
+| --- | --- | --- |
+| `ship` | Settles the mode and the branch, calls the others in order, and reports | ship |
+| `prove` | Runs the project's own verify gates until clean, then commits | prove or verify a change |
+| `file-pr` | Opens or updates the pull request, with its title, body, and secrets check | file a pull request |
+| `babysit` | Runs each pass: CI and the review bots, `review-loop`, one push, base updates | babysit, watch, or monitor a pull request |
+| `review-loop` | Reviews with Standards and Spec subagents, triages every finding into a ledger, and fixes the blocking ones in one batch | run one review-and-fix pass |
+| `land` | Checks the merge gate, merges with the repository's merge method, watches the release, and cleans up | land a ready pull request |
+
+Plain "ship" stops at a green pull request.
+It merges only when you ask it to, or when `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
+It merges with the `merge-method` in `.ship/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one method or its settings are unreadable.
 When a review bot is rate limited, out of credits, or silent, `babysit` goes on without it on a low-risk pull request, and on a high-risk one runs a stand-in review and waits only for a short rate limit.
-It needs a git remote, an authenticated GitHub CLI, and `jq`.
+The skills need a git remote, an authenticated GitHub CLI, and `jq`.
 
 ### fathom-progress (v0.2.0)
 
@@ -125,7 +135,8 @@ MIT
 
 Ryan Uesato built the `fathom-progress` mod in `mods/fathom-progress/`.
 
-Some rules are adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including ship's merge-danger line, the summary visuals and before-and-after evidence in ship's pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
-Ship's hold mode, CI, and pull request title and body rules, and execute's title and body rules, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
+Some rules are adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including the merge-danger line, the summary visuals, and the before-and-after evidence in `file-pr`'s pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
+Ship's hold mode, CI, and pull request title and body rules, now in `babysit` and `file-pr`, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
+The ship family's split into small skills, `review-loop`'s finding ledger, round budget, nit relabel rule, and diff-size check, `babysit`'s auto-merge and merge-queue release, `file-pr`'s secrets check, `land`'s proof-coverage gate item, and `ship`'s list of decisions made on the user's behalf are adapted from Theo Browne's tstack (MIT).
 `html-comms` is adapted from Theo Browne's html-communication, with its chart heuristic from [ruesato/agent-skill-floreo](https://github.com/ruesato/agent-skill-floreo) (MIT).
 The `rewrite` skill's floor rows for arguing with no one, re-explained context, dramatic closers, and the document-describing half of meta commentary, and rewrite mode's no-new-facts rule, are adapted from Siqi Chen's (blader) humanizer (MIT).
