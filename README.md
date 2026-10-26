@@ -63,10 +63,11 @@ Its [README](./mods/fathom-progress/README.md) covers setup, what the band shows
 
 These install through skills.sh only.
 
-### review (v1.1.2)
+### review (v1.2.0)
 
 `review` checks a pull request against the issue it claims to close, on running builds of the branch and its base, and posts one review with inline findings.
-It needs the GitHub CLI, plus a browser driver such as Playwright for visual changes.
+It reads its build, serving, and measuring steps from `ui.md` only when the pull request changes what the app renders.
+It needs the GitHub CLI, plus a browser driver such as Playwright for visual changes, and answers whether a pull request is safe to merge with `land`'s merge gate.
 
 ### rewrite (v3.0.0)
 
