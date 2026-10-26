@@ -15,16 +15,23 @@
 # --rerequest <bot> implies --bot <bot> and posts the bot's re-request comment
 # once, after a poll finds the pull request open on <head-sha> and the bot not
 # settled; a notice older than that post is then ignored.
+# A bot that labels its own findings (own_severity in BOTS) is re-requested only
+# when one of its comments or reviews on the pull request carries its own
+# Critical or Major label; otherwise --rerequest exits 2 before any poll, and a
+# --bot whose notice asks for a re-request exits 2 instead of posting, unless
+# the notice is a rate limit. It checks that such a label exists on the pull
+# request, not that this push fixed that finding; ship's caller decides that.
 #
 # | Exit | Meaning                                                              |
 # | ---- | -------------------------------------------------------------------- |
 # | 0    | settled, every check passed                                          |
 # | 1    | settled, one or more checks failed; prints each failed check's name  |
-# | 2    | usage error, or gh or jq missing                                     |
+# | 2    | usage error, gh or jq missing, or a re-request the bot's own finding |
+# |      | labels do not allow                                                  |
 # | 3    | head moved: it is no longer <head-sha>                               |
 # | 4    | deadline passed before settling; prints what is still pending        |
-# | 5    | forge error: 3 consecutive failed polls, or a failed re-request      |
-# |      | comment; prints the last error text                                  |
+# | 5    | forge error: 3 consecutive failed polls, a failed re-request         |
+# |      | comment, or a failed read of a bot's findings; prints the error text |
 # | 6    | a bot will not review (trial or plan quota notice); prints the notice |
 # | 7    | pull request is no longer open (MERGED or CLOSED); prints its state  |
 #
@@ -60,10 +67,13 @@ MAX_FAILED_POLLS=3
 # Mirrors the table in bots.md; change both together.
 # login is the GraphQL login, which has no [bot] suffix.
 # A bot settles on whichever of status, check_run, or review_on_sha it defines.
+# own_severity matches the bot's own Critical or Major label in a comment body,
+# in each CodeRabbit format: "</picture> Major**", "**🟠 Major**", and "_🟠 Major_".
 BOTS='{
   "coderabbit": {
     "login": "coderabbitai",
     "rerequest": "@coderabbitai review",
+    "own_severity": "(</picture>|🔴|🟠) (Critical|Major)(\\*\\*|_)",
     "status": {"context": "CodeRabbit", "settled": "Review completed", "notice": "rate limit(ed)?|Review skipped"}
   },
   "greptile": {
@@ -189,6 +199,7 @@ STILL_PENDING='[
 usage() {
   echo "usage: watch.sh <pr-number> <head-sha> --repo <owner/name> [--bot coderabbit|greptile]... [--rerequest coderabbit|greptile]... [--deadline <seconds>] [--interval <seconds>]" >&2
   echo "  --rerequest <bot> implies --bot <bot> and posts its re-request comment once, after a poll finds the pull request open on <head-sha> and the bot not settled" >&2
+  echo "  a bot that labels its own findings is re-requested only when it labeled one Critical or Major on the pull request; otherwise it exits 2" >&2
   finish usage "$1"
 }
 
@@ -229,6 +240,31 @@ done
 errfile=$(mktemp)
 trap 'rm -f "$errfile"' EXIT
 
+# Succeeds when one of the bot's review comments or reviews on the pull request
+# carries its own Critical or Major label (own_severity), or when the bot has no
+# own_severity. Ship's triage may grade a finding higher than the bot did, but
+# only the bot's label spends a re-review (bots.md, Re-request).
+labeled() {
+  local login pattern path out rc
+  pattern=$(jq -r --arg b "$1" '.[$b].own_severity // empty' <<<"$BOTS")
+  [ -n "$pattern" ] || return 0
+  login=$(jq -r --arg b "$1" '.[$b].login' <<<"$BOTS")
+  for path in "pulls/$pr/comments" "pulls/$pr/reviews"; do
+    rc=0
+    out=$(gh api --paginate "repos/$repo/$path" 2>"$errfile") || rc=$?
+    [ "$rc" = 0 ] || finish forge "reading $1 findings failed: $(tr '\n' ' ' <"$errfile")"
+    jq -se --arg l "$login" --arg p "$pattern" 'add // [] | any(.[];
+      (.user.login // "" | sub("\\[bot\\]$"; "")) == $l and (.body // "" | test($p)))' \
+      <<<"$out" >/dev/null && return 0
+  done
+  return 1
+}
+
+for bot in $(jq -r '.[]' <<<"$forced"); do
+  labeled "$bot" ||
+    finish usage "--rerequest $bot: no $bot finding on pull request $pr carries its own Critical or Major label"
+done
+
 # Sets $verdict on success; sets $error and returns 1 on a failed poll.
 poll() {
   local out rc=0 grace_over=false reduced
@@ -253,11 +289,17 @@ v() { jq -r "$@" <<<"$verdict"; }
 
 # Posts the re-request comment of each bot in the JSON array $1 that this run
 # has not re-requested yet. A failed post ends the run, because a post that may
-# have landed must not be retried.
+# have landed must not be retried. A --bot whose notice asks for a re-request
+# gets the same label check as --rerequest, unless the notice is a rate limit,
+# which retries a review that never ran.
 rerequest() {
   local bot comment rc
   for bot in $(jq -r '.[]' <<<"$1"); do
     [ "$(jq --arg b "$bot" 'has($b)' <<<"$rerequested")" = false ] || continue
+    if [ "$(jq --arg b "$bot" 'any(.[]; . == $b)' <<<"$forced")" = false ] &&
+      ! v --arg b "$bot" '.notices[$b] // ""' | grep -qi 'rate limit' && ! labeled "$bot"; then
+      finish usage "--bot $bot: its notice asks for a re-request, but no $bot finding on pull request $pr carries its own Critical or Major label"
+    fi
     rerequested=$(jq -c --arg b "$bot" --argjson t "$(date +%s)" '.[$b] = $t' <<<"$rerequested")
     comment=$(jq -r --arg b "$bot" '.[$b].rerequest' <<<"$BOTS")
     rc=0
