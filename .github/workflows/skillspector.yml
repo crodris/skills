@@ -13,6 +13,7 @@ on:
       - "bin/test-guard.sh"
       - "bin/test-resolve-verify.sh"
       - "bin/test-land.sh"
+      - "bin/test-settle-branch.sh"
       - "bin/check-pipeline-skills.sh"
       - "bin/test-check-pipeline-skills.sh"
       - ".github/workflows/skillspector.yml"
@@ -27,6 +28,7 @@ on:
       - "bin/test-guard.sh"
       - "bin/test-resolve-verify.sh"
       - "bin/test-land.sh"
+      - "bin/test-settle-branch.sh"
       - "bin/check-pipeline-skills.sh"
       - "bin/test-check-pipeline-skills.sh"
       - ".github/workflows/skillspector.yml"
@@ -53,6 +55,9 @@ jobs:
 
       - name: Check ship's guard.sh against scratch repositories
         run: bin/test-guard.sh
+
+      - name: Check ship's settle-branch.sh against scratch repositories
+        run: bin/test-settle-branch.sh
 
       - name: Check prove's resolve-verify.sh against scratch repositories
         run: bin/test-resolve-verify.sh

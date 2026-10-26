@@ -34,6 +34,6 @@ skills/rewrite/template.md 624
 skills/scaffold/SKILL.md 1965
 skills/ship/boundary.md 1021
 skills/ship/config.md 547
-skills/ship/SKILL.md 1711
+skills/ship/SKILL.md 1246
 skills/verification-audit/SKILL.md 911
 skills/worktree-setup/SKILL.md 249
