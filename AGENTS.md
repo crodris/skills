@@ -18,9 +18,6 @@ Tool names, model names, and other per-agent details go in `skills/fathom-shared
 Material that only some runs need goes in a separate file behind a pointer, such as `execute/fan-out.md`.
 The main `SKILL.md` keeps what every run needs.
 
-Every Markdown file in `skills/` has a word budget in `bin/skill-budgets.txt`, and `bin/check-skill-size.sh` fails when a file goes over it or has none.
-A trim lowers the budget in the same pull request, and raising one needs a reason in the pull request.
-
 Keep a reason only when a rule is easy to misread without it.
 Write one sentence per line, in plain declarative sentences, with one term per concept.
 
@@ -35,6 +32,9 @@ CI fails when running it would change a file.
 `git config core.hooksPath bin/hooks` runs it before each commit.
 README headings for plugins and standalone skills keep the form `### <name> (v<version>)`, since the sync finds them by it.
 A skill that no plugin claims is listed under `## Standalone Skills` in the README.
+
+Every Markdown file in `skills/` has a word budget in `bin/skill-budgets.txt`, and `bin/check-skill-size.sh` fails when a file goes over it or has none.
+A trim lowers the budget in the same pull request, and raising one needs a reason in the pull request.
 
 Credit adapted outside work in the README's License section.
 

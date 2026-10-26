@@ -51,6 +51,29 @@ printf 'skills/demo/SKILL.md lots\n' > "$dir/bin/skill-budgets.txt"
 expect "a malformed budget line fails" 1 "$dir" "expected \"<path> <words>\""
 
 dir=$(scratch)
+printf 'skills/demo/SKILL.md 3 extra\n' > "$dir/bin/skill-budgets.txt"
+expect "a budget line with three fields fails" 1 "$dir" "expected \"<path> <words>\""
+
+dir=$(scratch)
+printf 'skills/demo/SKILL.md\n' > "$dir/bin/skill-budgets.txt"
+expect "a budget line with only a path fails" 1 "$dir" "expected \"<path> <words>\""
+
+dir=$(scratch)
+printf 'skills/demo/SKILL.md 9\n' >> "$dir/bin/skill-budgets.txt"
+expect "a duplicate budget line fails" 1 "$dir" "skills/demo/SKILL.md already has a budget"
+
+dir=$(scratch)
+mkdir -p "$dir/skills/demo/deep dir"
+printf 'two words\n' > "$dir/skills/demo/deep dir/my file.md"
+printf 'skills/demo/deep dir/my file.md 2\n' >> "$dir/bin/skill-budgets.txt"
+expect "a nested path with spaces takes its budget" 0 "$dir"
+
+dir=$(scratch)
+printf 'skills/demo/ignored.md\n' > "$dir/.gitignore"
+printf 'ignored notes\n' > "$dir/skills/demo/ignored.md"
+expect "a git-ignored file is not checked" 0 "$dir"
+
+dir=$(scratch)
 rm "$dir/skills/demo/SKILL.md"
 printf '# budgets\n' > "$dir/bin/skill-budgets.txt"
 expect "a tracked file deleted from the tree is skipped" 0 "$dir"

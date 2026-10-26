@@ -1,6 +1,4 @@
-# Word budgets for every Markdown file in skills/, read by bin/check-skill-size.sh.
-# A budget only moves down. A trim lowers it, and raising one needs a reason in the pull request.
-# Each budget started at the file's word count on 2026-10-26.
+# Word budgets read by bin/check-skill-size.sh. AGENTS.md says when to change them.
 skills/execute/fan-out.md 1346
 skills/execute/README.md 7930
 skills/execute/SKILL.md 4468
