@@ -279,6 +279,17 @@ rules:
       boundary.md requires. bin/test-guard.sh
       covers the refusals and a stale lease failing.
 
+  - id: "TM1"
+    path: "cleanup.sh"
+    message: "*git push --force*"
+    reason: >-
+      Reviewed, intentional: land's cleanup.sh deletes the merged branch on
+      the remote only with --force-with-lease pinned to the merged head, so a
+      commit pushed after its tip check makes the delete fail instead of
+      erasing that commit. It pushes nothing else, and only after the forge
+      reports the pull request merged from that branch. bin/test-land.sh
+      covers a push landing after the check.
+
   - id: "LP3"
     path: "SKILL.md"
     message: "*capabilities were detected: file_read.*"

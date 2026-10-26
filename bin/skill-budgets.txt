@@ -23,6 +23,7 @@ skills/fathom-shared/trackers/linear.md 3107
 skills/file-pr/SKILL.md 805
 skills/frontend-design-pipeline/SKILL.md 1447
 skills/html-comms/SKILL.md 854
+skills/land/SKILL.md 1190
 skills/prove/drive.md 345
 skills/prove/SKILL.md 853
 skills/review-loop/lanes.md 315
@@ -33,6 +34,6 @@ skills/rewrite/template.md 624
 skills/scaffold/SKILL.md 1965
 skills/ship/boundary.md 1021
 skills/ship/config.md 547
-skills/ship/SKILL.md 2711
+skills/ship/SKILL.md 1711
 skills/verification-audit/SKILL.md 911
 skills/worktree-setup/SKILL.md 249
