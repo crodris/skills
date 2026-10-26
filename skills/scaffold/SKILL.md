@@ -9,92 +9,63 @@ version: 3.0.0
 ## Absolute boundary
 
 Treat the connected tracker MCP as the only channel for tracker work.
-When it is absent or disabled, refuse the request and stop.
-Say which MCP is missing and that the user must connect it before this skill can continue.
-Refuse even when a bypass looks possible and helpful.
-Do not read or search for credentials in files, environment variables, or token caches.
-Do not call tracker HTTP APIs.
-Do not edit MCP or agent configuration.
-Treat a disabled server as a deliberate user decision, a stop condition, never an obstacle to route around.
+When it is absent or disabled, refuse and stop, naming the missing MCP and saying the user must connect it, even when a bypass looks possible and helpful.
+Never search for credentials in files, environment variables, or token caches, never call tracker HTTP APIs, and never edit MCP or agent configuration.
+A disabled server is the user's decision and a stop condition.
 
-This skill turns requirements into a scaffolded tracker issue plus its linked sub-issues.
-In ask mode nothing is created in the tracker before the user approves the draft; in auto mode the scaffold is created without that approval, per `../execute/approval.md`.
-Tracker access goes only through the connected tracker MCP; when it is missing, stop and say so; never hunt for credentials on disk or call tracker APIs directly.
-This skill never writes task-memory or checklist files; the execute skill creates task memory when it runs its breakdown.
+This skill never writes task-memory or checklist files.
 
 ## Read first
 
-Before doing any tracker work, read:
+Before any tracker work, read these files.
+Their paths are relative to this SKILL.md's directory and point into the `execute` skill installed beside it.
 
-These paths are relative to the directory containing this SKILL.md file, not the current workspace, and they point into the execute skill installed next to this one.
-When `../execute/` does not exist there, stop before anything else and give its install command for the user to run, matching how this skill was installed; never run it yourself.
-That is `npx skills@latest add crodris/skills -s execute file-pr -g` for a global install, without `-g` for a project install, with the same `-a <agent>` flag the install used, such as `-a kiro-cli` on Kiro, and `/plugin install fathom@crodris` again for a Claude Code plugin install.
+- `../execute/trackers.md` for the tracker contract and the profile's default destination.
+- `../execute/agents.md` for the per-agent notes and the structured question mechanism every question here uses.
+- `../execute/approval.md` for the two approval modes and the stops that hold in both.
 
-- `../execute/trackers.md` for the tracker contract and the tracker profile default destination.
-- `../execute/agents.md` for the per-agent notes, including the structured question mechanism to prefer whenever this procedure asks the user anything.
-- `../execute/approval.md` for the two approval modes, and for the stops that hold in both.
-
-If any of these files cannot be found and read, stop immediately and report which paths were tried - never improvise their contracts from memory or proceed without them.
+When `../execute/` does not exist, stop first and give its install command for the user to run, never running it yourself.
+That is `npx skills@latest add crodris/skills -s execute file-pr -g` for a global install, without `-g` for a project install, with the install's `-a <agent>` flag, such as `-a kiro-cli`, and `/plugin install fathom@crodris` for a Claude Code plugin install.
+When any of these files cannot be read, stop and report which paths were tried, never improvising its contract.
 
 ## Procedure
 
 1. Resolve the approval mode per `../execute/approval.md` and state it.
-   Then determine whether the tracker is already settled, in the shared precedence order from `../execute/trackers.md`: the invocation names one, a profile records one, or exactly one tracker MCP is connected; an invocation-named tracker wins over the profile.
-   When it is settled, run preflight verification against that tracker as described in `../execute/trackers.md`; stop there when the tracker's MCP does not verify.
-   This skill creates tracker issues and never opens a review, so the forge's state does not gate it; a repository with no usable forge can still be scaffolded.
-   When it is not settled, because no profile exists and both tracker MCPs are connected, do not guess which MCP to verify: defer preflight to step 3, which asks the tie-break question first and then runs preflight against the answer.
-2. Run the done-on-merge sweep for the resolved tracker, whose tracker-agnostic mechanics are in `../execute/trackers.md`; it is tracker work, so it only runs once preflight has verified the MCP.
-   When preflight was deferred in step 1, defer this sweep with it; step 3 runs both once the tracker is chosen.
+   When the precedence in Preflight verification in `../execute/trackers.md` settles the tracker, run preflight against it, and stop when its MCP does not verify.
+   The forge never gates this skill.
+   When that precedence leaves two connected tracker MCPs to choose between, defer preflight to step 3.
+2. Run the done-on-merge sweep per `../execute/trackers.md` once preflight has verified the MCP; when preflight was deferred, defer the sweep with it.
 3. Resolve the tracker, then the destination.
-   - There is no existing issue ref to infer the tracker from, so this step settles the tracker explicitly.
-   - Preflight and the sweep in the previous steps run against the tracker inferred from the profile, or from the single connected MCP when there is no profile; when neither settles it, do the tie-break question here first and then run preflight and the sweep against the answer before continuing.
-   - Use the tracker the invocation names; otherwise the one the tracker profile records; otherwise check which tracker MCPs are connected.
-   - With exactly one connected, use it; with both connected, ask the user once which one to use.
-   - When neither tracker MCP is connected, stop and report a clear message naming both supported trackers, Asana and Linear.
-   - Once the tracker is resolved, when the user gave an explicit destination hint, resolve it with `resolveDestination`.
-   - Otherwise resolve the tracker profile's configured default destination.
-   - When there is no hint and no configured default, call `listDestinations`, list them to the user, and ask once which one to use; do not infer a destination from any other source.
-   - A suggestion drawn from prior issues in the repo may accompany that question, but the question must still be asked and answered before anything is created.
-   - When the repository has no tracker profile at all, run first-run setup from `../execute/trackers.md` to completion before showing the issue draft: all six of its steps in order, confirming the destination, the state mapping, the forge, the adapter's profile-load offers such as the merge-closer question, the base branch, and the approval mode.
-     Ask each setup question on its own and get its answer before asking the next; never show the issue draft while a setup question is still unanswered.
-4. Gather the requirements before drafting.
-   - Take them from the invocation itself when the text is there.
-   - When the invocation names or points at a file, such as a PRD, spec, or design doc, read that file and use it as the requirements; a path or filename in the request means read it rather than working from the filename alone.
-   - Otherwise, or when the user names the current conversation as the source, synthesize the requirements from this conversation instead of interviewing them; step 6's questions still fire when it is too thin, unclear in scope, or open to two incompatible readings.
-   - Summarize what you understood in one or two sentences so the user can catch a misread before any drafting happens.
-5. Ground the breakdown in the codebase before drafting.
-   - Search and read the files the requirements would touch, and note the existing patterns, module boundaries, and test style you find.
-   - Use that to name real files and real functions in the sub-issue drafts, since a breakdown that names actual paths is actionable and one written from prose alone is generic.
-   - When the repository has nothing related yet, say so and draft from the requirements alone.
-6. Judge whether the requirements can carry a breakdown at all.
-   - When they are too thin to split sensibly, when scope is unclear, or when two incompatible readings are both plausible, do not invent a confident breakdown.
-   - Ask targeted questions about exactly what is missing, one question at a time, and wait for answers before drafting.
-   - Prefer the structured question mechanism named in `agents.md` for those questions.
-   - When the requirements leave the approach open, propose two or three distinct approaches, each with its trade-offs, and recommend one.
-     In ask mode, ask it on its own, once every targeted question is answered, with the structured question mechanism, and wait for the choice; in auto mode, take the recommended approach and say so.
-     Draft the main issue and every sub-issue from the chosen approach, and skip this when the requirements already fix the approach.
-7. Draft the scaffold from the gathered requirements and the codebase context.
-   - Write a main issue title and a description in four parts: the problem from the user's side, the solution from the user's side, numbered user stories in the form "As a <actor>, I want <feature>, so that <benefit>", and the test seams, preferring the highest existing seam each behavior can be tested at.
-   - Infer the main issue's type from the requirements, one of feature, bug, chore, or docs, defaulting to feature when the requirements do not indicate one.
-   - Break the requirements into sub-issue drafts, as many as the unit rule in `../execute/SKILL.md` step 8 allows, each a tracer-bullet vertical slice: a narrow path through every layer the change touches, demoable on its own, and never one layer of the whole feature.
-   - Give each draft its blocking edges, the other drafts that must land before it can start, or none, and order the drafts so every blocker comes before what it blocks.
-   - In ask mode, show the full draft, main issue title, type, description, and every sub-issue, to the user and wait for approval before creating anything.
-   - In auto mode, skip that approval: create the scaffold immediately and report the same draft content as what was created.
-   - Draft approval must be the only open question in that turn; never show it alongside a setup question or any other unanswered question.
-   - In ask mode, apply any edits the user requests, then show the revised draft again until it is approved.
-   - When a reply could answer more than one open question, or its target is unclear, stop and ask which question it answered; do not guess.
-   - In ask mode, treat only an explicit, unambiguous approval of the draft as permission to create anything; never treat an ambiguous or negative reply, such as a bare "decline", as draft approval.
-8. Create the scaffold, once approved in ask mode or immediately in auto mode.
-   - Call `createIssue` for the main issue using the approved title, description, type, and resolved destination.
-   - Call `createSubIssue` once per approved sub-issue draft, in that order, linking each to the newly created main issue.
-   - Creating blockers first gives each later sub-issue real refs to name, so end each sub-issue description with a `Blocked by:` line listing each blocker's Linear key or full Asana task URL, or `none`.
-   - Report the result as a compact block listing the tracker, the main issue ref, title and URL, then one line per sub-issue with its ref and URL, so the scaffold is scannable at a glance.
-   - Report each issue's ref using that tracker's issue ref scheme, as defined in that tracker's adapter file; for Asana this is the short `asana-<last six digits of the GID>` form, never the full GID.
-   - Hand off with a reference the adapter's `getIssue` can resolve in a fresh session: the key for Linear, and for Asana the full task URL alongside the short ref, since the truncated form alone cannot be resolved back to the task.
-   - In auto mode, where execute starts at once, put that compact block in the run's final reply beside execute's final summary.
-9. A per-invocation destination hint applies only to the issue just created; do not overwrite the tracker profile's saved default because of it.
-   Write `default-destination` into the tracker profile only when the profile currently has none, or when the user explicitly asks to change the default.
-10. Hand off, always with the resolvable reference from step 8: the key for Linear, the full task URL for Asana, keeping the short Asana ref for display only, since `getIssue` cannot resolve the truncated form in a fresh session.
-   In ask mode, ask "run execute on <ref> now?"; in auto mode, call the Skill tool with "execute" on that reference without asking and say that you are doing so.
-   - When the user says yes, call the Skill tool with "execute" on that reference.
-   - When the user says no, stop here and leave the issue in the tracker for a later run.
+   - Use the tracker step 1 settled.
+     When it deferred preflight, ask once which tracker to use, then run preflight and the sweep against the answer.
+     When no tracker MCP is connected, stop and name both supported trackers, Asana and Linear.
+   - When the repository has no tracker profile, run first-run setup from `../execute/first-run.md` to completion first, so the destination below resolves from the profile it writes.
+   - Resolve the destination per Destination resolution in `../execute/trackers.md`, passing an explicit destination hint to `resolveDestination`.
+4. Gather the requirements.
+   Take them from the invocation text, or read the file it names or points at, such as a PRD, spec, or design doc.
+   Otherwise, or when the user names this conversation as the source, synthesize them from the conversation instead of interviewing the user.
+   Summarize them in one or two sentences.
+5. Read the files the requirements would touch, and name real files and functions in the sub-issue drafts.
+   When nothing related exists yet, say so.
+6. When the requirements are too thin to split, unclear in scope, or open to two incompatible readings, ask targeted questions about what is missing, one at a time, and wait for the answers before drafting.
+   When they leave the approach open, propose two or three approaches with their trade-offs and recommend one.
+   In ask mode, ask for the choice on its own, after every targeted question is answered, and wait; in auto mode, take the recommended one and say so.
+7. Draft the scaffold.
+   - The main issue: a title, a type (feature, bug, chore, or docs, defaulting to feature), and a description in four parts: the problem and the solution from the user's side, numbered user stories as "As a <actor>, I want <feature>, so that <benefit>", and the test seams, preferring the highest existing seam for each behavior.
+   - Sub-issue drafts from the chosen approach, as many as the unit rule in `../execute/SKILL.md` step 8 allows, each a tracer-bullet vertical slice through every layer the change touches, demoable on its own.
+   - Each draft's blocking edges, the drafts that must land before it or none, with the drafts ordered so every blocker comes before what it blocks.
+
+   In ask mode, show the full draft as the only open question in that turn, apply any requested edits and show it again, and create nothing until the user approves it explicitly and unambiguously.
+   An ambiguous or negative reply, such as a bare "decline", is not approval.
+   In auto mode, create the scaffold at once and report the draft as what was created.
+   When a reply could answer more than one open question, or its target is unclear, ask which question it answered.
+8. Create the scaffold.
+   - Call `createIssue` with the title, description, type, and resolved destination.
+   - Call `createSubIssue` once per sub-issue draft, in order, linked to the main issue, and end each description with a `Blocked by:` line listing each blocker's Linear key or full Asana task URL, or `none`.
+   - Report a compact block: the tracker, the main issue's ref, title, and URL, then one line per sub-issue with its ref and URL.
+     Write each ref in the adapter's issue ref scheme, which for Asana is `asana-<last six digits of the GID>`.
+   - In auto mode, put that block in the run's final reply beside execute's final summary.
+9. Write `default-destination` into the profile only when it has none or the user asks to change it; a destination hint applies only to this issue.
+10. Hand off with a reference `getIssue` can resolve in a fresh session: the Linear key, or the full Asana task URL, keeping the short Asana ref for display.
+    In ask mode, ask "run execute on <ref> now?"; on yes, invoke execute on that reference, as Invoking another skill in `../execute/agents.md` says, and on no, stop.
+    In auto mode, invoke execute on that reference the same way without asking, and say so.

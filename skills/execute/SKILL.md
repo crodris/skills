@@ -9,199 +9,120 @@ version: 3.0.0
 ## Absolute boundary
 
 Treat the connected tracker MCP as the only channel for tracker work.
-When it is absent or disabled, refuse the request and stop.
-Say which MCP is missing and that the user must connect it before this skill can continue.
-Refuse even when a bypass looks possible and helpful.
-Do not read or search for credentials in files, environment variables, or token caches.
-Do not call tracker HTTP APIs.
-Do not edit MCP or agent configuration.
-Treat a disabled server as a deliberate user decision, a stop condition, never an obstacle to route around.
+When it is absent or disabled, refuse and stop, naming the missing MCP and saying the user must connect it, even when a bypass looks possible and helpful.
+Never search for credentials in files, environment variables, or token caches, never call tracker HTTP APIs, and never edit MCP or agent configuration.
+A disabled server is the user's decision and a stop condition.
 
-This skill drives one tracker issue through a single resumable autonomous pass, from breakdown through implementation to an open code review; several issues named at once each get that pass on a subagent, per `fan-out.md`.
-There is no separate start step and finish step; re-invoke this same skill on the same issue to resume wherever the last run left off.
-Every run begins by reading durable state from the repository and the tracker, not from anything remembered between invocations.
-
-## Operating principles
-
-- After the first-run tracker profile is confirmed, proceed without further mid-run confirmation; only stop when this procedure or `approval.md` says to stop.
-- The memory backend is the source of truth for task state; state flows one way from it to the tracker, never the reverse.
+This skill drives one tracker issue through one resumable autonomous pass, from breakdown to an open code review.
+Re-invoke it on the same issue to resume, since every run reads its state from the repository and the tracker, never from memory.
+Once the tracker profile is settled, stop only where this procedure or `approval.md` says.
+Task state flows one way, from the memory backend to the tracker.
 
 ## Read first
 
-Before doing any tracker or memory work, read:
+Paths are relative to this file's directory.
+When `../file-pr/` is missing, stop and give the user the install command for how this skill was installed, without running it: `npx skills@latest add crodris/skills -s file-pr -g` for a global install, without `-g` for a project install, with the install's `-a <agent>` flag such as `-a kiro-cli`, or `/plugin install ship@crodris` for a Claude Code plugin.
 
-These paths are relative to the directory containing this SKILL.md file, not the current workspace.
-When `../file-pr/` does not exist next to this skill, stop before anything else and give the install command for the user to run, matching how this skill was installed; never run it yourself.
-That is `npx skills@latest add crodris/skills -s file-pr -g` for a global install, without `-g` for a project install, with the same `-a <agent>` flag the install used, such as `-a kiro-cli` on Kiro, and `/plugin install ship@crodris` for a Claude Code plugin install.
-
-- `trackers.md` for the tracker contract, phase names, and first-run profile setup.
-- `forges.md` for the forge contract, adapter resolution, the capability tiers, and base-branch resolution.
-- `memory.md` for the memory contract and backend resolution rules.
-- `agents.md` for the per-agent notes that apply to whichever agent is running this skill.
-- `conventions.md` for staging safety, commit messages, the plan document, and progress reporting.
-- `approval.md` for the two approval modes, and for the stops that hold in both.
-
-If any of these files cannot be found and read, stop immediately and report which paths were tried - never improvise their contracts from memory or proceed without them.
+From the first tool call, note each one the harness refuses, for the report the Permissions section of `agents.md` describes.
+Before any tracker or memory work, read `trackers.md`, `forges.md`, `memory.md`, `agents.md`, `conventions.md`, and `approval.md`.
+When one cannot be read, stop and report the paths tried; never improvise a contract.
+Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `first-run.md`, `stack.md`, or an adapter, only at the step that names it and only once that step's condition holds.
 
 ## Procedure
 
-1. Resolve the approval mode per `approval.md` and state it, then run preflight verification per `trackers.md` before any other tracker step, inferring the target tracker by that section's precedence.
-   Stop here, following that section's instructions, when the tracker's MCP does not verify.
-   A forge that does not verify is not a stop: it selects a capability tier per `forges.md`; state the resolved tier before continuing.
-   When a resumed run resolves the manual tier on an issue whose earlier bundles already have open reviews, leave those reviews alone and hand the remaining bundles off manually, saying that the tier changed between runs so the stack is now half automated and half manual.
-   Say with it that no later run will move this issue to `done` on its own, because the manual tier cannot observe what happened to a review, so closing the issue is now a manual step.
-2. Run the done-on-merge sweep per `trackers.md`, including its collection of a stack's records from every bundle branch and its ordered cases.
-   When the sweep's partial-progress case decides a stacked issue, run the restack check in `stack.md` in this skill's folder, on a cleanup-phrase run too.
-   When the invocation itself was a cleanup phrase, run only this sweep and that restack check, report what they found, then stop; do not continue into the rest of this procedure.
-   Treat any claim about a review's fate as a cleanup phrase, whether it says merged, closed, abandoned, landed, or shipped, and whether it names an issue or asks to clean up whatever is outstanding.
-   Never act on the claim itself: confirm each referenced review's real state through `getReviewState` first, then apply the merged path or the closed-without-merging path accordingly, and say plainly when the confirmed state differs from what the user described.
-   When the resolved forge declares `reviewLookup: none`, neither the claim nor the sweep can be checked: say so once and act on nothing, closing no issue on the strength of an unverifiable claim.
-3. Resolve which tracker owns this issue and which memory backend owns its task state, following `trackers.md` and `memory.md`, including `memory.md`'s stop when the base tracks beads but `bd where` fails.
-   Load the existing `.fathom/config.md` tracker profile, or run first-run setup when none exists; either way, run the tracker adapter's profile-load checks and honor any one-time offers they define.
-   On an agent that can spawn subagents, resolve the subagent models as `agents.md` says, asking only when no source names a role.
-4. When the invocation names two or more issues, read `fan-out.md` in this skill's folder and follow its several-issues section instead of the rest of this procedure.
-   Before reading the branch name, check whether this checkout holds a base update paused by an earlier hold: `git rev-parse -q --verify MERGE_HEAD` succeeds mid-merge, and a `head-name` file exists at the path `git rev-parse --path-format=absolute --git-path rebase-merge/head-name` or `git rev-parse --path-format=absolute --git-path rebase-apply/head-name` prints mid-rebase.
-   Run each of these on its own, as the Permissions section of `agents.md` says, and read that file by the printed path.
-   When one is paused, read the branch from `git branch --show-current` mid-merge, or from that `head-name` file mid-rebase, since a paused rebase detaches HEAD.
-   Then run no switch, no fetch-and-update, and never `git merge --quit` until step 7's resume rule finishes or holds the update, since quitting drops the merge's second parent.
-   Then determine the issue ref from the invocation argument, a pasted issue URL, or the current branch name, which for a paused update is the branch read above, in that order of preference; when the argument and the branch name refer to different issues, stop and ask the user which one to use.
-5. Call `getIssue` for that ref and save its title, description, type, URL, and existing children for the rest of this run.
-   Make this call even when this session just created the issue, as a scaffold handoff does, since the run works from what the tracker stored, which can differ from the draft that created it.
-   When the issue is already in the `done` phase or marked complete, do not start work: say so, report what the sweep found for it, and ask whether to reopen it or pick a different issue.
-6. Search the codebase and read the files that look relevant to this issue, noting existing patterns to follow during implementation.
-7. Ensure the branch this run implements on exists, and continue on that one branch until step 10 moves a stack to its next bundle.
-   Read this issue's plan document before creating anything, when one already exists.
-   When it carries a `Bundles` section, this issue was already split: read `stack.md` in this skill's folder and follow its step 7 section, which picks the branch and recovers the stack.
-   Otherwise this is a first run with no plan document yet, or a single-review issue, and the branch is the issue branch named below.
-
-   Name a branch that must be created from the issue type (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` by default) followed by the issue ref, cased as the tracker adapter says, and a short title slug; skip creation when a matching branch already exists.
-   When that branch is checked out in another worktree, as a held issue from `fan-out.md` leaves it, continue the run from inside that worktree.
-   After fetching the base branch and before switching to or creating this branch, handle an uncommitted `.fathom/config.md`, and once on it, commit an uncommitted one as the first commit the run makes on the branch, both as the first-run tracker profile in `trackers.md` says.
-   Resolve the base branch per the base-branch rules in `forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track`, not from a local copy that may be behind.
-   Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
-   When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
-   When the update conflicts in this issue's beads file `.beads/<ISSUE-REF>.jsonl`, resolve that file first as `memory/beads.md` says, even when other files conflict too.
-   When any other file is still conflicted, stop and hold exactly as an unfixable test failure would, and leave the update paused where git stopped it, mid-merge or mid-rebase, so the user resolves it in place.
-   Keep the work, leave the task in progress, and report each conflicting file with what this branch and the base each changed in it.
-   Name the sides "this branch" and "the base", since a rebase swaps which one git calls ours.
-   Ask the user to `git add` each file once it is resolved, and leave the choice of resolution to them, recommending neither side.
-   When you say what keeping a side would mean, such as which planned tasks it would already cover, say it for both sides or for neither.
-   Never resolve a conflict by discarding either side's changes.
-   When step 4 finds an update paused and `git ls-files -u` still lists this issue's beads file, resolve that file first as `memory/beads.md` says.
-   A run that stopped inside that recipe leaves the file conflicted.
-   When the update is still paused after that, hold again while `git ls-files -u` lists a conflicted file or `git diff --cached --check` reports a leftover conflict marker.
-   Otherwise finish it with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`.
-   When any `--continue`, including the one in the beads recipe, stops the rebase on its next commit, start again from the check for this issue's beads file above.
-   On a stack these rules describe bundle 1's branch, and `stack.md` names and creates the later bundles' branches.
+1. State the approval mode per `approval.md`, then run preflight verification per `trackers.md`, stopping as it says when the tracker's MCP does not verify.
+   An unverified forge selects a capability tier per `forges.md`; state the tier and continue.
+2. Run the done-on-merge sweep per `trackers.md`, and when its partial-progress case decides a stacked issue, run the restack check in `stack.md`.
+   Any claim about a review's fate is a cleanup phrase, whether it says merged, closed, abandoned, landed, or shipped, and whether or not it names an issue.
+   On a cleanup phrase, run only the sweep and the restack check, report what they found, and stop.
+   Never act on the claim: confirm each review's state with `getReviewState`, and say when it differs from what the user described.
+   When the forge declares `reviewLookup: none`, say once that the claim cannot be checked, and close nothing.
+3. Resolve the tracker per `trackers.md`.
+   Load the profile as Tracker profile in `trackers.md` says, with the tracker adapter's profile-load checks and one-time offers.
+   On an agent that can spawn subagents, resolve the subagent models per `agents.md`.
+4. When the invocation names two or more issues, follow the Several issues section of `fan-out.md` instead of the rest of this procedure.
+   Check for a base update an earlier hold paused, one command per call as the Permissions section of `agents.md` says.
+   Mid-merge, `git rev-parse -q --verify MERGE_HEAD` succeeds.
+   Mid-rebase, `ls <path>` prints the path that `git rev-parse --path-format=absolute --git-path rebase-merge/head-name` or `git rev-parse --path-format=absolute --git-path rebase-apply/head-name` prints, since `--git-path` prints a path whether or not the file exists.
+   It fails with "No such file" when no rebase is paused, which shows in the output where `test -f` would print nothing.
+   When one is paused, follow Paused base update in `resume.md`.
+   Take the issue ref from the invocation argument, then a pasted issue URL, then the current branch name, and when the argument and the branch disagree, ask which issue to use.
+5. Call `getIssue` for the ref, even for an issue this session just created, and keep its title, description, type, URL, and children.
+   When it is already `done`, start no work: say so, report what the sweep found, and ask whether to reopen it or pick another issue.
+6. Read the files relevant to this issue, and note the patterns to follow.
+7. Settle the branch this run implements on, and stay on it until step 10 moves a stack to its next bundle.
+   When the plan document carries a `Bundles` section, follow the step 7 section of `stack.md`, and in the manual tier also follow Manual tier on a stack in `resume.md`.
+   Otherwise the branch is the type prefix (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` otherwise), the issue ref cased as the tracker adapter says, and a short title slug.
+   Resolve the base and fetch it as the Base branch resolution section of `forges.md` says.
+   When `git status --porcelain -- .fathom/config.md` prints a line, follow Committing the profile in `first-run.md`, before switching branches and once on the branch.
+   When the issue branch exists, follow Existing branch in `resume.md`.
+   Otherwise create it from `origin/<base>` with `--no-track`, so a plain `git push` never pushes to the base.
+   Every push of the issue branch uses `git push -u origin <branch>`, plus the lease flag `stack.md` names where it pushes a rebased branch.
+   On a stack these rules describe bundle 1's branch, and `stack.md` handles the later bundles.
+   Once on the branch, resolve the memory backend per `memory.md`, including its stop when the base tracks beads but `bd where` fails, so a checklist that lives only on this branch is found.
 8. Ensure the breakdown exists.
-   - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.
-     When that plan document carries a `Bundles` section but step 7 recovered no stack, go back to step 7 and recover it before implementing anything.
-     Then call `init` for the issue before moving on, so the memory backend's checks still run and a run resumed on another machine imports the issue's tasks before step 10 reads them.
-     When beads is the backend, then run the sync steps in the Dolt remote section of `memory/beads.md`, which retries a sync that an interrupted run never finished.
-   - Plan the units of work before writing anything to the tracker or the memory backend.
-     When the issue has no existing children, plan up to seven units of work, each small enough to review as one commit and complete enough to verify on its own, and hold that plan rather than creating anything from it yet.
-     Plan only as many units as the issue's requirements support, which is one or two for a small issue, and never add a unit the issue does not ask for to pad the breakdown.
-     When the issue already has children, call `listSubIssues` to adopt them instead of inventing a new breakdown, which reads the tracker without writing to it.
-     Make these reads even right after a scaffold handoff, for the reason step 5 gives.
-     Call `getIssue` on each adopted child and read the `Blocked by:` line that scaffold ends its description with from that response, since `listSubIssues` returns no description and a list tool that does can cut one short.
-     Order the children by those lines, so every blocker comes before what it blocks.
-     Break ties, and order children whose line is missing or reads `none`, by creation order: ascending Linear keys, or Asana's subtask order under the parent, which scaffold fills in creation order; never the order a Linear list call returns.
-     Children caught in a cycle also take their creation-order position, and the run says so.
-     Either way the units are ordered, and that order is the creation order below and the order any bundle boundary follows; the `deps` below name only real prerequisites, except on a stack, which chains every task.
-   - Decide whether this issue produces one review or a stack, from those planned units and before anything is written to the tracker.
-     Never consider a split when the resolved forge tier is the manual tier.
-     In that case, when the breakdown has five or more units, say the split was not offered because the tier cannot create reviews; below five units say nothing about it.
-     Read the profile's `stacking` field per `approval.md`; treat an absent field as `never`, and stop considering a split immediately when it reads `never`, whether it was written or absent.
-     When it reads `propose`, read `stack.md` in this skill's folder and follow its step 8 section, which decides whether to propose a split and runs the proposal stop.
-     Without a confirmed split, the issue produces a single review.
-   - Call `init` for the issue, then call `parentTask` for it, once the split question is settled.
-     These are the first writes this step makes.
-   - Create the sub-issues and their tasks next, passing each task's final `deps` to `createTask` itself, since no operation in `memory.md` adds deps to a task that already exists.
-     When no split was confirmed and the issue has no existing children, for each planned unit call `createSubIssue` first, then call `createTask` with the newly created sub-issue's ref as `subIssueRef`, then write the returned task id back onto that sub-issue so the link reads both ways, setting `deps` to the ids of the tasks it builds on, so a unit that builds on nothing gets no deps.
-     When no split was confirmed and the issue already had children, for each adopted sub-issue still call `createTask`, passing that sub-issue's existing ref as `subIssueRef` and skipping `createSubIssue` since the sub-issue already exists, then write the returned task id back onto that sub-issue the same way, and setting `deps` to the tasks of the sibling sub-issues its `Blocked by:` line names.
-     A child whose line reads `none` gets no deps; a child with no line at all deps on the task created just before it, since nobody stated its blockers.
-     A dep can only name a task that already exists, so a blocker caught in a cycle is replaced by a dep on the task created just before.
-     Real deps rather than one chain are what let independent tasks run in parallel in step 10.
-     Both branches create one sub-issue and its task at a time.
-     When a split was confirmed, create them as `stack.md`'s step 8 section says.
-   - After every child task exists, add the parent's dependency edge on each child, so the parent cannot close before its children.
-   - Whether the sub-issues were newly created or adopted, write the plan document described in `conventions.md` and commit it with the breakdown.
-     When beads is the backend, run the three export steps in One database per repository in `memory/beads.md` before that commit, so it carries `.beads/<ISSUE-REF>.jsonl`.
-     After that commit, when beads is the backend, run the sync steps in the Dolt remote section of `memory/beads.md`.
-     A confirmed split adds the `Bundles` section and the `Merge-closer` line that `stack.md` describes.
-   - Write `.fathom/tasks/<ISSUE-REF>.md` only when the resolved backend is the checklist adapter.
-9. Call `updateState` to move the issue to the `inProgress` phase.
-   For a stacked issue whose `Bundles` section records bundle 1's review, call `getIssue` again first.
-   Skip the update when it shows the issue already in `inReview`, since that review is open and moving the issue back would misreport it.
-10. Run the implementation loop until `claimNext` reports nothing claimable.
-    On a stacked issue, run the check in `stack.md`'s step 10 section before the first pass.
-    On an issue not split into a stack, read `fan-out.md` in this skill's folder before the first pass and apply its parallel-tasks section at the start of every pass; its recovery rule applies even when the running agent cannot spawn subagents.
-    Each pass through the loop does the following, in order.
-    - Call `claimNext`, and record the claim in the memory backend's own format at claim time.
-    - Move the claimed task's linked sub-issue to the `inProgress` phase, subject to the adapter's own rules for sub-issues; the Asana adapter degrades this to a no-op on subtasks, so read its subtask section rather than assuming a state change happens.
-      Never redirect a sub-issue transition onto the main issue.
-    - Implement that one unit of work, following the codebase patterns found in step 6.
-    - Run the typecheck, when the project has one, and the test files covering that unit, not the full suite.
-      On the last task of the issue, or of a bundle on a stack, run the typecheck and the full suite instead of the unit's test files, so a failure they find is fixed inside that task's commit or holds that task open.
-      When the repository has no test framework, or the touched code has no tests, say so once and write a test for the unit using whatever the project already depends on, then treat that test as this task's verification.
-      When the project genuinely cannot run tests, say so plainly in the progress line and in the review body rather than implying the work was verified.
-    - On a passing run, commit the change with a message referencing the issue ref and the task, staged and worded per `conventions.md`.
-    - Confirm the commit exists before closing anything, and record its short hash with the close per the commit-verification rules in `conventions.md`.
-    - Close the task in the memory backend and move its sub-issue to `done`, again per the adapter's sub-issue rules, recording the close as it happens rather than summarizing at the end of the loop.
-      A task is not closed until both its memory record and its sub-issue are closed; closing only the sub-issue leaves it claimable.
-    - Print the per-task progress line from `conventions.md`.
-    - On a stacked issue, when the closed task was the last one in its bundle, follow `stack.md`'s step 10 section before claiming again.
-    - On a failure that cannot be fixed, stop and hold: keep the change, leave the task in progress, report the failure, and exit without continuing the loop.
-      On a stacked issue, also name which bundles already have open reviews and which were never built.
-    One commit per task, always, even when two tasks touch the same file.
+   When it already exists, follow Existing breakdown in `resume.md` and skip the rest of this step.
+   - Plan before writing to the tracker or the memory backend.
+     With no children, plan up to seven units, each one reviewable commit that verifies alone, and only as many as the requirements support.
+     With children, adopt them through `listSubIssues`, then call `getIssue` on each for the `Blocked by:` line scaffold ends its description with, even right after a scaffold handoff.
+     Order them so every blocker precedes what it blocks.
+     Break ties, and place children whose line is missing, reads `none`, or forms a cycle, by creation order: ascending Linear keys or Asana's subtask order, never a Linear list call's order, and name any cycle.
+   - Decide between one review and a stack before any tracker write.
+     In the manual tier never split, and say the split was not offered when the breakdown has five or more units.
+     When the profile's `stacking` field reads `propose`, follow the step 8 section of `stack.md`; when it reads `never` or is absent, use one review, per `approval.md`.
+   - Then call `init` and `parentTask`, the step's first writes.
+   - Create each sub-issue and task in planned order, passing final `deps` to `createTask`, since deps cannot be added later.
+     For a new unit, call `createSubIssue`, then `createTask` with that ref as `subIssueRef` and `deps` on the tasks it builds on.
+     For an adopted child, skip `createSubIssue`, and dep on the sibling tasks its `Blocked by:` line names: none for `none`, and the previous task for a missing line or a blocker in a cycle.
+     Write each task id back onto its sub-issue.
+     A confirmed split creates them as `stack.md`'s step 8 section says.
+   - Once every child task exists, add the parent's dependency edge on each child.
+   - Commit the plan document from `conventions.md` with the breakdown, with the `Bundles` and `Merge-closer` lines on a split.
+     On beads, run the three export steps in One database per repository in `memory/beads.md` before that commit, and its Dolt remote sync steps after it.
+   - Write `.fathom/tasks/<ISSUE-REF>.md` only on the checklist backend.
+9. Move the issue to `inProgress` with `updateState`, unless `getIssue` shows the issue already in `inReview` and either this issue's file under `.fathom/` records its review, as the `- Review:` line of a single review or bundle 1's in the `Bundles` section, or the plan document carries `- Finalization: complete`.
+10. Before the first `claimNext`, finish any task a stopped run left half closed: in progress, or done with its sub-issue open or no commit recorded.
+    For each, find its commit with `git log --format=%h --grep "^Task: <id>$" "origin/<base>..HEAD"`, so a commit from an earlier issue never matches.
+    When it exists, call `close` to record it, then close its sub-issue under the adapter's rules when still open; when none exists, set a checklist task's `- [x]` back to `- [>]`.
+    Then run the loop until `claimNext` reports nothing claimable.
+    On a stack, run the check in `stack.md`'s step 10 section before the first pass.
+    Otherwise, at the start of a pass, follow the Parallel tasks section of `fan-out.md` when a `<issue branch>--task-*` branch exists, or when the agent can spawn subagents and `ready()` returns two or more tasks.
+    Each pass, in order:
+    - Call `claimNext`, and record the claim in the backend's format.
+    - Move the task's sub-issue to `inProgress` under the adapter's sub-issue rules, never redirecting it onto the main issue.
+    - Implement that one unit with the patterns from step 6.
+    - Run the typecheck and the unit's test files; on the last task of the issue or of a bundle, run the typecheck and the full suite, so their failures land in that task.
+      When the code has no tests, say so once and write one with what the project already depends on.
+      When the project cannot run tests, say so in the progress line and the review body.
+    - On a pass with the checklist backend, mark the task `- [x]` first, as `close` in `memory/checklist.md` says, so the mark rides the task commit.
+    - Commit per `conventions.md`, confirm the commit exists, and record its short hash with the close per Commit verification there.
+    - Close the task in the memory backend and its sub-issue under the adapter's rules, as it happens; a task with only its sub-issue closed stays claimable.
+    - On the beads backend, run the three export steps in One database per repository in `memory/beads.md` after the close, so the next task commit, or the final closing commit after the last task, carries the closed state.
+    - Print the progress line from `conventions.md`.
+    - On a stack, after a bundle's last task, follow `stack.md`'s step 10 section.
+    - On a failure you cannot fix, hold: keep the change, leave the task in progress, report the failure, and exit, naming on a stack the bundles with open reviews and those never built.
+    Make one commit per task, even when two tasks touch the same file.
+11. Once nothing is claimable, finish the issue.
+    When the plan document carries `- Finalization: complete` per `conventions.md`, push its commit per step 7 if unpushed, change nothing else, and go to step 12.
+    When a stacked issue lacks it, follow Interrupted finalization in `resume.md`.
+    A single-review issue runs this path:
+    - Commit leftover changes from this issue's tasks, leaving unrelated edits alone, then run the commit reconciliation in `conventions.md`, stopping when the counts disagree.
+    - Close the parent task, a no-op on the checklist backend.
+    - Through the forge contract in `forges.md`, never a forge CLI, call `resolveBase`, then push the branch per step 7, unless the adapter declares `pushesForYou`.
+    - Read merged titles with `git log origin/<base> --format=%s -20`, and title the review the way they are titled, as a squash subject or a merge commit's title line, naming the outcome for the user.
+      Build the body from Body steps 1 to 4 of `../file-pr/SKILL.md`, carrying `Closes <ref>` on Linear or the task URL on Asana, the completed tasks, and a test plan as the Review test plan section of `conventions.md` says.
+    - Call `openReview` with the branch, the base, that title, and that body, which `../file-pr/SKILL.md` takes as a supplied title and body and so skips its Title section.
+      Reuse a review that already exists for the branch.
+      On failure, hold and report, as a failure you cannot fix does above.
+    - Call `publishReview`, fill the `- Review:` line with `<id> <url>` in this issue's file under `.fathom/`, the plan document on beads and the checklist file on the checklist backend, and apply `inReview`.
+      Never write a `- PR:` line, which only older records carry.
+    - On the manual-handoff result, skip `publishReview`, record no id, print the handoff, apply `inReview`, and say closing the issue is now manual because the forge cannot be observed.
 
-11. Once `claimNext` returns none remaining, finish the issue.
-    Read this issue's plan document before anything else in this step and look for the `- Finalization: complete` line described in `conventions.md`.
-    When it is present, this issue is already finished: say so, change nothing else in this step, and go to step 12.
-    The one exception is a line sitting on a commit that was never pushed; push that commit before reporting.
-    When the line is absent, run the rest of this step.
-
-    A single-review issue follows the single-review path below, then the closing actions at the end of this step.
-    A stacked issue skips the single-review path entirely and goes straight to the closing actions, because step 10 already opened every one of its reviews through `stack.md`'s per-bundle routine.
-
-    A run interrupted before that line was written arrives here with it absent, and recovering such a run is the only reason a stacked issue ever runs this step's body.
-    Decide what remains from the durable record rather than from what is claimable: the plan document's `Bundles` section says which bundles carry a recorded review, the memory backend says whether the parent task is still open, the tracker says the issue's phase and whether the completion comment is already on it, and branch N says whether the final closing commit exists and is pushed.
-    Then do only what that record shows is missing, and skip whatever it shows is already done.
-    Never call `openReview` for a bundle that already carries a recorded review; reuse it, exactly as `stack.md`'s per-bundle routine says.
-    A bundle whose tasks are all closed and whose review is missing is recovered in step 10 rather than here, before any claiming, so by the time this step runs every bundle has its review.
-    Close the parent task only when the backend shows it open, apply `inReview` only when the tracker shows the issue in an earlier phase, post the completion comment only when `listComments` shows the issue does not already carry one, and make and push the final closing commit only when branch N does not already carry the completed task state.
-    When the resolved tracker cannot list comments, post the comment and say that it may be a duplicate.
-    When the record shows every one of those already done, write the finalization line described below, commit and push it as bookkeeping, and say that the issue was already finished and only its record was missing.
-
-    The single-review path, for an issue that was not split into a stack:
-
-    Commit any leftover uncommitted change that belongs to this issue's tasks, leaving unrelated working-tree edits alone rather than sweeping them into the review.
-    Then run the commit reconciliation from `conventions.md` and stop if the task and commit counts disagree; run it after that commit, so the range it counts carries every commit this issue's tasks produced.
-    Close the parent task in the memory backend (a no-op for the checklist adapter, whose file is the parent record).
-
-    Then open the review through the forge contract in `forges.md`, never by invoking a forge CLI directly from this procedure.
-    - Confirm the resolved base with `resolveBase` first, as the contract requires, before anything is created against it.
-    - Push the branch, with `-u origin <branch>` when it has no upstream yet, unless the resolved adapter declares `pushesForYou`.
-    - Call `openReview` with the branch, the resolved base, a title, and a body, written by the Title and Body sections of `../file-pr/SKILL.md`.
-      The body's parts from this run are `Closes <ref>` for a Linear issue or the task's URL for an Asana task, the list of completed tasks, and a test plan.
-    - Skip this when a review already exists for the branch, and reuse that one; resuming an issue must never open a second review.
-    - Call `publishReview` with the returned id.
-    - Record `- Review: <id> <url>` in this issue's file under `.fathom/`, alongside the existing `- PR:` line.
-    - Call `updateState` to move the issue to the `inReview` phase.
-
-    When `openReview` returns the manual-handoff result instead of an id, there is no review object: skip `publishReview`, record no review id, print the handoff.
-    Still apply `inReview`, and say plainly that no later run will move this issue to `done` on its own because the forge cannot be observed, so closing it is now a manual step.
-
-    Finally, post a completion comment on the issue, including the done-on-merge note from `asana.md` when the tracker is Asana, then write `- Finalization: complete` into this issue's plan document per `conventions.md`, and commit and push the task-state files this run changed as a final closing commit so the branch carries the completed state, staging them by explicit path per the staging rules in `conventions.md`: when beads is the backend, run the three export steps in One database per repository in `memory/beads.md`, which stage `.beads/<ISSUE-REF>.jsonl` with the final state, including the last task's close and the parent's close, and stage this issue's files under `.fathom/`; never sweep `.beads/` or `.fathom/` as directories, since the beads database and runtime files must not ride into the review.
-    Write that line last, after every other closing action except the Dolt sync below; a line written earlier would make the check at the top of this step skip the rest of it forever.
-    It rides this same closing commit.
-    Push this closing commit with an ordinary `git push` of the branch even when the adapter declares `pushesForYou`, since that capability governs only the push that opens the review, per `forges.md`.
-    When beads is the backend, then run the sync steps in the Dolt remote section of `memory/beads.md`.
-    This sync is the one action that follows the finalization line, since it changes nothing on the branch.
-    Step 8 retries it when a run stops before it.
-    On a stacked issue, `stack.md`'s after-bundle-N section says which branch carries this commit and what to say at handoff.
-12. Report a final summary: the issue, the review URL when one was opened, every bundle's review URL in order when the issue was split into a stack, or the resolved tier when no review was opened, the tracker's current phase, and the task counts from `status()`.
-
-## Display overlay
-
-When the running agent exposes built-in task-list capabilities, mirror progress into them for a live view; follow the display-overlay rule in `memory.md` and never treat that view as authoritative.
+    The closing actions, which a stack reaches from `stack.md`'s After bundle N section:
+    - Post a completion comment that says what closes the issue, as the Completion comment section of `trackers/merge-closer.md` says.
+    - Write `- Finalization: complete` into the plan document only now, since it makes later runs skip this step.
+    - Commit and push the changed task-state files as the final closing commit carrying that line, staged by explicit path per `conventions.md`, never `.beads/` or `.fathom/` as directories.
+      On beads, first run the three export steps in One database per repository in `memory/beads.md`.
+      Push it per step 7, even under `pushesForYou`.
+    - On beads, then run the Dolt remote sync steps in `memory/beads.md`, which step 8 retries after an interrupted run.
+12. Report the issue, its review URL or every bundle's in order, or the tier when no review opened, then the tracker phase and the `status()` counts, what closes the issue as the Completion comment section of `trackers/merge-closer.md` says, and any refused tool call as the Permissions section of `agents.md` says.

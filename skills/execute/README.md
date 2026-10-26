@@ -65,7 +65,8 @@ Run these inside a Claude Code session:
 /reload-plugins
 ```
 
-Confirm both skills loaded by asking for the skill list; you should see `fathom:execute` and `fathom:scaffold`.
+The `ship` plugin carries `file-pr`, which `execute` opens its reviews through.
+Confirm the skills loaded by asking for the skill list; you should see `fathom:execute`, `fathom:scaffold`, and `ship:file-pr`.
 
 </details>
 
@@ -190,14 +191,14 @@ Execute asks only for a role neither file names, and only in ask mode.
 In auto mode it uses Sonnet for that role, writes nothing, and says so.
 A value other than `fable`, `opus`, `sonnet`, `haiku`, or `inherit-parent` (or its alias `auto`) is ignored.
 Each subagent's description starts with its model, such as `[opus] Execute TES-250`, so Claude Code's agent list shows it.
-To change your split later, edit `models.md`; the format and the details are in [agents.md](agents.md#subagent-models).
+To change your split later, edit `models.md`; the format and the details are in [agents/claude-code.md](agents/claude-code.md#subagent-models).
 
 ### 5. Pre-approve the commands
 
 Autonomous runs stall on permission prompts.
 Pre-approve `git`, `bd`, your forge's CLI (`gh` on GitHub), and your tracker MCP's tools: in Claude Code through the permissions allowlist, in Kiro through trusted commands.
 
-A headless Claude Code run with a restricted tool allowlist also needs `--add-dir <checkout>.fathom`, the sibling directory described under [What lands in your repo](#what-lands-in-your-repo).
+A headless Claude Code run with a restricted tool allowlist needs the `--add-dir` flags in [agents/claude-code.md](agents/claude-code.md#subagents).
 
 Read [Security boundary](#security-boundary) before blanket-approving shell access.
 
@@ -634,6 +635,7 @@ Either reinstall after each change:
 
 ```
 /plugin uninstall fathom
+/plugin uninstall ship
 /plugin install fathom@crodris
 /plugin install ship@crodris
 /reload-plugins
@@ -655,7 +657,7 @@ Two things hold for every legacy repository once you have done the rename for yo
 Repos set up before forge support need no extra work for the forge field itself.
 The next run asks which forge you use and adds `forge` to the profile in the first commit it makes on its issue branch, exactly as it repairs any other missing field.
 Existing `.fathom/` records that carry a branch and no review id keep working.
-The sweep matches them by branch on every run and leaves the record unchanged.
+A legacy record resolves when its branch lookup finds one review against the resolved base branch.
 
 The first time you run execute on Claude Code after upgrading to 2.6.0, it asks the subagent model question once, unless your pstack model rule already answers it.
 Auto mode runs skip it and use Sonnet until a run in ask mode asks.
