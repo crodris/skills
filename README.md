@@ -36,7 +36,7 @@ The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacke
 
 `ship` carries the current branch to a ready pull request: verify until clean, commit, push, open the pull request, review it with subagents and any review bots, and fix until nothing blocking remains.
 It merges, watches the release, and cleans up only when you ask it to merge, or when the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
-It merges with the `merge-method` in `.ship/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one.
+It merges with the `merge-method` in `.ship/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one or its settings are unreadable.
 It needs a git remote, an authenticated GitHub CLI, and `jq`.
 
 ### fathom-progress (v0.2.0)

@@ -28,6 +28,6 @@ skills/ship/bots.md 958
 skills/ship/config.md 520
 skills/ship/drive.md 502
 skills/ship/lanes.md 623
-skills/ship/SKILL.md 7983
+skills/ship/SKILL.md 8064
 skills/verification-audit/SKILL.md 911
 skills/worktree-setup/SKILL.md 249
