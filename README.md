@@ -25,7 +25,7 @@ On Claude Code, Fathom and ship also install as plugins, and so does the fathom-
 
 ## Plugins
 
-### fathom (v2.7.2)
+### fathom (v2.7.3)
 
 `execute` takes a tracker issue through breakdown, implementation, tests, commits, and an open review, and resumes where the last run stopped.
 `scaffold` turns requirements into a main issue with linked sub-issues, then offers to hand off to `execute`.
