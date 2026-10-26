@@ -254,3 +254,41 @@ rules:
       added to its dense profile section was enough to trigger it. Caution: this
       also hides a real partial analysis of trackers.md, so re-review the
       file's diff by hand when it changes.
+
+  - id: "RP1"
+    path: "boundary.md"
+    message: "*npx skills*"
+    reason: >-
+      Reviewed, intentional: ship/boundary.md's Missing skills section holds
+      the one install command (npx skills@latest add crodris/skills -s ship
+      prove file-pr babysit review-loop land) that every skill in the ship
+      family gives the user when a sibling is missing. The user runs it; no
+      skill runs it itself. Same reasoning as the SKILL.md rule above:
+      pinning the CLI goes stale and is not a security boundary. Scoped to
+      boundary.md, so an npx skills hit in another ship file still fails.
+
+  - id: "TM1"
+    path: "guard.sh"
+    message: "*git push --force*"
+    reason: >-
+      Reviewed, intentional: ship's guard.sh force-pushes only when its caller
+      passes a lease SHA, and then only with --force-with-lease pinned to that
+      SHA, after checking that the checkout is the shipping branch and not the
+      base. babysit passes the lease only for a base rebase and for the
+      autosquash push before READY, both on a branch this run created, as
+      boundary.md requires. bin/test-guard.sh
+      covers the refusals and a stale lease failing.
+
+  - id: "LP3"
+    path: "SKILL.md"
+    message: "*capabilities were detected: file_read.*"
+    reason: >-
+      Reviewed, intentional: prove's resolve-verify.sh reads the repository's
+      own manifests (package.json, Makefile, CI workflows) to print verify
+      candidates, and runs nothing it finds. Declaring allowed-tools would
+      pre-approve tools in Claude Code, which widens what the skill may do
+      instead of narrowing it. The glob ends on "file_read." so a skill whose
+      scripts also show shell, network, file_write, or env capabilities still
+      fails.
+      Caution: path "SKILL.md" matches every skill's SKILL.md, so re-review
+      this rule when another skill gains a script that reads files.
