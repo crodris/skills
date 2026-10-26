@@ -30,27 +30,27 @@ Every run begins by reading durable state from the repository and the tracker, n
 
 Before doing any tracker or memory work, read:
 
-These paths are relative to the directory containing this SKILL.md file, not the current workspace, and they all point into the fathom-shared skill installed next to this one.
-When `../fathom-shared/` or `../file-pr/` does not exist there, stop before anything else and give the install command for the user to run, matching how this skill was installed; never run it yourself.
-That is `npx skills@latest add crodris/skills -s fathom-shared file-pr -g` for a global install, without `-g` for a project install, with the same `-a <agent>` flag the install used, such as `-a kiro-cli` on Kiro, and `/plugin install fathom@crodris` again for a Claude Code plugin install.
+These paths are relative to the directory containing this SKILL.md file, not the current workspace.
+When `../file-pr/` does not exist next to this skill, stop before anything else and give the install command for the user to run, matching how this skill was installed; never run it yourself.
+That is `npx skills@latest add crodris/skills -s file-pr -g` for a global install, without `-g` for a project install, with the same `-a <agent>` flag the install used, such as `-a kiro-cli` on Kiro, and `/plugin install ship@crodris` for a Claude Code plugin install.
 
-- `../fathom-shared/trackers.md` for the tracker contract, phase names, and first-run profile setup.
-- `../fathom-shared/forges.md` for the forge contract, adapter resolution, the capability tiers, and base-branch resolution.
-- `../fathom-shared/memory.md` for the memory contract and backend resolution rules.
-- `../fathom-shared/agents.md` for the per-agent notes that apply to whichever agent is running this skill.
-- `../fathom-shared/conventions.md` for staging safety, commit messages, the plan document, and progress reporting.
-- `../fathom-shared/approval.md` for the two approval modes, and for the stops that hold in both.
+- `trackers.md` for the tracker contract, phase names, and first-run profile setup.
+- `forges.md` for the forge contract, adapter resolution, the capability tiers, and base-branch resolution.
+- `memory.md` for the memory contract and backend resolution rules.
+- `agents.md` for the per-agent notes that apply to whichever agent is running this skill.
+- `conventions.md` for staging safety, commit messages, the plan document, and progress reporting.
+- `approval.md` for the two approval modes, and for the stops that hold in both.
 
 If any of these files cannot be found and read, stop immediately and report which paths were tried - never improvise their contracts from memory or proceed without them.
 
 ## Procedure
 
-1. Resolve the approval mode per `../fathom-shared/approval.md` and state it, then run preflight verification per `../fathom-shared/trackers.md` before any other tracker step, inferring the target tracker by that section's precedence.
+1. Resolve the approval mode per `approval.md` and state it, then run preflight verification per `trackers.md` before any other tracker step, inferring the target tracker by that section's precedence.
    Stop here, following that section's instructions, when the tracker's MCP does not verify.
-   A forge that does not verify is not a stop: it selects a capability tier per `../fathom-shared/forges.md`; state the resolved tier before continuing.
+   A forge that does not verify is not a stop: it selects a capability tier per `forges.md`; state the resolved tier before continuing.
    When a resumed run resolves the manual tier on an issue whose earlier bundles already have open reviews, leave those reviews alone and hand the remaining bundles off manually, saying that the tier changed between runs so the stack is now half automated and half manual.
    Say with it that no later run will move this issue to `done` on its own, because the manual tier cannot observe what happened to a review, so closing the issue is now a manual step.
-2. Run the done-on-merge sweep per `../fathom-shared/trackers.md`, including its collection of a stack's records from every bundle branch and its ordered cases.
+2. Run the done-on-merge sweep per `trackers.md`, including its collection of a stack's records from every bundle branch and its ordered cases.
    When the sweep's partial-progress case decides a stacked issue, run the restack check in `stack.md` in this skill's folder, on a cleanup-phrase run too.
    When the invocation itself was a cleanup phrase, run only this sweep and that restack check, report what they found, then stop; do not continue into the rest of this procedure.
    Treat any claim about a review's fate as a cleanup phrase, whether it says merged, closed, abandoned, landed, or shipped, and whether it names an issue or asks to clean up whatever is outstanding.
@@ -58,10 +58,10 @@ If any of these files cannot be found and read, stop immediately and report whic
    When the resolved forge declares `reviewLookup: none`, neither the claim nor the sweep can be checked: say so once and act on nothing, closing no issue on the strength of an unverifiable claim.
 3. Resolve which tracker owns this issue and which memory backend owns its task state, following `trackers.md` and `memory.md`, including `memory.md`'s stop when the base tracks beads but `bd where` fails.
    Load the existing `.fathom/config.md` tracker profile, or run first-run setup when none exists; either way, run the tracker adapter's profile-load checks and honor any one-time offers they define.
-   On an agent that can spawn subagents, resolve the subagent models as `../fathom-shared/agents.md` says, asking only when no source names a role.
+   On an agent that can spawn subagents, resolve the subagent models as `agents.md` says, asking only when no source names a role.
 4. When the invocation names two or more issues, read `fan-out.md` in this skill's folder and follow its several-issues section instead of the rest of this procedure.
    Before reading the branch name, check whether this checkout holds a base update paused by an earlier hold: `git rev-parse -q --verify MERGE_HEAD` succeeds mid-merge, and a `head-name` file exists at the path `git rev-parse --path-format=absolute --git-path rebase-merge/head-name` or `git rev-parse --path-format=absolute --git-path rebase-apply/head-name` prints mid-rebase.
-   Run each of these on its own, as the Permissions section of `../fathom-shared/agents.md` says, and read that file by the printed path.
+   Run each of these on its own, as the Permissions section of `agents.md` says, and read that file by the printed path.
    When one is paused, read the branch from `git branch --show-current` mid-merge, or from that `head-name` file mid-rebase, since a paused rebase detaches HEAD.
    Then run no switch, no fetch-and-update, and never `git merge --quit` until step 7's resume rule finishes or holds the update, since quitting drops the merge's second parent.
    Then determine the issue ref from the invocation argument, a pasted issue URL, or the current branch name, which for a paused update is the branch read above, in that order of preference; when the argument and the branch name refer to different issues, stop and ask the user which one to use.
@@ -76,18 +76,18 @@ If any of these files cannot be found and read, stop immediately and report whic
 
    Name a branch that must be created from the issue type (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` by default) followed by the issue ref, cased as the tracker adapter says, and a short title slug; skip creation when a matching branch already exists.
    When that branch is checked out in another worktree, as a held issue from `fan-out.md` leaves it, continue the run from inside that worktree.
-   After fetching the base branch and before switching to or creating this branch, handle an uncommitted `.fathom/config.md`, and once on it, commit an uncommitted one as the first commit the run makes on the branch, both as the first-run tracker profile in `../fathom-shared/trackers.md` says.
-   Resolve the base branch per the base-branch rules in `../fathom-shared/forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track`, not from a local copy that may be behind.
+   After fetching the base branch and before switching to or creating this branch, handle an uncommitted `.fathom/config.md`, and once on it, commit an uncommitted one as the first commit the run makes on the branch, both as the first-run tracker profile in `trackers.md` says.
+   Resolve the base branch per the base-branch rules in `forges.md`, then fetch it and create the new branch from the fetched remote copy with `--no-track`, not from a local copy that may be behind.
    Without `--no-track`, git sets the new branch to track the base, so a plain `git push` would push to the base branch.
    When the branch already exists and the base branch has moved on since, bring it up to date before implementing, and report that you did.
-   When the update conflicts in this issue's beads file `.beads/<ISSUE-REF>.jsonl`, resolve that file first as `../fathom-shared/memory/beads.md` says, even when other files conflict too.
+   When the update conflicts in this issue's beads file `.beads/<ISSUE-REF>.jsonl`, resolve that file first as `memory/beads.md` says, even when other files conflict too.
    When any other file is still conflicted, stop and hold exactly as an unfixable test failure would, and leave the update paused where git stopped it, mid-merge or mid-rebase, so the user resolves it in place.
    Keep the work, leave the task in progress, and report each conflicting file with what this branch and the base each changed in it.
    Name the sides "this branch" and "the base", since a rebase swaps which one git calls ours.
    Ask the user to `git add` each file once it is resolved, and leave the choice of resolution to them, recommending neither side.
    When you say what keeping a side would mean, such as which planned tasks it would already cover, say it for both sides or for neither.
    Never resolve a conflict by discarding either side's changes.
-   When step 4 finds an update paused and `git ls-files -u` still lists this issue's beads file, resolve that file first as `../fathom-shared/memory/beads.md` says.
+   When step 4 finds an update paused and `git ls-files -u` still lists this issue's beads file, resolve that file first as `memory/beads.md` says.
    A run that stopped inside that recipe leaves the file conflicted.
    When the update is still paused after that, hold again while `git ls-files -u` lists a conflicted file or `git diff --cached --check` reports a leftover conflict marker.
    Otherwise finish it with `git -c core.editor=true merge --continue` or `git -c core.editor=true rebase --continue`.
@@ -97,7 +97,7 @@ If any of these files cannot be found and read, stop immediately and report whic
    - Skip the rest of this step when a breakdown already exists for this issue; a resumed run reads the split, the bundles, and their branches out of the plan document instead of deciding any of them again.
      When that plan document carries a `Bundles` section but step 7 recovered no stack, go back to step 7 and recover it before implementing anything.
      Then call `init` for the issue before moving on, so the memory backend's checks still run and a run resumed on another machine imports the issue's tasks before step 10 reads them.
-     When beads is the backend, then run the sync steps in the Dolt remote section of `../fathom-shared/memory/beads.md`, which retries a sync that an interrupted run never finished.
+     When beads is the backend, then run the sync steps in the Dolt remote section of `memory/beads.md`, which retries a sync that an interrupted run never finished.
    - Plan the units of work before writing anything to the tracker or the memory backend.
      When the issue has no existing children, plan up to seven units of work, each small enough to review as one commit and complete enough to verify on its own, and hold that plan rather than creating anything from it yet.
      Plan only as many units as the issue's requirements support, which is one or two for a small issue, and never add a unit the issue does not ask for to pad the breakdown.
@@ -111,12 +111,12 @@ If any of these files cannot be found and read, stop immediately and report whic
    - Decide whether this issue produces one review or a stack, from those planned units and before anything is written to the tracker.
      Never consider a split when the resolved forge tier is the manual tier.
      In that case, when the breakdown has five or more units, say the split was not offered because the tier cannot create reviews; below five units say nothing about it.
-     Read the profile's `stacking` field per `../fathom-shared/approval.md`; treat an absent field as `never`, and stop considering a split immediately when it reads `never`, whether it was written or absent.
+     Read the profile's `stacking` field per `approval.md`; treat an absent field as `never`, and stop considering a split immediately when it reads `never`, whether it was written or absent.
      When it reads `propose`, read `stack.md` in this skill's folder and follow its step 8 section, which decides whether to propose a split and runs the proposal stop.
      Without a confirmed split, the issue produces a single review.
    - Call `init` for the issue, then call `parentTask` for it, once the split question is settled.
      These are the first writes this step makes.
-   - Create the sub-issues and their tasks next, passing each task's final `deps` to `createTask` itself, since no operation in `../fathom-shared/memory.md` adds deps to a task that already exists.
+   - Create the sub-issues and their tasks next, passing each task's final `deps` to `createTask` itself, since no operation in `memory.md` adds deps to a task that already exists.
      When no split was confirmed and the issue has no existing children, for each planned unit call `createSubIssue` first, then call `createTask` with the newly created sub-issue's ref as `subIssueRef`, then write the returned task id back onto that sub-issue so the link reads both ways, setting `deps` to the ids of the tasks it builds on, so a unit that builds on nothing gets no deps.
      When no split was confirmed and the issue already had children, for each adopted sub-issue still call `createTask`, passing that sub-issue's existing ref as `subIssueRef` and skipping `createSubIssue` since the sub-issue already exists, then write the returned task id back onto that sub-issue the same way, and setting `deps` to the tasks of the sibling sub-issues its `Blocked by:` line names.
      A child whose line reads `none` gets no deps; a child with no line at all deps on the task created just before it, since nobody stated its blockers.
@@ -126,8 +126,8 @@ If any of these files cannot be found and read, stop immediately and report whic
      When a split was confirmed, create them as `stack.md`'s step 8 section says.
    - After every child task exists, add the parent's dependency edge on each child, so the parent cannot close before its children.
    - Whether the sub-issues were newly created or adopted, write the plan document described in `conventions.md` and commit it with the breakdown.
-     When beads is the backend, run the three export steps in One database per repository in `../fathom-shared/memory/beads.md` before that commit, so it carries `.beads/<ISSUE-REF>.jsonl`.
-     After that commit, when beads is the backend, run the sync steps in the Dolt remote section of `../fathom-shared/memory/beads.md`.
+     When beads is the backend, run the three export steps in One database per repository in `memory/beads.md` before that commit, so it carries `.beads/<ISSUE-REF>.jsonl`.
+     After that commit, when beads is the backend, run the sync steps in the Dolt remote section of `memory/beads.md`.
      A confirmed split adds the `Bundles` section and the `Merge-closer` line that `stack.md` describes.
    - Write `.fathom/tasks/<ISSUE-REF>.md` only when the resolved backend is the checklist adapter.
 9. Call `updateState` to move the issue to the `inProgress` phase.
@@ -179,7 +179,7 @@ If any of these files cannot be found and read, stop immediately and report whic
     Then run the commit reconciliation from `conventions.md` and stop if the task and commit counts disagree; run it after that commit, so the range it counts carries every commit this issue's tasks produced.
     Close the parent task in the memory backend (a no-op for the checklist adapter, whose file is the parent record).
 
-    Then open the review through the forge contract in `../fathom-shared/forges.md`, never by invoking a forge CLI directly from this procedure.
+    Then open the review through the forge contract in `forges.md`, never by invoking a forge CLI directly from this procedure.
     - Confirm the resolved base with `resolveBase` first, as the contract requires, before anything is created against it.
     - Push the branch, with `-u origin <branch>` when it has no upstream yet, unless the resolved adapter declares `pushesForYou`.
     - Call `openReview` with the branch, the resolved base, a title, and a body, written by the Title and Body sections of `../file-pr/SKILL.md`.
@@ -192,11 +192,11 @@ If any of these files cannot be found and read, stop immediately and report whic
     When `openReview` returns the manual-handoff result instead of an id, there is no review object: skip `publishReview`, record no review id, print the handoff.
     Still apply `inReview`, and say plainly that no later run will move this issue to `done` on its own because the forge cannot be observed, so closing it is now a manual step.
 
-    Finally, post a completion comment on the issue, including the done-on-merge note from `asana.md` when the tracker is Asana, then write `- Finalization: complete` into this issue's plan document per `conventions.md`, and commit and push the task-state files this run changed as a final closing commit so the branch carries the completed state, staging them by explicit path per the staging rules in `conventions.md`: when beads is the backend, run the three export steps in One database per repository in `../fathom-shared/memory/beads.md`, which stage `.beads/<ISSUE-REF>.jsonl` with the final state, including the last task's close and the parent's close, and stage this issue's files under `.fathom/`; never sweep `.beads/` or `.fathom/` as directories, since the beads database and runtime files must not ride into the review.
+    Finally, post a completion comment on the issue, including the done-on-merge note from `asana.md` when the tracker is Asana, then write `- Finalization: complete` into this issue's plan document per `conventions.md`, and commit and push the task-state files this run changed as a final closing commit so the branch carries the completed state, staging them by explicit path per the staging rules in `conventions.md`: when beads is the backend, run the three export steps in One database per repository in `memory/beads.md`, which stage `.beads/<ISSUE-REF>.jsonl` with the final state, including the last task's close and the parent's close, and stage this issue's files under `.fathom/`; never sweep `.beads/` or `.fathom/` as directories, since the beads database and runtime files must not ride into the review.
     Write that line last, after every other closing action except the Dolt sync below; a line written earlier would make the check at the top of this step skip the rest of it forever.
     It rides this same closing commit.
-    Push this closing commit with an ordinary `git push` of the branch even when the adapter declares `pushesForYou`, since that capability governs only the push that opens the review, per `../fathom-shared/forges.md`.
-    When beads is the backend, then run the sync steps in the Dolt remote section of `../fathom-shared/memory/beads.md`.
+    Push this closing commit with an ordinary `git push` of the branch even when the adapter declares `pushesForYou`, since that capability governs only the push that opens the review, per `forges.md`.
+    When beads is the backend, then run the sync steps in the Dolt remote section of `memory/beads.md`.
     This sync is the one action that follows the finalization line, since it changes nothing on the branch.
     Step 8 retries it when a run stops before it.
     On a stacked issue, `stack.md`'s after-bundle-N section says which branch carries this commit and what to say at handoff.

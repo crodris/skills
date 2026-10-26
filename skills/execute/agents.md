@@ -7,7 +7,7 @@ Read the rest of this plugin's skills as agent-neutral; when you need an agent-s
 ## Install
 
 Claude Code: install this plugin from its marketplace repo.
-Kiro: install with the skills CLI, `npx skills add crodris/skills -a kiro-cli`, which places `execute/`, `scaffold/`, and `fathom-shared/` as siblings under `~/.kiro/skills/`; or copy or symlink the contents of this plugin's `skills/` directory there by hand so the three sit as siblings directly under the destination. Copying the `skills/` directory itself would nest them one level too deep and break every `../fathom-shared/` reference.
+Kiro: install with the skills CLI, `npx skills add crodris/skills -a kiro-cli`, which places `execute/`, `scaffold/`, and `file-pr/` as siblings under `~/.kiro/skills/`; or copy or symlink the contents of this plugin's `skills/` directory there by hand so the three sit as siblings directly under the destination. Copying the `skills/` directory itself would nest them one level too deep and break every `../execute/` and `../file-pr/` reference.
 
 ## Task display overlay
 
@@ -22,7 +22,7 @@ This file only names which tools each agent offers for it.
 
 ## Subagents
 
-`execute`'s fan-out runs issues and tasks on background subagents, as `../execute/fan-out.md` describes.
+`execute`'s fan-out runs issues and tasks on background subagents, as `fan-out.md` describes.
 
 Claude Code: dispatch each one with the Agent tool, `subagent_type: general-purpose`, the role's model from Subagent models below, and `run_in_background: true`.
 Start each `description` with that model in brackets, such as `[opus] Execute TES-246`, or `[inherit]` when `model` is omitted, since Claude Code's agent list shows the description but not the model.
@@ -45,7 +45,7 @@ Read the Fathom file with the Read tool, since a restricted allowlist refuses a 
 1. The person's Fathom file, `$XDG_CONFIG_HOME/fathom/models.md`, or `~/.config/fathom/models.md` when that variable is unset: its `issue:` and `task:` lines.
 2. The pstack model rule, `~/.claude/rules/pstack-models.md`: its `hardest tasks:` line for `issue` and its `feature, refactoring:` line for `task`.
    When a line lists several models, use the first.
-3. Ask, at the point `../execute/SKILL.md` step 3 names, as one structured question covering each role still unresolved.
+3. Ask, at the point `SKILL.md` step 3 names, as one structured question covering each role still unresolved.
    Offer Sonnet for both, Opus for issues and Sonnet for tasks, Opus for both, and the parent session's model for both.
    When only one role is unresolved, the options name that role alone: Sonnet, Opus, Haiku, or the parent session's model.
    Accept a typed answer when each role maps to an allowed value below; otherwise ask again, naming the allowed values.

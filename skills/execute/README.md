@@ -61,6 +61,7 @@ Run these inside a Claude Code session:
 ```text
 /plugin marketplace add crodris/skills
 /plugin install fathom@crodris
+/plugin install ship@crodris
 /reload-plugins
 ```
 
@@ -76,7 +77,8 @@ npx skills@latest add crodris/skills
 ```
 
 Pick which coding agents to install onto - the installer auto-detects what you have.
-**Take all three entries when it asks which skills you want: `fathom-shared` carries the contract files the other two read, and an install without it stops at the first step.**
+**Take `execute`, `scaffold`, and `file-pr` when it asks which skills you want: `execute` carries the contract files `scaffold` reads, `execute` opens its reviews through `file-pr`, and an install without them stops at the first step.**
+Upgrading from Fathom 2, delete the old `fathom-shared/` directory from your skills root, since its files now live in `execute/`.
 
 Kiro's default agent auto-loads everything under `~/.kiro/skills/`, so no further configuration is needed there.
 Other agents may need the skill added to their config after install; see that agent's page on [skills.sh](https://www.skills.sh).
@@ -89,7 +91,7 @@ Other agents may need the skill added to their config after install; see that ag
 The same installer works on any agent - including Claude Code - and writes the skills as ordinary files you own and can edit.
 Nothing updates behind your back; pull the latest changes when you want them with `npx skills update`.
 
-Installing fully by hand also works; keep `execute/`, `scaffold/`, and `fathom-shared/` as siblings at the destination's top level:
+Installing fully by hand also works; keep `execute/`, `scaffold/`, and `file-pr/` as siblings at the destination's top level:
 
 ```bash
 # global install, available in every workspace
@@ -98,7 +100,7 @@ cp -r skills/. ~/.kiro/skills/
 # or symlink while iterating, so edits take effect immediately
 ln -s "$PWD/skills/execute"       ~/.kiro/skills/execute
 ln -s "$PWD/skills/scaffold"      ~/.kiro/skills/scaffold
-ln -s "$PWD/skills/fathom-shared" ~/.kiro/skills/fathom-shared
+ln -s "$PWD/skills/file-pr"       ~/.kiro/skills/file-pr
 ```
 
 </details>
@@ -188,7 +190,7 @@ Execute asks only for a role neither file names, and only in ask mode.
 In auto mode it uses Sonnet for that role, writes nothing, and says so.
 A value other than `fable`, `opus`, `sonnet`, `haiku`, or `inherit-parent` (or its alias `auto`) is ignored.
 Each subagent's description starts with its model, such as `[opus] Execute TES-250`, so Claude Code's agent list shows it.
-To change your split later, edit `models.md`; the format and the details are in [agents.md](../fathom-shared/agents.md#subagent-models).
+To change your split later, edit `models.md`; the format and the details are in [agents.md](agents.md#subagent-models).
 
 ### 5. Pre-approve the commands
 
@@ -448,7 +450,7 @@ In the manual tier the "review merged" line never fires, because nothing can obs
 Plans and task files stay after the review merges; they are the record of how the work was broken down.
 
 Fathom also uses a sibling directory next to your checkout, named after it with `.fathom` appended.
-It holds the fan-out worktrees, the GitHub review body file, and on beads the export file.
+It holds the fan-out worktrees and, on beads, the export file.
 It sits outside the repository, so nothing in it is committed.
 
 ## Forges
@@ -473,7 +475,7 @@ The manual tier has one consequence worth knowing up front: **nothing can observ
 
 Internal and self-hosted forges are the reason the contract exists. Fathom cannot ship an adapter for a forge whose name and CLI it has never seen - but you can write one.
 
-Copy `skills/fathom-shared/forges/TEMPLATE.md` to `.fathom/forge.md` in your repository, fill in the five operations against your forge's CLI, declare the capability table, and commit it. A repo-local adapter beats every bundled one, so nothing else changes and this plugin never needs forking. Your teammates who clone the repo get it automatically.
+Copy `skills/execute/forges/TEMPLATE.md` to `.fathom/forge.md` in your repository, fill in the five operations against your forge's CLI, declare the capability table, and commit it. A repo-local adapter beats every bundled one, so nothing else changes and this plugin never needs forking. Your teammates who clone the repo get it automatically.
 
 A partial adapter is fine and often correct. One that opens reviews but declares `reviewLookup: none` still does the useful part; it just leaves the sweep off. That is far better than an adapter that guesses at review state, because a wrong guess marks abandoned work as shipped.
 
@@ -633,6 +635,7 @@ Either reinstall after each change:
 ```
 /plugin uninstall fathom
 /plugin install fathom@crodris
+/plugin install ship@crodris
 /reload-plugins
 ```
 
@@ -715,8 +718,7 @@ Either way the merge-closer finds no record for the branch and takes the same gr
 Step 3 matters more than it looks.
 A merge-closer left pointing at `.workbench/` finds no file, takes its zero-match branch, and exits successfully, so every merge shows a green check that closed nothing.
 
-On a skills.sh install, re-run `npx skills@latest add crodris/skills` and take all three entries.
-`fathom-shared` is a new skill name at the destination, so nothing installs it in place of the old one, and without it both skills stop at the first step.
+On a skills.sh install, re-run `npx skills@latest add crodris/skills` and take `execute`, `scaffold`, and `file-pr`.
 Then delete the stale `workbench-shared/` directory from your skills root, since `execute/` and `scaffold/` are overwritten in place but the old shared directory is not removed.
 
 Abandoned reviews you already triaged stay triaged.
@@ -736,4 +738,4 @@ Rename it on every unmerged feature branch as well, not just on the base, and th
 
 Version 3 of the predecessor plugin removed its slash commands (`/issue-start`, `/issue-task`, `/commit`, `/issue-finish`).
 The `execute` skill covers the issue flow they formed: "execute TES-5" does what the whole sequence used to.
-The one gap is `/commit` as a standalone conventional-commit helper outside an issue run; Fathom applies its commit conventions only inside execute runs, so for non-issue commits use your agent's normal commit flow, borrowing the rules in `skills/fathom-shared/conventions.md` if you want the same style.
+The one gap is `/commit` as a standalone conventional-commit helper outside an issue run; Fathom applies its commit conventions only inside execute runs, so for non-issue commits use your agent's normal commit flow, borrowing the rules in `skills/execute/conventions.md` if you want the same style.

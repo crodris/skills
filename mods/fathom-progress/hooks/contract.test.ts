@@ -6,8 +6,8 @@ import { startOf, startOfPrompt } from './lifecycle'
 import { parsePlan } from './plan'
 
 // The formats as the Fathom skills state them today, copied by bin/sync-contract.sh.
-// A change to one of them in skills/fathom-shared fails a test here, and
-// skills/fathom-shared/progress.md says what the band reads.
+// A change to one of them in skills/execute fails a test here, and
+// skills/execute/progress.md says what the band reads.
 
 const VALUES: readonly [string, string][] = [
   ['<ISSUE-REF>', 'ONC-5'],

@@ -74,9 +74,8 @@ rules:
       the intended install path, and the README at the repository root shows
       the same commands.
 
-  # fathom-shared carries the contract files execute and scaffold read;
-  # its SKILL.md exists so directory-copying installers (npx skills) bring it
-  # along. Scanning it flags documentation text, not executable skill behavior.
+  # execute carries the contract files execute and scaffold read. Scanning
+  # them flags documentation text, not executable skill behavior.
 
   - id: "EA2"
     path: "memory.md"
@@ -165,8 +164,11 @@ rules:
     reason: >-
       Reviewed, intentional: frontend-design-pipeline prints skills.sh
       install commands (npx skills@latest add) for the companion skills
-      its stages call, and execute and scaffold print fathom-shared's
-      install command when it is missing. html-comms tells the user to
+      its stages call, and execute and scaffold print file-pr's and
+      execute's install commands when they are missing. The ship family
+      (ship, prove, babysit, review-loop, land, through ship/boundary.md)
+      and review print the ship family's install command when a sibling is
+      missing. html-comms tells the user to
       run the here-now install command and moves on to its next
       publisher. Each is for the user to run, and
       frontend-design-pipeline says never to run one itself. Same
@@ -243,18 +245,21 @@ rules:
 
   - id: "AE1"
     path: "SKILL.md"
-    message: "*trackers.md (partial)*"
+    message: "*trackers*.md (partial)*"
     reason: >-
-      Coverage limit, not evasion: fathom-shared's SKILL.md lists trackers.md,
-      and the static layer marks that file partial when its directive
+      Coverage limit, not evasion: execute's SKILL.md lists trackers.md and
+      names the tracker adapters under trackers/, and the static layer marks
+      such a file partial when its directive
       reconstruction hits a limit (for example more than 8 active directives
       in one window, MAX_ACTIVE_DIRECTIVES in SkillSpector's
       security_reconstruction.py), which it reports as
-      "obfuscated_instruction_text". trackers.md is this repo's own contract
-      prose with no encoded or split-letter text; one ordinary rule sentence
-      added to its dense profile section was enough to trigger it. Caution: this
-      also hides a real partial analysis of trackers.md, so re-review the
-      file's diff by hand when it changes.
+      "obfuscated_instruction_text". trackers.md and the adapters are this
+      repo's own contract prose with no encoded or split-letter text; one
+      ordinary rule sentence added to trackers.md's dense profile section was
+      enough to trigger it, and trackers/asana.md became a referenced file
+      when the contracts moved into execute. Caution: this also hides a real
+      partial analysis of those files, so re-review their diffs by hand when
+      they change.
 
   - id: "RP1"
     path: "boundary.md"

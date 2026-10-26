@@ -2,7 +2,7 @@
 # sync-contract.sh - copy the Fathom formats the band reads, as the Fathom skills
 # state them, into hooks/contract.fixtures.ts, where contract.test.ts parses them.
 # A test cannot read a file from disk, so the formats travel as a module.
-# skills/fathom-shared/progress.md lists what is copied.
+# skills/execute/progress.md lists what is copied.
 #
 #   bash mods/fathom-progress/bin/sync-contract.sh
 #
@@ -18,7 +18,6 @@ python3 - "$ROOT" <<'PY'
 import json, os, re, sys
 
 root = sys.argv[1]
-shared = os.path.join(root, 'skills', 'fathom-shared')
 
 def read(*parts):
     return open(os.path.join(root, *parts), encoding='utf-8').read()
@@ -38,19 +37,19 @@ def spans(text):
 
 # A whole line has a label and a value; a bare `- Review:` in prose names the label only.
 plan = []
-for s in spans(section(read('skills', 'fathom-shared', 'conventions.md'), '## The plan document')):
+for s in spans(section(read('skills', 'execute', 'conventions.md'), '## The plan document')):
     if s.startswith(('# ', '- ')) and ': ' in s and s not in plan:
         plan.append(s)
 if not plan:
     die('conventions.md states no plan document lines')
 
 # The example holds ## headings of its own, so it is the first fence after the heading.
-block = re.search(r'^## File format\n+```markdown\n(.*?)^```', read('skills', 'fathom-shared', 'memory', 'checklist.md'), re.S | re.M)
+block = re.search(r'^## File format\n+```markdown\n(.*?)^```', read('skills', 'execute', 'memory', 'checklist.md'), re.S | re.M)
 if not block:
     die('memory/checklist.md has no example checklist')
 checklist = block.group(1)
 
-beads = [s for s in spans(read('skills', 'fathom-shared', 'memory', 'beads.md')) if s.startswith('bd create ')]
+beads = [s for s in spans(read('skills', 'execute', 'memory', 'beads.md')) if s.startswith('bd create ')]
 if not beads:
     die('memory/beads.md states no bd create commands')
 

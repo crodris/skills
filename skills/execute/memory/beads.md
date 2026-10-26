@@ -25,7 +25,7 @@ Write and stage the file with these three export steps, each run as its own comm
 3. `git add .beads/<issueRef>.jsonl`
 
 Run them as three separate commands, since a restricted allowlist refuses a whole chained command when any part of it is not allowed.
-`bd export` writes every issue in the database and has no label filter, so it writes to a scratch file in `<main checkout>.fathom/`, the sibling directory `../../execute/fan-out.md` names, and `sed` copies only the lines whose labels include `<issueRef>`.
+`bd export` writes every issue in the database and has no label filter, so it writes to a scratch file in `<main checkout>.fathom/`, the sibling directory `../fan-out.md` names, and `sed` copies only the lines whose labels include `<issueRef>`.
 `bd` and `sed` write their own files, since a shell redirect such as `>` needs the user's approval in an agent session, and so does a `jq` filter that uses a `$` variable.
 `bd export` does not create a missing directory, which is why `init` creates `<main checkout>.fathom`, taking `<main checkout>` from the first line of `git worktree list --porcelain`.
 Leave the scratch file in place; the next export overwrites it.
