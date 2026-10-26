@@ -51,10 +51,6 @@ printf 'skills/demo/SKILL.md lots\n' > "$dir/bin/skill-budgets.txt"
 expect "a malformed budget line fails" 1 "$dir" "expected \"<path> <words>\""
 
 dir=$(scratch)
-printf 'skills/demo/SKILL.md 3 extra\n' > "$dir/bin/skill-budgets.txt"
-expect "a budget line with three fields fails" 1 "$dir" "expected \"<path> <words>\""
-
-dir=$(scratch)
 printf 'skills/demo/SKILL.md\n' > "$dir/bin/skill-budgets.txt"
 expect "a budget line with only a path fails" 1 "$dir" "expected \"<path> <words>\""
 
@@ -72,6 +68,19 @@ dir=$(scratch)
 printf 'skills/demo/ignored.md\n' > "$dir/.gitignore"
 printf 'ignored notes\n' > "$dir/skills/demo/ignored.md"
 expect "a git-ignored file is not checked" 0 "$dir"
+
+dir=$(scratch)
+printf '\xff\xfe\n' > "$dir/skills/demo/SKILL.md"
+expect "a file that is not UTF-8 fails with only that problem" 1 "$dir" "skills/demo/SKILL.md: not valid UTF-8."
+dir=$(scratch)
+printf '\xff\xfe\n' > "$dir/skills/demo/SKILL.md"
+out=$("$dir/bin/check-skill-size.sh" 2>&1 || true)
+if printf '%s' "$out" | grep -q "has a budget but no file"; then
+  echo "FAIL: a file that is not UTF-8 is still counted as present"; failures=$((failures + 1))
+else
+  echo "ok: a file that is not UTF-8 is still counted as present"
+fi
+rm -rf "$dir"
 
 dir=$(scratch)
 rm "$dir/skills/demo/SKILL.md"

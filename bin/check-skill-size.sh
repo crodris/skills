@@ -37,6 +37,7 @@ for path in sorted(p for p in sys.stdin.read().split("\0") if p):
     except FileNotFoundError:
         continue
     except UnicodeDecodeError:
+        present.add(path)
         problems.append(f"{path}: not valid UTF-8.")
         continue
     present.add(path)
