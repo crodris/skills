@@ -12,7 +12,7 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill, so take only the ones you want.
-`execute` and `scaffold` also need `fathom-shared`, which carries the files they read.
+`execute` and `scaffold` also need `fathom-shared`, which carries the files they read, and `execute` opens its pull requests through `file-pr` from the ship plugin.
 
 On Claude Code, Fathom and ship also install as plugins, and so does the fathom-progress mod:
 
@@ -25,18 +25,19 @@ On Claude Code, Fathom and ship also install as plugins, and so does the fathom-
 
 ## Plugins
 
-### fathom (v2.7.3)
+### fathom (v3.0.0)
 
 `execute` takes a tracker issue through breakdown, implementation, tests, commits, and an open review, and resumes where the last run stopped.
 `scaffold` turns requirements into a main issue with linked sub-issues, then offers to hand off to `execute`.
 They need an Asana or Linear MCP, and the GitHub CLI for reviews on GitHub.
 The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacked reviews, and troubleshooting.
 
-### ship (v2.2.0)
+### ship (v3.0.0)
 
 `ship` carries the current branch to a ready pull request: verify until clean, commit, push, open the pull request, review it with subagents and any review bots, and fix until nothing blocking remains.
 It merges, watches the release, and cleans up only when you ask it to merge, or when the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
 It merges with the `merge-method` in `.ship/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one or its settings are unreadable.
+It opens the pull request through `file-pr`, which also opens a pull request on its own when you ask to file one.
 It needs a git remote, an authenticated GitHub CLI, and `jq`.
 
 ### fathom-progress (v0.2.0)

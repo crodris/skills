@@ -1,7 +1,7 @@
 ---
 name: execute
 description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5, or several at once like "execute ONC-5 ONC-6". Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
-version: 2.7.3
+version: 3.0.0
 ---
 
 # Execute
@@ -31,8 +31,8 @@ Every run begins by reading durable state from the repository and the tracker, n
 Before doing any tracker or memory work, read:
 
 These paths are relative to the directory containing this SKILL.md file, not the current workspace, and they all point into the fathom-shared skill installed next to this one.
-When `../fathom-shared/` does not exist there, stop before anything else and give its install command for the user to run, matching how this skill was installed; never run it yourself.
-That is `npx skills@latest add crodris/skills -s fathom-shared -g` for a global install, without `-g` for a project install, with the same `-a <agent>` flag the install used, such as `-a kiro-cli` on Kiro, and `/plugin install fathom@crodris` again for a Claude Code plugin install.
+When `../fathom-shared/` or `../file-pr/` does not exist there, stop before anything else and give the install command for the user to run, matching how this skill was installed; never run it yourself.
+That is `npx skills@latest add crodris/skills -s fathom-shared file-pr -g` for a global install, without `-g` for a project install, with the same `-a <agent>` flag the install used, such as `-a kiro-cli` on Kiro, and `/plugin install fathom@crodris` again for a Claude Code plugin install.
 
 - `../fathom-shared/trackers.md` for the tracker contract, phase names, and first-run profile setup.
 - `../fathom-shared/forges.md` for the forge contract, adapter resolution, the capability tiers, and base-branch resolution.
@@ -182,9 +182,8 @@ If any of these files cannot be found and read, stop immediately and report whic
     Then open the review through the forge contract in `../fathom-shared/forges.md`, never by invoking a forge CLI directly from this procedure.
     - Confirm the resolved base with `resolveBase` first, as the contract requires, before anything is created against it.
     - Push the branch, with `-u origin <branch>` when it has no upstream yet, unless the resolved adapter declares `pushesForYou`.
-    - Call `openReview` with the branch, the resolved base, a title, and a body.
-      Title it the way merged reviews are titled in the resolved base's `git log` (a squash subject, or a merge commit's title line), naming the outcome for the user: `perf(server): cut websocket frame size by 70%+ with gzipping` names the outcome, where `perf(server): negotiate permessage-deflate on the websocket` names only the mechanism.
-      Open the body with the problem as the issue states it, then the fix in a sentence or two, then `Closes <ref>` for a Linear issue or the task's URL for an Asana task, the list of completed tasks, and a test plan.
+    - Call `openReview` with the branch, the resolved base, a title, and a body, written by the Title and Body sections of `../file-pr/SKILL.md`.
+      The body's parts from this run are `Closes <ref>` for a Linear issue or the task's URL for an Asana task, the list of completed tasks, and a test plan.
     - Skip this when a review already exists for the branch, and reuse that one; resuming an issue must never open a second review.
     - Call `publishReview` with the returned id.
     - Record `- Review: <id> <url>` in this issue's file under `.fathom/`, alongside the existing `- PR:` line.
