@@ -1,7 +1,7 @@
 ---
 name: ship
 description: Use when the user says "ship", "ship it", "/ship", "ship and merge", "take this all the way", "get this merged and released", or asks for the current branch to be carried from working tree to a merged release. Plain "ship" stops at a green pull request, and the merge needs a request that says to merge or a `merge` value of `yes` in the repository's `.ship/config.md`. Also use when the branch is already pushed or already has an open pull request and the user asks to finish it, and when the user asks to babysit, watch, or monitor a pull request or get it green without merging. Not for a single commit or a release cut from an already-merged main.
-version: 2.1.4
+version: 2.2.0
 ---
 
 # Ship
@@ -66,6 +66,7 @@ Resolve all of it before touching the working tree, so the run never pauses mid-
 | `security-paths` | Stages 0-3 | No security review beside the code reviewer. |
 | `drive` | Stages 1 and 3 | No drive; stage 1 ends on verify alone, and the confirmation pass runs as written in stage 3, step 5. |
 | `merge` | Mode | Hold mode unless the request says to merge. |
+| `merge-method` | Stage 3 | Resolved as Merge method says. |
 
 There is no review slot to resolve: the pre-merge review is always the code reviewer that stage 3 defines, never a command nor a review skill that wraps one.
 Never route a review tool into `verify`: a command this project names as a review step is not a verify gate.
@@ -87,6 +88,24 @@ When `light-paths` or `security-paths` is set, read `lanes.md` in this skill's f
 When `drive` is set, read `drive.md` in this skill's folder during stage 0, and run the drive where it says.
 Without `light-paths`, `security-paths`, or `drive`, every run is the standard lane with no drive.
 The Mode section says how `merge` selects the mode.
+
+### Merge method
+
+`merge-method` is `squash`, `rebase`, or `merge`.
+Every run reads it from `.ship/config.md`, without any trailing `# comment`, since step 4's base update follows it in hold mode too.
+Read the repository's allowed methods with `gh api repos/<owner>/<repo> --jq '[.allow_squash_merge, .allow_rebase_merge, .allow_merge_commit]'`.
+A failed call or a `null` value means the settings are unreadable.
+A configured value outside the three, or one the settings show as `false`, is unresolved.
+A merge-mode run with no resolved value uses the one method when exactly one is `true`.
+Otherwise it asks under When to ask.
+Offer one option per allowed method, or all three when the settings are unreadable, with these examples:
+
+- `squash`: the branch's commits become one commit on `base`, titled like the pull request.
+  Five work-in-progress commits become `feat(api): add rate limits (#42)`.
+- `rebase`: each branch commit lands on `base` as its own commit, including work-in-progress and review-fix commits.
+  An import authored by someone else stays separate from the commit that wires it in.
+- `merge`: a merge commit joins the branch to `base`, keeping its commits and their shape.
+  A release branch merged back into `main` stays visible as a branch.
 
 ### Where to look, in order
 
@@ -124,6 +143,7 @@ Ask the user, with AskUserQuestion, when any of these holds:
 - The aggregate found skips a tool the project clearly configures, for example a repository with a typecheck script whose `ci` script only runs tests.
 - A command from `.ship/config.md` no longer resolves: exit code 127, `command not found`, `Missing script`, `No rule to make target`. Treat the file as stale, re-detect from tier 2, and re-ask.
 - A `verify` command from `.ship/config.md` is a review tool, which this run will not adopt as a verify gate. Same treatment: stale file, re-detect from tier 2, re-ask. This one is visible on reading the file, rather than only when the command runs.
+- A merge-mode run that Merge method leaves with no method.
 
 Before prompting, check whether another local branch or worktree already carries a `.ship/config.md`, and offer to reuse it rather than starting over.
 A repository is usually shipped from many branches, and the answer does not change between them.
@@ -313,14 +333,19 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Apply one only when the edit is a one-liner, touches nothing the blocking fixes touch, AND a blocking fix is already buying the push it rides; when in doubt, disposition it.
 4. Apply every blocking fix, from every reviewer, in ONE batch.
    Re-run `verify` under stage 1's rules, steps 1 to 4, until it is clean, re-check the lane, then commit and push once, behind the same branch guard stage 2 uses; the drive is step 5's to run, not this step's.
-   When the pull request conflicts with `base`, or `base` requires an up-to-date branch and this one is behind, the batch also runs `git fetch origin "$base"` and merges `origin/$base` into the branch, resolving any conflict the way the change intends; the squash merge in step 7 drops that merge commit.
+   When the pull request conflicts with `base`, or `base` requires an up-to-date branch and this one is behind, the batch also runs `git fetch origin "$base"` and merges `origin/$base` into the branch, resolving any conflict the way the change intends; a squash merge in step 7 drops that merge commit.
+   When the resolved merge method is `rebase`, rebase the branch onto `origin/$base` instead, before committing the fixes, since a rebase merge needs a branch with no merge commits.
+   Record the merge base and the head from before the rebase as `<old-base>` and `<old-head>`, and the rebased tip as `<rebased-head>`.
+   Push it with `--force-with-lease` set to the head the reviewers read, and only when the branch is exclusively this run's; otherwise stop and report.
    A run takes at most one base update, riding a push or buying one, and a branch that needs a second is a stop-and-report.
    Update this run's section of the pull request body with the review outcome and every disposition recorded so far.
    When nothing was blocking and no base update was due, nothing is pushed, and this pass is the one step 6 can terminate on.
 5. Confirm each push once, and only when step 4 pushed.
    The push buys one confirmation pass on the new head: each bot that reviews every push re-reviews it on its own, and concurrently the code reviewer's subagents read the fix commits alone, at the same bar, without re-reading the whole change.
    Standards checks the fix commits against the documented conventions, and Spec checks that each one resolves the finding it was pushed for and adds nothing else; a fix that does not resolve its finding leaves that finding open under step 6, whether or not a bot repeats it.
-   A base merge is confirmed on its conflict resolutions alone (`git show --remerge-diff <merge-sha>`), and one with no conflicts needs verify and the checks, not a subagent read.
+   A base merge is confirmed on its conflict resolutions alone (`git show --remerge-diff <merge-sha>`).
+   A base rebase is confirmed on `git range-diff <old-base>..<old-head> origin/$base..<rebased-head>`, with the values step 4 recorded.
+   A base update with no conflicts needs verify and the checks, not a subagent read.
    A first-push-only bot is re-requested here when the push fixed a confirmed critical or major that bot raised.
    For a bot that labels its own findings, such as CodeRabbit, that finding must carry the bot's own Critical or Major label; triage's higher grade does not count, and watch.sh refuses the re-request when no finding on the pull request carries that label, as the Re-request section of `bots.md` says.
    Run step 1's watch.sh command with `--rerequest <bot>` for that bot instead of `--bot`, so the script posts its review command once and waits on that review.
@@ -343,21 +368,21 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Then read its `reviewDecision`.
    In hold mode, or when `reviewDecision` is `REVIEW_REQUIRED` or `CHANGES_REQUESTED`, stop here and report the pull request with that SHA as ready to merge, awaiting approval, or changes requested, and skip the merge, the release watch, and the cleanup.
    Never merge past a required approval with `--admin`.
-   Otherwise merge that SHA explicitly: `gh pr merge <n> --squash --match-head-commit <reviewed-sha>`, adding `--delete-branch` only when this run did NOT use a worktree.
-   Keep the squash subject identical to the pull request title, because release tooling may parse it.
+   Otherwise merge that SHA explicitly with the resolved method: `gh pr merge <n> --<merge-method> --match-head-commit <settled-sha>`, adding `--delete-branch` only when this run did NOT use a worktree.
+   With `squash`, keep the subject identical to the pull request title, because release tooling may parse it.
    On a worktree run, leave both deletions to the cleanup step, which removes the worktree first and then deletes the local and remote branch in the right order.
-   Record the resulting merge commit's SHA; the next step needs it to know which run is this run's.
+   Record the SHA `gh pr view <n> --json mergeCommit --jq .mergeCommit.oid` prints, which is the commit the merge put at the tip of `base`; the next step needs it to know which run is this run's.
    From the merge through step 9 and the final report, run every command in the foreground and do not end the turn.
    This replaces step 1's background default for the rest of this ship run, and step 8's repeated calls are the one wait that step 1's ban on polling loops does not cover.
    Once the pull request has merged, a host may close the agent's session as soon as the turn goes idle, which kills every background command.
    T3 Code does this when it settles a thread whose linked pull request merged.
-8. Watch the base-branch pipeline after the merge, following the run whose head SHA is the recorded merge commit.
+8. Watch the base-branch pipeline after the merge, following the run whose head SHA is the SHA step 7 recorded.
    Whatever the project releases with, that run reaching a successful terminal state is the pass condition, and nothing else is.
    With semantic-release or similar, a landed release commit descending from the recorded merge is necessary but not sufficient: wait for its run to finish successfully too, since a release job can push the commit and then fail on publishing, tagging, or a downstream step.
    A finished-but-failed run is a stop-and-report, never a silent pass.
    Give this wait a deadline of roughly thirty minutes past the run's own typical duration; past it, report that the release did not settle and leave the merge as it stands.
-   Find the release run with `gh run list --branch "$base" --commit <merge-sha>`, and list again until it appears, since it can take a few seconds to start.
-   When no release run appears within 5 minutes, report that the base branch started no run for the merge commit.
+   Find the release run with `gh run list --branch "$base" --commit <recorded-sha>`, and list again until it appears, since it can take a few seconds to start.
+   When no release run appears within 5 minutes, report that the base branch started no run for that SHA.
    Wait on it with `gh run watch <run-id> --exit-status` under a time limit below the tool's timeout: `timeout <seconds>` on Linux, or `perl -e 'alarm <seconds>; exec @ARGV'` on macOS, which has no `timeout`.
    After each call, read `gh run view <run-id> --json status,conclusion`: a release run whose status is not `completed` means call again, and a completed one with any conclusion but `success` is a failed release run.
    The deadline counts across every call, and once it passes, stop calling and report that the release did not settle.
@@ -375,12 +400,12 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Either way, `git fetch --prune`, then fast-forward `base` with `git merge --ff-only origin/<base>` and leave it alone if that refuses; a plain `pull` on the base branch can merge or rebase work this run never looked at.
    Then clean up ONLY what this run created: the branch it shipped and, when it made one, that branch's worktree.
    The guard here is on the deletion target, not on the current checkout - by this point the checkout is deliberately on `base` - so delete a branch only when its name equals the settled one, and remove a worktree only when it is the one preflight created.
-   Confirm the merge through `gh pr view` before any `-D`, since a squash merge leaves no ancestry for `git branch --merged` to see, and confirm the worktree is clean before removing it.
+   Confirm the merge through `gh pr view` before any `-D`, since a squash or rebase merge leaves no ancestry for `git branch --merged` to see, and confirm the worktree is clean before removing it.
    Leave every other local branch and worktree alone: they belong to work this run knows nothing about, and a sweep of everything that looks merged is how unrelated work disappears.
 
 ## Reporting
 
-Give one final summary covering: the mode and the Mode rule that chose it, how the pipeline was resolved and whether the user was asked, the verify rounds and result, the lane and why it was chosen, the pull request number, the review bots found or that none were, the subagent rounds and each bot's passes and what each caught, the number of pushes, the drive evidence when there was one, the merge, the release version or "no release", and the cleanup state.
+Give one final summary covering: the mode and the Mode rule that chose it, how the pipeline was resolved and whether the user was asked, the verify rounds and result, the lane and why it was chosen, the pull request number, the review bots found or that none were, the subagent rounds and each bot's passes and what each caught, the number of pushes, the drive evidence when there was one, the merge and the method it used, the release version or "no release", and the cleanup state.
 Name `.ship/config.md` when this run wrote or updated it, and say which slots the user answered.
 Say so too when a recorded answer could not be written because the run skipped to stage 3, and when a command was dropped from a tier's answer, naming the command and why.
 Surface anything skipped, red, or deferred the moment it happens, not only at the end.
