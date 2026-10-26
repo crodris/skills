@@ -86,27 +86,6 @@ rules:
       which task-memory backend to read is a read-only precedence decision;
       every consequential action still runs through approval.md's stops.
 
-  - id: "TM1"
-    path: "trackers.md"
-    message: "*rm -f -- .fathom/config.md*"
-    reason: >-
-      False positive: first-run setup names `git clean -f -- .fathom/config.md`
-      and `git rm -f -- .fathom/config.md` to remove an uncommitted profile
-      copy only after comparing it with the issue branch's tracked copy and
-      finding them identical, so git can switch branches. Both are scoped to
-      that one path, and the same line forbids `git checkout -f`, which would
-      discard tracked changes.
-
-  - id: "EA2"
-    path: "trackers.md"
-    message: "*without asking*"
-    reason: >-
-      False positive: the flagged line is the first-run setup QUESTION that
-      asks the user to choose an approval mode ("stop for approval ... or
-      run straight through without asking"). It is literally a
-      human-in-the-loop prompt; "without asking" names the option offered,
-      not behavior taken unilaterally.
-
   - id: "PE3"
     path: "conventions.md"
     message: "*credentials.yml*"
@@ -116,19 +95,8 @@ rules:
       forbid staging them. The rule instructs the agent to stop and ask;
       nothing reads or transmits credentials.
 
-  - id: "PE3"
-    path: "trackers/asana.md"
-    message: "*access token*"
-    reason: >-
-      False positive: the line documents merge-closer Action setup and
-      tells the USER to add an ASANA_TOKEN repository secret in GitHub
-      settings. The skill never reads or handles the token; the absolute
-      boundary in both entry skills forbids credential access. The offer
-      is now gated on the resolved forge declaring ciHooks, so it is only
-      reachable on a forge that can run the workflow at all.
-
   - id: "E1"
-    path: "trackers/asana.md"
+    path: "trackers/merge-closer.md"
     message: "*app.asana.com*"
     reason: >-
       Reviewed, intentional: the flagged curl is inside the OPTIONAL
@@ -140,23 +108,13 @@ rules:
       forbids them from calling tracker HTTP APIs.
 
   - id: "E1"
-    path: "trackers/linear.md"
+    path: "trackers/merge-closer.md"
     message: "*api.linear.app*"
     reason: >-
       Reviewed, intentional: same as the Asana rule - the flagged curl is
-      the Linear variant of the optional merge-closer Action template,
+      the Linear variant of the optional merge-closer Action template, which lives beside the Asana one in trackers/merge-closer.md,
       calling Linear's documented GraphQL API with the user's own
       repository secret. Never executed by the skills.
-
-  - id: "RP1"
-    path: "agents.md"
-    message: "*npx skills*"
-    reason: >-
-      Reviewed, intentional: the install instruction uses the skills.sh
-      CLI (npx skills add). Pinning an exact CLI version here would go
-      stale and is not a security boundary; the command runs on the USER's
-      machine at install time by their choice, and the installed content
-      is this repository itself.
 
   - id: "RP1"
     path: "SKILL.md"

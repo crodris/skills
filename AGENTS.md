@@ -13,7 +13,7 @@ Another file that needs it points to it by path and does not restate it.
 The Fathom contracts, the files in `skills/execute/` that both `execute` and `scaffold` read, are defined only there, and a contract row says what the operation does, not which skill calls it.
 
 Fathom skills stay agent-neutral.
-Tool names, model names, and other per-agent details go in `skills/execute/agents.md`.
+Tool names, model names, and other per-agent details go in the agent files under `skills/execute/agents/`.
 
 Material that only some runs need goes in a separate file behind a pointer, such as `execute/fan-out.md`.
 The main `SKILL.md` keeps what every run needs.

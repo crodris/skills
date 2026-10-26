@@ -1,10 +1,7 @@
 # GitHub
 
-The forge adapter for GitHub, driven entirely through the GitHub CLI, `gh`.
-Implements the contract in `../forges.md`; read that file first for the operation and capability definitions this one fills in.
-
-GitHub's own vocabulary is used throughout this file, so a review is a pull request and a review id is a pull request number.
-Shared contracts outside this file say "review"; that difference is deliberate, not drift.
+The forge adapter for GitHub, driven through the GitHub CLI, `gh`.
+It implements the contract in `../forges.md`, where a review is a pull request and a review id is a pull request number.
 
 ## Declared capabilities
 
@@ -16,98 +13,65 @@ Shared contracts outside this file say "review"; that difference is deliberate, 
 | `reviewLookup` | `by-id` |
 | `stackedReviews` | `retarget` |
 
-`ciHooks` is true because GitHub Actions can run a merge-closer workflow in the user's repository; the tracker adapters' merge-closer offers are gated on this.
-`pushesForYou` is false because `gh pr create` does not push the branch, so the calling skill pushes first.
-`stackedReviews` is `retarget` because GitHub stacking is branch retargeting, and GitHub retargets a dependent pull request automatically when its upstream merges.
-That automatic retarget is real but partial, and the gap matters to the caller.
-When the upstream pull request is **squash-merged**, the squash commit is not an ancestor of the dependent branch, so the dependent pull request retargets to the base and then redisplays the upstream bundle's changes as if they were new.
-The dependent branch has to be rebased for its diff to be honest again, which is why the calling skill's rebase rule is keyed on commit ancestry rather than on this capability value.
+GitHub retargets a dependent pull request when its upstream merges.
+After a squash merge, the dependent branch still shows the upstream bundle's changes until it is rebased, so the calling skill decides rebases by commit ancestry.
 
 ## Absolute boundary
 
-The GitHub HTTP API is not a fallback for any operation here.
-When `gh` is missing or unauthenticated, that is the answer, and it selects a tier per `../forges.md`.
-
 Never call the GitHub HTTP API directly.
-Never read tokens from disk or from the environment, including `GITHUB_TOKEN` and `GH_TOKEN`.
-Never modify the user's `gh` configuration, and never run `gh auth login` on the user's behalf.
-Authentication is the user's to perform.
+Never read tokens from disk or the environment, including `GITHUB_TOKEN` and `GH_TOKEN`.
+Never modify the user's `gh` configuration or run `gh auth login` for the user.
+A missing or unauthenticated `gh` selects a tier per `../forges.md`.
 
 ## `verifyForge()`
 
 Run `gh auth status`.
-
-Treat a missing binary and an unauthenticated one identically: unverified.
-Do not distinguish them in the outcome, only in the fix text below.
-
-When it does not verify, report the fix rather than working around it:
+A missing binary and an unauthenticated one are both unverified.
+When it does not verify, report the fix and stop:
 
 - Install the CLI with `brew install gh` on macOS, or the platform package listed at https://github.com/cli/cli#installation.
 - Authenticate with `gh auth login`.
 - Re-invoke the skill.
 
-Delivering these instructions is a complete, useful action, not a fallback.
-
 ## `resolveBase(branch)`
 
-Confirm the branch exists on the remote with `git ls-remote --exit-code --heads origin <branch>`.
-A base branch that exists only locally is not a valid merge target, because the pull request is created against the remote.
+Look the branch up as the `resolveBase(branch)` section of `../forges.md` says.
+A base that exists only locally is not a valid target.
 
 ## `openReview(branch, base, title, body, dependsOn?)`
 
-Push the branch first; `pushesForYou` is false, so the push is the caller's and this operation does not perform it.
+The caller has already pushed the branch.
+Wrap the body in `<!-- execute:start -->` and `<!-- execute:end -->`, outside the run markers, and pass the branch, the base, the title as given, and that body by following `../../file-pr/SKILL.md`.
+The caller supplied this title and applied Body steps 1 to 4, so this is that title and body.
+Follow `../../file-pr/SKILL.md`, reusing an open pull request for the branch or opening one.
+From its `OPEN <number> <url>` result, return the number as the review id and the URL.
+On `FAIL <reason>`, follow the openReview failure rule in step 11 of `../SKILL.md`, never return the manual-handoff result.
+When it returns `HANDOFF <url>`, return the manual-handoff result.
 
-Open it by following `../../file-pr/SKILL.md` with the branch, the base, and the given title and body.
-The caller already applied that skill's Title and Body sections, so pass both as given.
-It reuses a pull request that already exists for the branch, so re-running the skill on the same issue never opens a second one.
+Ignore `dependsOn`, since the base branch carries the dependency.
+Never encode the dependency a second way, such as a label or an extra API call.
+The `Depends on <url>` line in a body is prose, not a second encoding.
 
-Return the pull request number as the review id, and the pull request URL.
-The number is what `getReviewState` looks up, and it resolves from any clone without a listing call.
-Ignore `dependsOn` when it is supplied.
-`stackedReviews` is `retarget`, so passing the previous bundle's branch as `base` is the entire mechanism, and GitHub needs no separate dependency declaration.
-Never encode the dependency a second way, such as by adding a label or an extra API call; the base branch already carries it and a second representation can disagree with the first.
-The `Depends on <url>` line in a review body is prose for a human reviewer and carries no machine meaning, so it is not a second representation of the dependency; the prohibition is on machine-readable representations such as a label or an extra API call.
-Nothing on GitHub reads that line, which is why the calling skill writes it into every bundle after the first while this operation still ignores `dependsOn`.
-
-Two body conventions matter on GitHub specifically, and the calling skill supplies them:
-
-- `Closes <ref>` is a GitHub issue-closing keyword, and Linear's GitHub integration keys on the same line to close a Linear issue when the pull request merges into the default branch.
-- An Asana task URL in the body is what Asana's native GitHub integration attaches to.
-
-Neither is this adapter's decision; both are recorded here because they are GitHub-specific behavior that would be wrong to carry into another adapter.
+In the body, `Closes <ref>` closes a Linear issue through Linear's GitHub integration when the pull request merges into the default branch, and an Asana task URL is what Asana's GitHub integration attaches to.
 
 ## `publishReview(id)`
 
-A deliberate no-op.
-
-GitHub distinguishes draft from ready-for-review pull requests, so `draftState` is true, but the current skill flow opens pull requests ready for review and never opens drafts.
-`publishReview` therefore has nothing to do, and this adapter preserves that existing behavior exactly.
-
-Driving the `inReview` phase off publication rather than off creation, so that a draft pull request no longer moves an issue to `inReview`, is a known and deliberate follow-up.
-Do not fix it here; changing GitHub's behavior inside the portability change would make that change unreviewable.
+A no-op, since pull requests open ready for review.
 
 ## `getReviewState(id)`
 
-Run `gh pr view <id> --json state,mergedAt`.
+Run `gh pr view <id> --json state,mergedAt`, and map it:
 
-Map the result:
+- `mergedAt` is non-null: `merged`, with `mergedAt` as the merge timestamp.
+- state is closed and `mergedAt` is null: `closed-unmerged`.
+- otherwise: `open`.
 
-- `mergedAt` is non-null → `merged`, with `mergedAt` as the merge timestamp.
-- state is closed and `mergedAt` is null → `closed-unmerged`.
-- otherwise → `open`.
+Look up each recorded id directly, never by listing pull requests.
 
-Look up each recorded id directly.
-Do not list pull requests to find one.
-An earlier version of the sweep matched `gh pr list --state all --json headRefName,state,mergedAt` against recorded branch names, which silently skipped older branches whenever the listing hit its default cap of 30; per-id lookup removes that hazard entirely and is the reason the sweep is keyed on ids.
+## `findReviewByBranch(branch)`
 
-## `findReviewByBranch(branch)` - optional, incomplete-record lookup only
-
-Run `gh pr list --state all --head <branch> --json number,url,baseRefName --limit 10`.
-
-Return one candidate record per pull request the listing returned, newest first, each carrying the pull request number as the review id, its URL, and `baseRefName` as its base.
-Return an empty list when the listing is empty.
-Never collapse the list to the newest entry here: a head branch can carry more than one pull request, and which of them the caller wants is the caller's question to answer from the base, per the contract in `../forges.md`.
-
-This is the one sanctioned listing call, and it exists only so an incomplete record can be resolved: the sweep resolves a record written before review ids were recorded, and `execute` recovers a bundle whose pull request opened before its `- Review:` line was committed.
-Scoping the list to one head branch keeps it bounded regardless of repository age, which is what the unscoped listing above could not guarantee.
-Never use it for records that already carry an id.
+Run `gh pr list --state all --head <branch> --json number,url,baseRefName,isCrossRepository --limit 10`.
+Drop each result whose `isCrossRepository` is `true`, since a fork's pull request can share the branch name.
+Return one record per pull request listed, newest first, with the number as the review id, its URL, and `baseRefName` as its base, or an empty list.
+Never collapse the list to its newest entry.
+Never use it for a record that already carries an id.

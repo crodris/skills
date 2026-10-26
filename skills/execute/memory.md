@@ -1,77 +1,51 @@
 # Task memory
 
-Task state lives in exactly one durable backend per run.
-The backend is resolved by probing, never configured.
+Task state lives in exactly one durable backend per issue, resolved by probing.
 
 ## The contract
 
-Use exactly these eight operations.
-Adapter files implement each one against a specific backend; treat the operation names as the vocabulary for every other skill and adapter in this plugin.
+Use exactly these eight operations, which each adapter implements.
+Every operation reads and claims only the issue being worked, so a run never implements another issue's task or closes the wrong sub-issue.
 
 | Operation | Purpose |
 | --- | --- |
-| `init(issueRef)` | Prepare the backend for this issue's task set. A repeated call must never duplicate, roll back, or drop this issue's existing tasks, though it may update them from a newer committed copy. |
-| `createTask(title, description, subIssueRef, deps)` | Create a task, tag it with the issue ref so all tasks for one issue can be listed directly, record `subIssueRef` on the task, and return its task id. This is the only operation here that takes `deps`, so the dependency edges between a split issue's child tasks are settled as those tasks are created and cannot be added to a task that already exists. Create the child tasks in planned order for that reason, so each task's predecessor id already exists when the next task needs it as a dep. The parent task's own dependency edges on its children are outside that guarantee and are added after the children exist, as the `parentTask` row below describes. When the issue was split into a stack, every task takes a dep on its predecessor so the whole issue forms one sequential chain across bundles as well as within them, which is what lets the backend itself enforce bundle order: a later bundle's task is never claimable while any earlier task is still open. A single edge at each bundle boundary would not achieve this, because a task carrying no deps at all has them trivially closed and stays claimable out of order. Whether the issue is split is therefore decided before the first `createTask` call, since a chain this contract cannot add afterwards has to be built as the tasks are created. |
-| `claimNext()` | Return and mark in-progress this issue's first open task whose deps are all closed; null when none remain. Scope every call to the issue being worked: a backend able to see other issues' tasks must filter to this one, or the loop will implement another issue's work on this branch and close the wrong sub-issue. When an interrupted run left one of this issue's tasks in progress, return that task to be resumed rather than claiming a new one. |
-| `ready()` | Return this issue's open tasks whose deps are all closed, in creation order, without claiming any. Scope it to the issue exactly as `claimNext` is. |
-| `claim(taskId)` | Mark one task from `ready()` in progress, so several tasks can be in progress at once. |
-| `close(taskId)` | Mark a task done. Calling it on a task already done replaces its recorded commit with the new one. |
-| `status()` | Return this issue's open and done counts and its in-progress tasks, scoped to the issue exactly as `claimNext` is. |
-| `parentTask(issueRef)` | Create or fetch the parent task representing the overarching issue. Its dependency edges on the children are added after the children exist, not during this call, since at that point they do not. |
+| `init(issueRef)` | Prepare the backend for this issue. A repeated call never duplicates, rolls back, or drops tasks, though it may update them from a newer committed copy. |
+| `createTask(title, description, subIssueRef, deps)` | Create a task tagged with the issue ref and `subIssueRef`, and return its id. Only this operation sets `deps`, so create tasks in planned order and decide whether the issue is split before the first call. In a split issue every task deps on its predecessor, so a later bundle's task is never claimable while an earlier task is open. |
+| `claimNext()` | Mark in progress and return the first open task whose deps are all closed, or null. When a task is already in progress from an interrupted run, return it instead. |
+| `ready()` | Return the open tasks whose deps are all closed, in creation order, claiming none. |
+| `claim(taskId)` | Mark one task from `ready()` in progress, so several can run at once. |
+| `close(taskId)` | Mark a task done with its commit. On a task already done, replace the recorded commit. |
+| `status()` | Return the open and done counts and the in-progress tasks. |
+| `parentTask(issueRef)` | Create or fetch the issue's parent task. Its edges on the children are added once the children exist. |
 
 ## Resolution
 
-Probe once per run, before doing any task-memory work.
-Existing state wins over capability: never switch backends mid-issue just because a capability becomes available partway through.
+Probe once per run, before any task-memory work, and never switch an issue's backend mid-issue.
 
-Follow this order:
+1. When `.fathom/tasks/<ISSUE-REF>.md` exists, even with no task lines, use the checklist adapter, whatever beads state the repository has.
+2. Otherwise take the base per Base branch resolution in `forges.md`, the same base the issue branch starts from, and fetch it as Base branch resolution in `forges.md` says when `origin/<base>` is missing or may be outdated.
+   When `git cat-file -e origin/<base>:.beads/metadata.json` succeeds, run `bd where`, and use the beads adapter when it succeeds.
+   When `bd where` fails, stop, show its error, and ask the user to install or upgrade beads or to continue on a machine where it succeeds.
+   Never fall back to the checklist adapter then.
+3. Otherwise use the checklist adapter.
+   A repository adopts beads by initializing it by hand and merging that into the base, as Fathom's `execute/README.md` describes.
 
-Check the issue's own state before the repository's state, because the per-issue signal decides that issue's backend.
+Do not ask the user to choose a backend.
+State the resolved backend in the run summary when other open issues in the repository use the other one.
 
-When `.fathom/tasks/<ISSUE-REF>.md` exists, use the checklist adapter for this issue.
-The file's existence is the signal, not its contents: `init` creates it before any task lines are added, so requiring checkboxes would send a run that died between `init` and the first task into a different backend and fork that issue's status across both.
-Do this even when `.beads/` exists and even when `bd` is installed.
-An issue whose statuses already live in checkboxes keeps that backend for its whole life; adding beads to a repository later must never move an in-flight issue, which would orphan the statuses already recorded in its checklist file.
-
-Otherwise, check whether the base branch tracks a beads workspace.
-Take the base from the tracker profile's `base-branch`, resolved per `forges.md`, and run `git fetch origin <base>` first when `origin/<base>` is missing or may be stale.
-When `git cat-file -e origin/<base>:.beads/metadata.json` succeeds, run `bd where`.
-Use the beads adapter when `bd where` succeeds.
-`bd --version` is no proof here, since it succeeds even when `bd` cannot open this workspace.
-`bd where` fails when `bd` is missing and when it refuses a 0.49-era workspace that still has `.beads/beads.db`.
-The beads adapter's `init` catches a 0.49-era workspace that has no `.beads/beads.db`, and a database with no issue prefix, which `bd where` also passes.
-When `bd where` exits nonzero, stop and show the user the error it printed.
-Ask them to install or upgrade beads, or to continue on a machine where `bd where` succeeds.
-Do not fall back to the checklist adapter in this case: task status must never fork across two backends, per the no-dual-truth rule below.
-
-When the base branch does not track `.beads/metadata.json`, use the checklist adapter, even when `bd` is installed.
-A repository that wants beads initializes it once by hand and merges that into the base, as Fathom's `execute/README.md` describes, and issues started after that use beads.
-
-Repositories do change backends over time, and that is fine as long as it happens per issue.
-When a repository gains beads while checklist-mode issues are still open, those issues stay on checklists and only issues started afterward use beads.
-Do not ask the user to choose a backend; resolution is a silent probe.
-Do state the resolved backend in the run summary whenever it differs from what the repository's other open issues are using, so a mixed-backend period is visible rather than surprising.
-
-Both backends store their state inside the repo, so a later session resumes by reading the repo rather than by remembering anything.
-Resuming on a different machine only works for state that was committed and pushed.
-The checklist file travels with each task commit, and beads commits its per-issue file as Repository hygiene in `memory/beads.md` describes.
-Resume by reading the working tree, not the last commit.
-An in-progress marker may be uncommitted when a session dies, and the file on disk is the truth, not whatever was last committed.
+Another machine resumes only from committed and pushed state.
+Resume from the working tree, since an in-progress marker may be uncommitted.
 
 ## Display overlay
 
-When the agent exposes built-in task-list tools, mirror tasks into them for a live progress UI.
-Rebuild the overlay from the durable backend on every resume; do not carry overlay state across sessions.
-Never read the overlay as the source of truth; the durable backend answers every question about task state.
-Skip the overlay silently when the agent exposes no such tools.
+When the agent has built-in task-list tools, mirror tasks into them for a live view.
+Rebuild the overlay from the backend on every resume, and never read it as the source of truth.
 
 ## No dual truth
 
-Task status never lives in two places.
-The human-readable plan always lives in the plan document at `.fathom/plans/<ISSUE-REF>.md` described in `conventions.md`, and that document never carries status.
-When the beads adapter is active, statuses live in beads and no file is written under `.fathom/tasks/` for that issue.
-When the checklist adapter is active, `.fathom/tasks/<ISSUE-REF>.md` holds the checkbox statuses for that issue, and the plan still lives in the plan document.
-Whichever backend is active, at least one file under `.fathom/` must record the issue's branch, its review id once one exists, and its tracker URL, because the merge sweep finds an issue by searching that directory, and a merge-closer running on the forge's own CI finds one the same way.
-A stacked issue has more than one branch and more than one review id, so it records one branch per bundle at breakdown time and adds each review id once that bundle's review exists, in stack order, in the plan document's `Bundles` section described in `conventions.md`.
-The single `Branch` line at the top of the plan document keeps naming bundle 1's branch and is never removed, because the merge-closer Action matches that exact label and knows nothing about stacks.
-This is a record of structure rather than of status, so it does not violate the no-dual-truth rule above: task status still lives only in the resolved backend, and the sweep reads review ids from these lines the same way it reads the single-review one.
+Task status lives only in the resolved backend.
+The plan document at `.fathom/plans/<ISSUE-REF>.md`, per `conventions.md`, never carries status, and beads writes no file under `.fathom/tasks/`.
+
+A file under `.fathom/` records the issue's branch, its review id once one exists, and its tracker URL, since the merge sweep and a merge-closer search that directory.
+A stacked issue records each bundle's branch and review id in the plan document's `Bundles` section.
+The plan document's `Branch` line always names bundle 1's branch, because the merge-closer Action matches that exact label.
