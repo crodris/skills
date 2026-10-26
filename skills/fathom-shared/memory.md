@@ -45,7 +45,7 @@ Ask them to install or upgrade beads, or to continue on a machine where `bd wher
 Do not fall back to the checklist adapter in this case: task status must never fork across two backends, per the no-dual-truth rule below.
 
 When the base branch does not track `.beads/metadata.json`, use the checklist adapter, even when `bd` is installed.
-A repository that wants beads initializes it once by hand and merges that into the base, as Fathom's `docs/fathom.md` describes, and issues started after that use beads.
+A repository that wants beads initializes it once by hand and merges that into the base, as Fathom's `execute/README.md` describes, and issues started after that use beads.
 
 Repositories do change backends over time, and that is fine as long as it happens per issue.
 When a repository gains beads while checklist-mode issues are still open, those issues stay on checklists and only issues started afterward use beads.

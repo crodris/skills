@@ -188,7 +188,7 @@ Execute asks only for a role neither file names, and only in ask mode.
 In auto mode it uses Sonnet for that role, writes nothing, and says so.
 A value other than `fable`, `opus`, `sonnet`, `haiku`, or `inherit-parent` (or its alias `auto`) is ignored.
 Each subagent's description starts with its model, such as `[opus] Execute TES-250`, so Claude Code's agent list shows it.
-To change your split later, edit `models.md`; the format and the details are in [agents.md](../skills/fathom-shared/agents.md#subagent-models).
+To change your split later, edit `models.md`; the format and the details are in [agents.md](../fathom-shared/agents.md#subagent-models).
 
 ### 5. Pre-approve the commands
 
