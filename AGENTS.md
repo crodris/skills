@@ -1,7 +1,7 @@
 # Working in this repository
 
 These rules cover changes to the skills here, and ship's Standards reviewer checks pull requests against them.
-The verify pipeline in `.ship/config.md` enforces the mechanical rules: no em or en dashes, skill frontmatter that parses, versions in step, and a clean SkillSpector scan.
+The verify pipeline in `.ship/config.md` enforces the mechanical rules: no em or en dashes, skill frontmatter that parses, versions in step, a word budget for every skill file, and a clean SkillSpector scan.
 
 ## Skill prose
 
@@ -32,6 +32,9 @@ CI fails when running it would change a file.
 `git config core.hooksPath bin/hooks` runs it before each commit.
 README headings for plugins and standalone skills keep the form `### <name> (v<version>)`, since the sync finds them by it.
 A skill that no plugin claims is listed under `## Standalone Skills` in the README.
+
+Every Markdown file in `skills/` has a word budget in `bin/skill-budgets.txt`, and `bin/check-skill-size.sh` fails when a file goes over it or has none.
+A trim lowers the budget in the same pull request, and raising one needs a reason in the pull request.
 
 Credit adapted outside work in the README's License section.
 
