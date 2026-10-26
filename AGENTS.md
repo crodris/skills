@@ -27,8 +27,15 @@ Update `README.md` and `skills/execute/README.md` wherever they describe the cha
 
 Update the version in the same pull request.
 Plugin skills take theirs from `.claude-plugin/marketplace.json`, and standalone skills from their `SKILL.md` frontmatter.
-`bin/sync-versions.sh` copies them into the README, and CI fails when running it would change a file.
+`bin/sync-versions.sh` copies each plugin version into its README heading and into the `SKILL.md` frontmatter of every skill the plugin claims, and copies each standalone version into its README heading.
+CI fails when running it would change a file.
 `git config core.hooksPath bin/hooks` runs it before each commit.
+README headings for plugins and standalone skills keep the form `### <name> (v<version>)`, since the sync finds them by it.
 A skill that no plugin claims is listed under `## Standalone Skills` in the README.
 
 Credit adapted outside work in the README's License section.
+
+## Security scanning
+
+Change the SkillSpector commit pin in the README and in `.github/workflows/skillspector.yml` together, so a local scan and CI run the same scanner.
+Suppress a finding in `.skillspector-baseline.yaml` only after you understand it, with a written reason, and scope the rule by rule id and flagged text.

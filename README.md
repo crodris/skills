@@ -34,7 +34,7 @@ The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacke
 ### ship (v2.1.4)
 
 `ship` carries the current branch to a ready pull request: verify until clean, commit, push, open the pull request, review it with subagents and any review bots, and fix until nothing blocking remains.
-It merges, watches the release, and cleans up only when you ask it to merge.
+It merges, watches the release, and cleans up only when you ask it to merge, or when the repository's `.ship/config.md` sets `merge: yes`.
 It needs a git remote, an authenticated GitHub CLI, and `jq`.
 
 ## Standalone Skills
@@ -51,7 +51,7 @@ It needs the GitHub CLI, plus a browser driver such as Playwright for visual cha
 `rewrite` drafts and rewrites prose you post under your name, in your voice, and removes the patterns that mark text as machine-written.
 It reads the voice file that `~/.config/voice/config.md` points at, and builds one with you on first run.
 It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when that is installed.
-To move from the old name, run `npx skills@latest remove my-voice -g`, then `npx skills@latest add crodris/skills -s rewrite -g`.
+To move from an old name, run `npx skills@latest remove my-voice -g` (or `npx skills@latest remove voice -g` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
 
 ### frontend-design-pipeline (v1.3.0)
 
@@ -66,7 +66,9 @@ It needs a private publisher, such as the Artifact tool in Claude Code or [here-
 ### worktree-setup (v1.0.2)
 
 `worktree-setup` makes a new git worktree runnable: it copies the main checkout's untracked env files and installs dependencies.
-Install it globally, then add this SessionStart hook to `~/.claude/settings.json` so worktrees created by other tools are covered too:
+It needs Git 2.31 or newer, and the package manager the worktree's lockfile names on `PATH`.
+Install it globally, then add this SessionStart hook to `~/.claude/settings.json` so worktrees created by other tools are covered too.
+The hook expects the global install; a project-scoped install puts the script at `.claude/skills/worktree-setup/setup.sh`, so change the path to match, or the hook does nothing.
 
 ```bash
 npx skills@latest add crodris/skills -s worktree-setup -g
