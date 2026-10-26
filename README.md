@@ -34,7 +34,7 @@ The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacke
 ### ship (v2.1.4)
 
 `ship` carries the current branch to a ready pull request: verify until clean, commit, push, open the pull request, review it with subagents and any review bots, and fix until nothing blocking remains.
-It merges, watches the release, and cleans up only when you ask it to merge, or when the repository's `.ship/config.md` sets `merge: yes`.
+It merges, watches the release, and cleans up only when you ask it to merge, or when the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
 It needs a git remote, an authenticated GitHub CLI, and `jq`.
 
 ## Standalone Skills
