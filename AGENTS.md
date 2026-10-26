@@ -1,7 +1,7 @@
 # Working in this repository
 
 These rules cover changes to the skills here, and ship's Standards reviewer checks pull requests against them.
-The verify pipeline in `.ship/config.md` enforces the mechanical rules: no em or en dashes, skill frontmatter that parses, versions in step, and a clean SkillSpector scan.
+The verify pipeline in `.ship/config.md` enforces the mechanical rules: no em or en dashes, skill frontmatter that parses, versions in step, a word budget for every skill file, and a clean SkillSpector scan.
 
 ## Skill prose
 
@@ -17,6 +17,9 @@ Tool names, model names, and other per-agent details go in `skills/fathom-shared
 
 Material that only some runs need goes in a separate file behind a pointer, such as `execute/fan-out.md`.
 The main `SKILL.md` keeps what every run needs.
+
+Every Markdown file in `skills/` has a word budget in `bin/skill-budgets.txt`, and `bin/check-skill-size.sh` fails when a file goes over it or has none.
+A trim lowers the budget in the same pull request, and raising one needs a reason in the pull request.
 
 Keep a reason only when a rule is easy to misread without it.
 Write one sentence per line, in plain declarative sentences, with one term per concept.

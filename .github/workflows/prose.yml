@@ -21,3 +21,15 @@ jobs:
 
       - name: Check for em and en dashes
         run: bin/check-dashes.sh
+
+  skill-size:
+    name: Skill word budgets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check the word budget check against scratch repositories
+        run: bin/test-check-skill-size.sh
+
+      - name: Check every skill file against its word budget
+        run: bin/check-skill-size.sh
