@@ -10,6 +10,8 @@ on:
       - "bin/test-scan-skills.sh"
       - "bin/test-worktree-setup.sh"
       - "bin/test-watch.sh"
+      - "bin/test-guard.sh"
+      - "bin/test-resolve-verify.sh"
       - "bin/check-pipeline-skills.sh"
       - "bin/test-check-pipeline-skills.sh"
       - ".github/workflows/skillspector.yml"
@@ -21,6 +23,8 @@ on:
       - "bin/test-scan-skills.sh"
       - "bin/test-worktree-setup.sh"
       - "bin/test-watch.sh"
+      - "bin/test-guard.sh"
+      - "bin/test-resolve-verify.sh"
       - "bin/check-pipeline-skills.sh"
       - "bin/test-check-pipeline-skills.sh"
       - ".github/workflows/skillspector.yml"
@@ -44,6 +48,12 @@ jobs:
 
       - name: Check ship's watch.sh against fake gh responses
         run: bin/test-watch.sh
+
+      - name: Check ship's guard.sh against scratch repositories
+        run: bin/test-guard.sh
+
+      - name: Check prove's resolve-verify.sh against scratch repositories
+        run: bin/test-resolve-verify.sh
 
       - name: Check check-pipeline-skills.sh against scratch repositories
         run: bin/test-check-pipeline-skills.sh
