@@ -1,0 +1,7 @@
+{
+  "name": "fathom-progress",
+  "version": "0.2.0",
+  "description": "Shows Fathom progress above the prompt: the sub-tasks of the issue being created or executed, their states, and the current task.",
+  "author": { "name": "Ryan Uesato" },
+  "types": "./types.d.ts"
+}
