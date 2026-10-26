@@ -25,6 +25,8 @@ tmux kill-session -t fathom-bench
 
 - `make-bench-repo.sh` takes its tracker destination and state mapping from `.fathom/config.md` at the repository root. This repository has none, so pass `--destination "<your default-destination line>"`, or `--config-from` with the path to another repository's `.fathom/config.md`.
 - The mod must be installed and on the branch under test. It loads from the working tree of the marketplace you installed it from.
+- `/fathom:execute` must be a known command too, or Claude Code answers "Unknown command" and the band never arms. Without the Fathom plugin installed, pass a second `--plugin-dir` with the absolute path of a folder holding a `.claude-plugin/plugin.json` named `fathom` and a `skills/` folder that links `execute`, `scaffold`, and `file-pr` from the branch under test. `--plugin-dir "$PWD/mods/fathom-progress"`, run from this repository's root, loads the mod the same way, for one session, with nothing installed.
+  Both paths must be absolute, since the session starts in the bench repository.
 - `--arm` types `/fathom:execute BENCH-1` and presses Esc after 3 seconds. Typing the command arms the band, and Esc stops Claude before it does Fathom's work. It still costs one started model turn, so `-- --model haiku` keeps it small. A finished run stops polling, so pass `--arm` again for each timeline.
 - Each step takes about 10 seconds to show, because of the poll. A nine-step timeline runs about two minutes.
 - The screens are saved next to the bench repo, in `out/<time>-<timeline>/step-N.txt`, and the debug log in `out/claude-debug-<session>.log`. In the log, look for `armed (execute) by prompt.submit` and `following BENCH-1 (checklist)`.
