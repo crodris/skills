@@ -1,0 +1,4 @@
+{
+  "description": "Fathom progress above the prompt.",
+  "modules": ["./register.tsx"]
+}
