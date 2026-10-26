@@ -11,18 +11,3 @@ release: none
 post-merge: none
 merge: yes
 ```
-
-Detection alone would find only `bin/scan-skills.sh`, because that is the sole
-command the README names as a pre-commit gate. `bin/sync-versions.sh` is just as
-much a gate - it fails when a skill directory is claimed by no plugin entry, by
-more than one, or is claimed but missing - so it is recorded here rather than
-left to be rediscovered. `claude plugin validate --strict .` gates
-`.claude-plugin/marketplace.json`, and CI runs it in `plugin-validate.yml`.
-`bin/check-dashes.sh` bans em and en dashes, with its scope in the README, and
-`bin/test-check-dashes.sh` proves it; CI runs both in `prose.yml`.
-`bin/check-frontmatter.sh` fails when a skill's frontmatter does not parse as
-YAML or its description is cut short, and `bin/test-check-frontmatter.sh`
-proves it; CI runs both in `frontmatter.yml`.
-`bin/test-check-pipeline-skills.sh` proves `bin/check-pipeline-skills.sh`, and
-CI runs it in `skillspector.yml`. The check itself stays out of verify, because
-it needs network access and checks this machine's installed skills.

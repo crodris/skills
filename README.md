@@ -2,22 +2,19 @@
 
 [![SkillSpector](https://github.com/crodris/skills/actions/workflows/skillspector.yml/badge.svg)](https://github.com/crodris/skills/actions/workflows/skillspector.yml)
 
-Personal agent skills for issue-driven development workflow automation, installable as Claude Code plugins or onto any agent via [skills.sh](https://www.skills.sh).
-CI scans the skills with [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) whenever a change touches `skills/`, the baseline, or the scan scripts; the build fails on any non-suppressed security finding.
+Agent skills I use every day, for taking work from a tracker issue to a merged pull request.
+They run on any agent that skills.sh supports, and Fathom and ship also install as Claude Code plugins.
 
-## Installation (30-second setup)
-
-**Recommended: any agent** - use [skills.sh](https://www.skills.sh), which installs the same skills on Claude Code, Kiro, Codex, and other agents, and `npx skills update` pulls the latest when this repo ships:
+## Install
 
 ```bash
 npx skills@latest add crodris/skills
 ```
 
-The installer lists every skill in `skills/` regardless of which plugin owns it.
-Take `ship`, `review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, `worktree-setup`, or `verification-audit` on its own if that is all you want.
-`execute` and `scaffold` require `fathom-shared`, which carries the contract files they read, and each stops with its install command when it is missing.
+The installer lists every skill, so take only the ones you want.
+`execute` and `scaffold` also need `fathom-shared`, which carries the files they read.
 
-**Claude Code plugins** - also available, for Claude Code only:
+On Claude Code, Fathom and ship also install as plugins:
 
 ```text
 /plugin marketplace add crodris/skills
@@ -25,347 +22,57 @@ Take `ship`, `review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, `wor
 /plugin install ship@crodris
 ```
 
-The two plugins are independent: install either one alone.
-Fathom needs a tracker MCP. Ship needs a git repository with a remote, plus an authenticated `gh` and `jq` for its pull request and check-waiting stages.
-`review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, `worktree-setup`, and `verification-audit` belong to no plugin on purpose, so they install through skills.sh and not through `/plugin install`.
+## Plugins
 
-> Individual plugins may have additional prerequisites that run in your **terminal** (e.g., `brew install`). See each plugin's section below for details.
+### fathom (v2.7.2)
 
-## Available Plugins
-
-### fathom (v2.7.1)
-
-Fathom provides two agent skills, execute and scaffold, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter.
-It works with Asana or Linear as your issue tracker, and both skills run unchanged on Claude Code and Kiro.
-
-#### Prerequisites
-
-- An Asana or Linear MCP plugin installed and authenticated
-- [Beads CLI](https://github.com/gastownhall/beads) 1.x installed (`bd` command available); optional, and used only in a repository whose base branch tracks `.beads/`, where it gives the richest task memory
-- A forge adapter for wherever your reviews live. Two ship built in: GitHub, which needs the [GitHub CLI](https://cli.github.com/) installed and authenticated (`gh` command available), and a generic-git fallback that pushes the branch and hands the review off to you. Write a `.fathom/forge.md` from the bundled template only for a forge Fathom does not ship.
-
-#### Install
-
-```bash
-/plugin install fathom@crodris
-```
-
-#### Skills
-
-| Skill | Description |
-|-------|-------------|
-| `execute` | Drives one tracker issue through a single resumable pass: breakdown, implementation, tests, commits, and an open code review. |
-| `scaffold` | Turns requirements text into a scaffolded main issue plus linked sub-issues, then offers to hand off to execute. |
-
-Talk to either skill in plain language; there are no slash commands to memorize.
-
-```bash
-execute ONC-5
-work on <asana task url>
-scaffold these requirements
-```
-
-#### Features
-
-- **Resumable pass** - execute reads durable state from disk and the tracker on every invocation, never from memory of a previous run
-- **Scaffold-to-execute handoff** - scaffold drafts a main issue plus sub-issues, then offers to hand straight into execute
-- **Task memory** - beads-backed when the base branch tracks a bd 1.x `.beads/`, and a plain checklist file otherwise
-- **Conventional Commits** - one commit per task, referencing the issue ref
-- **Fan-out** - independent tasks run on parallel subagents in their own worktrees, and naming several issues runs each one on its own subagent
-- **Your model split** - on Claude Code, execute asks you once per machine which models should run issues and tasks, and saves your answer to `~/.config/fathom/models.md` (if you already have a pstack model rule, it reads that and skips the question)
-- **Stacked reviews** - opt in with `stacking: propose` in `.fathom/config.md`; an issue with five or more units and a clean cut point can split into up to three dependent reviews, only the last closes the issue, and the issue reaches done once a later run sees every bundle merged
-- **Tracker-only access** - tracker work only happens through the connected tracker MCP; when it is missing, the skill refuses and stops
-- **Forge-portable** - reviews go through a five-operation forge contract; GitHub and a generic-git fallback ship built in, and any other forge is a `.fathom/forge.md` you write without forking
-
-#### Tracker Status Lifecycle
-
-```text
-Todo → In Progress (execute starts) → In Review (review opened) → Done (review merged)
-```
-
-See the [full guide](./docs/fathom.md) for setup, task memory, and the security boundary.
-
----
+`execute` takes a tracker issue through breakdown, implementation, tests, commits, and an open review, and resumes where the last run stopped.
+`scaffold` turns requirements into a main issue with linked sub-issues, then offers to hand off to `execute`.
+They need an Asana or Linear MCP, and the GitHub CLI for reviews on GitHub.
+The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacked reviews, and troubleshooting.
 
 ### ship (v2.1.4)
 
-Ship takes the current branch from working tree to a ready pull request, or to a merged release when asked, in one pass: verification runs until clean, five rounds at most, then commit, push, pull request, one parallel review by Standards and Spec subagents and any pull-request review bots, batched fix pushes, each one confirmed, until nothing blocking remains.
-It stops there with a pull request that is ready for you to merge, unless the request says to merge, or the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request; then it adds the squash-merge, release watch, and post-merge cleanup.
-Everything from the pull request onward needs an installed and authenticated GitHub CLI; without one, ship stops after pushing the branch and printing the compare URL, and the review, merge, and release are yours to drive.
-
-#### Prerequisites
-
-- A git repository with a remote
-- [GitHub CLI](https://cli.github.com/) installed and authenticated (`gh`) for the pull request, merge, and check-waiting stages; without it ship pushes the branch, prints the compare URL, and hands the review off to you
-- [jq](https://jqlang.org/) for the check-waiting stage; without it ship stops at the first wait and reports that `watch.sh` needs jq
-
-#### Install
-
-```bash
-npx skills@latest add crodris/skills
-```
-
-Pick `ship` in the installer. On Claude Code, `/plugin install ship@crodris` also works.
-
-#### Skills
-
-| Skill | Description |
-|-------|-------------|
-| `ship` | Resolves the project's own verification pipeline, then drives the branch through review, CI, and pull request, and through merge, release, and cleanup only when asked to merge. |
-
-```bash
-ship
-ship it
-```
-
-#### Features
-
-- **Project-resolved pipeline** - the verify command comes from `.ship/config.md`, then the project's docs, then a declared aggregate task, then the pull-request CI job, then a composed fallback; the first tier that answers wins
-- **Asks once, remembers** - when detection is ambiguous ship first offers to reuse a `.ship/config.md` from another branch or worktree, then asks a single question before touching the tree, and records the answer in `.ship/config.md` and commits it on its own, so the decision reaches the next branch, clone, and teammate; the commit keeps it separable from the change it rode in with, and it is still reviewed and merged as part of the pull request
-- **No config for free answers** - a pipeline detection resolved on its own gets no file, because a file that restates what is already discoverable only goes stale; `.ship/config.md` exists to preserve a human decision
-- **Review gates the merge, not the pull request** - the subagents and the review bots read the same pushed head at the same time, their findings are deduped by root cause, and every blocking fix on a pass lands in one batched push followed by a confirmation pass; the normal run is two pushes, and one when nothing was blocking
-- **Exit only on an untouched pass** - the review loop ends only on a settled pass that pushed nothing, with no pass cap: it runs until a settled pass has nothing blocking, and stops to report when a root cause an earlier push carried a fix for comes back, so a green result always describes the code that actually merges
-- **A blocking bar, not a nit hunt** - ship fixes verify failures, a failed drive, a failed check the change caused (an infrastructure failure is rerun once, and a check already red on the base stops the run), confirmed critical or major findings, and confirmed minors (defects or code smells) worth fixing whose fix stays contained to the flagged code, replies with a disposition for everything else, lets minors buy a push on their own only once per run, and never pushes for a nit; fixing every nit hands the next pass fresh code to find fault with, which is how a review loop never converges
-- **Lanes from your config** - optional `light-paths` and `security-paths` globs in `.ship/config.md` skip the subagents for changes that are entirely low-risk, or add a security review when a sensitive path is touched; the slots are read from `origin/<base>` so a change cannot widen its own lane, a change that edits `.ship/config.md` is never light, security outranks light, and light needs at least one review bot; an optional `drive`, a command or a `skill:<name>` verification skill the repository itself ships, runs once before the push on a behavior-changing diff, and again on each confirmation pass a fix push buys, where it replaces the subagents' confirmation round when at least one bot is present and every present bot re-reviews every push; a failed drive blocks, and the path of its evidence goes in the pull request body
-- **Different reviewers, not one twice** - the pre-merge review is two `general-purpose` subagents on the same SHA, one checking the repository's documented conventions and one checking the change against its issue or stated intent (on Claude Code, the conventions check runs on Sonnet, the intent check runs on Opus for the full diff and on Sonnet when it confirms fixes, and a security-lane review stays on Opus), and each review bot is a final bar that still has to settle green; ship never shells out to a review CLI, because the vendors that ship one also run the bot and the CLI would spend that quota on a judgment the bot reaches anyway; a bot that reviews only the first push is asked to re-review a fix push only when that push fixed a critical or major the bot raised, which for CodeRabbit means a finding CodeRabbit itself labeled Critical or Major (`watch.sh` refuses the re-request when no CodeRabbit finding on the pull request carries that label), and the subagents confirm every fix, except in the light lane, which skips the full-diff subagent round and re-requests a bot on every fix push when that rule allows, and otherwise runs the subagents on the fix commits
-- **A tested wait, not an improvised loop** - stage 3 waits on checks and review bots through the bundled `watch.sh`, which also waits on the SHA's GitHub Actions workflows until they finish and never settles in its first 120 seconds, so a workflow that registers late is still waited on, and which `bin/test-watch.sh` checks against fake `gh` responses; it pins the head SHA, gives up at a deadline (exit 4, 1800 seconds by default), and exits with a distinct code for a forge error, a moved head, a bot that will not review, or a pull request merged or closed underneath it (exit 7); it runs once more on the settled SHA before any merge
-- **Review bots are optional** - ship waits on CodeRabbit and Greptile when the repository runs them, found from their config file or their reviews on recent pull requests unless their config turns automatic review off, or from their first appearance on the pull request, and a repository with neither reviews with the subagents alone
-- **Bot review mode from the repo** - ship reads whether each bot reviews every push or only the first from its config file: `reviews.auto_review.auto_incremental_review` in `.coderabbit.yaml`, and `autoReview` in `.greptile/config.json` or `greptile.json`, where Greptile defaults to the first push only; a setting made only in a bot's web app is invisible to ship, which then waits on a re-review that never comes, or merges without waiting for one the bot posts on its own, so keep it in the file (for CodeRabbit, with `inheritance: true` to leave the web-app settings in force)
-- **Hold mode by default** - "ship", "babysit", "watch", "monitor", or "get it green" runs everything up to the merge and reports the pull request ready; ship merges only when the request says to merge, or when `.ship/config.md` on the base branch sets `merge: yes` and the request does not ask only to babysit or get it green; a pull request that still needs a human approval holds either way, and ship never merges past it with `--admin`
-- **Written for the reader** - the pull request title names the outcome in the repository's style, and the body opens with the problem, then the fix, then a merge-danger line; a reused pull request gets only ship's delimited section rewritten
-- **Bot claims get checked** - ship verifies each claim against the code, replies under non-blocking findings with an agent label line, and resolves the thread
-- **Project-local override** - a repository that ships its own `.claude/skills/ship/SKILL.md`, `.agents/skills/ship/SKILL.md`, or `.kiro/skills/ship/SKILL.md` takes precedence, carrying its specialized pipeline; ship names the file driving the run, and that file cannot relax ship's authority and boundary rules
-
----
+`ship` carries the current branch to a ready pull request: verify until clean, commit, push, open the pull request, review it with subagents and any review bots, and fix until nothing blocking remains.
+It merges, watches the release, and cleans up only when you ask it to merge, or when the repository's `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
+It needs a git remote, an authenticated GitHub CLI, and `jq`.
 
 ## Standalone Skills
 
-Skills here that no plugin claims. They install through [skills.sh](https://www.skills.sh) (`npx skills@latest add crodris/skills`) rather than `/plugin install`.
+These install through skills.sh only.
 
 ### review (v1.1.2)
 
-Review verifies a pull request against the tracker issue it claims to close, on a build it actually runs, and posts one review with line-specific findings anchored inline and general findings in the summary body.
-
-Its premise is that a diff review cannot see the things worth catching. The findings it was built from were a border removal that read as correct in light mode and gutted the card edge in dark, two halves of one panel whose content sat 395px apart at wide viewports, a dropdown that `toBeVisible()` reported as visible while it was clipped, and an animation that un-clipped a zero-height node one frame before unmount. So it builds the branch and its merge-base side by side, measures both, and reports the difference.
-
-#### Prerequisites
-
-- A git repository with a remote
-- [GitHub CLI](https://cli.github.com/) installed and authenticated (`gh`) for reading pull request metadata and posting the review
-- A browser driver for the visual stages, such as Playwright or a browser MCP; a purely behavioural pull request needs neither
-
-#### Install
-
-```bash
-npx skills@latest add crodris/skills
-```
-
-#### Skills
-
-| Skill | Description |
-|-------|-------------|
-| `review` | Builds the pull request and its merge-base, measures both, proves the new tests are load-bearing, then posts one review with severity-marked findings. |
-
-```bash
-review this PR
-review #107
-```
-
-#### Features
-
-- **Never concludes from the diff** - the branch and its merge-base are built and served side by side, so every claim comes from a running app rather than from reading a change
-- **A/B before blame** - a finding measured on the base build too is reported as pre-existing, which is the difference between telling an author they broke something and telling them they inherited it
-- **Pixels over computed styles** - for any claim that something is or is not visible, the screenshot is decoded and the painted colours compared; `border: 0` plus a 1.1:1 background step reads as conclusive and is routinely wrong
-- **Checks the house rules too** - the diff is read against the conventions the repository documents, such as AGENTS.md, CLAUDE.md, CODING_STANDARDS.md, and contributing docs, separately from the issue check, and those files are read from the merge-base so a pull request cannot rewrite the rules it is graded against
-- **Reads the existing review last** - a review already on the pull request is an answer key, so it is read only after every measurement and draft finding is done, then reconciled
-- **Before and after for every visual surface** - each changed surface gets a before and after pair from the two builds, annotated where a finding needs it and hosted through a GitHub comment upload
-- **Tests the tests** - reverts the changed source to confirm the new assertions fail without it, then adversarially checks the ones that pass either way by making the exact change they claim to catch
-- **Fails closed on a moved head** - the fetched ref is verified against the pull request's reported head before anything is measured, so a re-review never silently describes yesterday's commit
-- **Severity that means something** - 🔴 is reserved for a regression the pull request introduces with a cheap fix, and findings are deduped to root causes first, so a good pull request does not read as riddled with defects
-- **Comments, never approves unasked** - the review event is COMMENT unless you ask for approval, and merging stays your call
-- **Costs what it should** - both builds stay warm, every measurement batches through one browser session, and the gates come from CI rather than being re-derived locally
-
----
+`review` checks a pull request against the issue it claims to close, on running builds of the branch and its base, and posts one review with inline findings.
+It needs the GitHub CLI, plus a browser driver such as Playwright for visual changes.
 
 ### rewrite (v3.0.0)
 
-`rewrite` drafts, rewrites, and checks the prose you post under your own name, in your own voice, with the tells that mark text as machine-written removed.
-PR descriptions and review comments, issues, Slack, email, READMEs, blog posts, release notes, cover letters.
-It reads your voice file at the start of each conversation and applies a built-in floor of AI writing patterns on top: the negation-then-correction construction ("it's not X, it's Y"), the rule of three, puffery, participle tails, chat leakage, replies that re-explain what the reader already knows, dead vocabulary.
-Your voice file wins over the floor, so anything it re-allows comes back.
-
-It was named `voice` before v2.0.0, a name that hid Claude Code's built-in `/voice` dictation command.
-It was named `my-voice` before v3.0.0, and `rewrite` names what the skill does.
-To move an old install to the new name, run `npx skills@latest remove my-voice -g` (or `npx skills@latest remove voice -g` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
-
-Nothing personal ships in this repository.
-The skill reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset.
-On first run it takes a voice file you already have, or a folder of things you wrote and builds the voice file from excerpts of it, or interviews you and builds one from the bundled `template.md`.
-The folder or pasted samples stay listed in the config, so when the output drifts you can say "recalibrate my voice" and the skill goes back to your real writing instead of its own last draft.
-
-#### Prerequisites
-
-- A writable `$XDG_CONFIG_HOME/voice/` (or `~/.config/voice/` when that variable is unset) for the config file and, when the interview builds one, the voice file
-
-#### Works best with
-
-[unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) by Lauren Tan (poteto), from the pstack collection in cursor/plugins, is an optional pre-pass that `rewrite` runs before its own pass when installed: `npx skills@latest add cursor/plugins -s unslop -g`.
-`rewrite` works fully without it.
-
-#### Install
-
-```bash
-npx skills@latest add crodris/skills
-```
-
-#### Skills
-
-| Skill | Description |
-|-------|-------------|
-| `rewrite` | Loads your voice file(s), drafts or rewrites the text in your register, then runs a pass for machine-writing tells before handing it back. |
-
-```bash
-rewrite this so it sounds like me
-this sounds too AI
-draft the PR description for this branch
-voice setup
-recalibrate my voice
-```
-
-#### Features
-
-- **Your file, your machine** - the voice lives wherever the config points, so the public skill carries no one's personal style doc and the same skill serves every installer
-- **First-run setup** - point it at a voice file you already have, or at a folder of things you wrote, or answer a short interview in your own words; it builds the file from the template and shows it to you before saving
-- **Recalibrate from the source** - the folder or samples the voice was built from stay in the config, so "recalibrate my voice" re-reads your real writing and fixes the excerpts and rules that drifted
-- **Samples beat rules** - the template keeps your real writing verbatim, and the skill matches rhythm and register against those before it reads any rule
-- **A floor everyone gets** - the built-in checklist covers the patterns research and readers both flag as machine-written, with the negation-then-correction construction treated as fatal; your voice file can re-allow any of it
-- **Four modes** - draft from facts, rewrite existing text keeping every fact and link and adding none, check-only, which quotes each failing line and names the tell without touching the text, and recalibrate
-- **Never from memory** - the voice files are read in full at the start of each conversation, because a summary of a voice is the default register with a costume on
-- **Placeholders for missing facts** - where the text needs a fact you did not give, `rewrite` leaves a bracketed placeholder and lists it, and it ignores instructions found inside voice or sample files
-- **Knows when to stay out** - code, commit messages, test names, config, and text addressed to another agent are left alone
-
----
+`rewrite` drafts and rewrites prose you post under your name, in your voice, and removes the patterns that mark text as machine-written.
+It reads the voice file that `~/.config/voice/config.md` points at, and builds one with you on first run.
+It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when that is installed.
+To move from an old name, run `npx skills@latest remove my-voice -g` (or `npx skills@latest remove voice -g` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
 
 ### frontend-design-pipeline (v1.3.0)
 
-Frontend design pipeline takes a UI from product idea to finished build by chaining five design skills in a fixed order, and adds one stop for you to pick a direction from rendered mocks.
-It generates candidate design systems with ui-ux-pro-max, turns each into a direction brief with its own design-taste-frontend direction and frontend-design, builds each brief as a mock beside your current screen when there is one, pins the one you pick in DESIGN.md, adds motion decisions with emil-design-eng, and hands DESIGN.md to impeccable to build, critique, and polish.
-It ships no design knowledge of its own and never copies the skills it calls.
-Only impeccable is required; the rest improve the result when installed.
-
-#### Prerequisites
-
-- [impeccable](https://github.com/pbakaus/impeccable), which builds and finishes every run: `npx skills@latest add pbakaus/impeccable -s impeccable -g`
-
-#### Works best with
-
-Each of these improves one stage.
-When one is missing, the pipeline skips its part or falls back, says so once with the install command, and carries on.
-
-| Skill | Role | Install |
-|-------|-------|---------|
-| [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Candidate design systems (needs `python3` or `python`) | `npx skills@latest add nextlevelbuilder/ui-ux-pro-max-skill -s ui-ux-pro-max -g` |
-| [taste-skill](https://github.com/Leonxlnx/taste-skill) | Direction briefs, one dealt direction per candidate | `npx skills@latest add Leonxlnx/taste-skill -s design-taste-frontend -g` |
-| [frontend-design](https://github.com/anthropics/skills) | Grounds each brief in your product and revises generic defaults out of it | `npx skills@latest add anthropics/skills -s frontend-design -g` |
-| `html-comms`, from this repo | Publishes the mocks side by side on one page, privately when the harness has a private publisher | `npx skills@latest add crodris/skills -s html-comms -g` |
-| [emil-design-eng](https://github.com/emilkowalski/skills) | Motion and interaction decisions | `npx skills@latest add emilkowalski/skills -s emil-design-eng -g` |
-
-#### Install
-
-```bash
-npx skills@latest add crodris/skills
-```
-
-#### Skills
-
-| Skill | Description |
-|-------|-------------|
-| `frontend-design-pipeline` | Runs options, direction, mocks and your pick, motion, and build in order, and writes the picked direction to DESIGN.md for impeccable to build against. |
-
-```bash
-design a landing page for my app and give me directions first
-redesign the settings screen
-run the full design flow
-```
-
-#### Features
-
-- **Mocks, not descriptions** - every direction is built as a real styled mock of the screen you asked about, shown beside your current screen when there is one
-- **One direction per candidate** - design-taste-frontend deals the directions, and each candidate gets a different one
-- **One source of truth** - after your pick, DESIGN.md beats the generated candidates, any ui-ux-pro-max MASTER.md, and taste-skill hard bans; when a DESIGN.md already exists, the pick question says it replaces it and the old file stays unless you confirm
-- **Existing looks skip ahead** - a new page or a refinement inside the current look goes straight to motion or build
-- **Works outside Claude Code** - ui-ux-pro-max's search script is resolved from its own skill directory instead of the Claude Code-only `${CLAUDE_PLUGIN_ROOT}` path its SKILL.md uses
-- **Upstream check** - `bin/check-pipeline-skills.sh` diffs each installed skill named in the pipeline's Companion skills table against a fresh clone of the repository and branch or tag the skills CLI lock file records for it, ignores `__pycache__`, and exits 1 when any skill differs or is missing; it needs network access, and `bin/test-check-pipeline-skills.sh` checks it against scratch repositories
-
----
+`frontend-design-pipeline` takes a UI from idea to build: candidate design systems, direction briefs, rendered mocks for you to pick from, motion, then the build.
+It needs [impeccable](https://github.com/pbakaus/impeccable), and its `SKILL.md` lists the optional companion skills with their install commands.
 
 ### html-comms (v1.0.1)
 
-HTML comms turns a plan, spec, write-up, findings, report, comparison, or set of UI mocks into one self-contained HTML page and publishes it to a private link.
-The page reads like a spec, works on a phone, and follows the system dark mode.
-It never writes HTML for the product itself.
-
-Adapted from Theo Browne's (t3dotgg) html-communication; chart heuristic from [ruesato/agent-skill-floreo](https://github.com/ruesato/agent-skill-floreo) (MIT).
-
-#### Prerequisites
-
-- A private publisher: the Artifact tool in Claude Code, whatever private publisher another harness designates, or here.now below; without one, the skill reports the local path and says the page is unpublished
-
-#### Works best with
-
-[here-now](https://github.com/heredotnow/skill) is the fallback publisher when the harness has none: `npx skills@latest add heredotnow/skill -s here-now -g`.
-It needs a saved here.now API key, because only a claimed Site can be made owner-only.
-
-#### Install
-
-```bash
-npx skills@latest add crodris/skills
-```
-
-#### Skills
-
-| Skill | Description |
-|-------|-------------|
-| `html-comms` | Writes one dense, mobile-readable HTML page about the work and publishes it to a private link without asking. |
-
-```bash
-write up these findings as HTML
-compare the three caching options
-give me mocks for the settings page
-HTML
-```
-
-#### Features
-
-- **Broad triggers** - a plan, report, comparison, or set of mocks all count, the word "plan" does not have to appear, and a bare "HTML" is enough
-- **Private first** - the harness's own private publisher wins; on here.now, which publishes as anyone-with-link, the skill locks a placeholder Site to owner-only and confirms the lock before the real page goes up, and an update to a Site anyone else can open asks first
-- **One stable link** - updates redeploy the same file to the same URL, and mocks labeled A, B, and C sit side by side in that one file
-- **Charts when the data has shape** - a table maps each kind of data to a chart, and every SVG carries a title and description for screen readers
-- **Small and navigable** - the page stays under 100 KB and gets a linked table of contents at 4 or more sections
-- **Safe to forward** - secrets, private URLs, and local paths stay out of the page, and nothing is called hosted before the upload succeeds
-
----
+`html-comms` turns a plan, report, comparison, or set of UI mocks into one HTML page and publishes it to a private link.
+It needs a private publisher, such as the Artifact tool in Claude Code or [here-now](https://github.com/heredotnow/skill).
 
 ### worktree-setup (v1.0.2)
 
-Worktree setup makes a fresh git worktree runnable before the agent starts work in it.
-A new worktree gets the tracked files and nothing else, so dev servers, tests, and builds fail on the missing env files and `node_modules`.
-The skill copies the main checkout's untracked local files into the worktree and installs dependencies, and a SessionStart hook runs it on every session so worktrees that another tool created, such as T3 Code's New worktree, are covered too.
-
-#### Prerequisites
-
-- Git 2.31 or newer
-- The package manager the worktree's lockfile names (`pnpm`, `bun`, `yarn`, or `npm`) on `PATH`
-
-#### Install
+`worktree-setup` makes a new git worktree runnable: it copies the main checkout's untracked env files and installs dependencies.
+It needs Git 2.31 or newer, and the package manager the worktree's lockfile names on `PATH`.
+Install it globally, then add this SessionStart hook to `~/.claude/settings.json` so worktrees created by other tools are covered too.
+The hook expects the global install; a project-scoped install puts the script at `.claude/skills/worktree-setup/setup.sh`, so change the path to match, or the hook does nothing.
 
 ```bash
 npx skills@latest add crodris/skills -s worktree-setup -g
 ```
-
-Then add this SessionStart hook to `~/.claude/settings.json`, so worktrees that another tool created are ready before the first prompt.
-The script's output becomes session context, so the agent sees what was copied or why the install failed.
-The hook expects the global install above; a project-scoped install puts the script at `.claude/skills/worktree-setup/setup.sh`, so change the path to match.
 
 ```json
 {
@@ -385,111 +92,26 @@ The hook expects the global install above; a project-scoped install puts the scr
 }
 ```
 
-The skill never edits your settings; add the hook yourself.
-
-#### Skills
-
-| Skill | Description |
-|-------|-------------|
-| `worktree-setup` | Copies the main checkout's untracked env files (except `.env.prod*` files, Sentry's `.env.sentry-build-plugin`, and `.env*.bak*` backups), local HTTPS certificates (`certificates/*.pem`), and `.claude/settings.local.json` into a linked worktree, then installs dependencies when they are missing or the lockfile changed. Not user-invocable; the agent and the hook run it. |
-
-#### Features
-
-- **Automatic** - the hook runs it at session start, and the agent runs it right after creating a worktree mid-session
-- **Never clobbers** - it copies only untracked files the worktree is missing, so edits made inside the worktree survive and a tracked file the branch deleted stays deleted; it skips `node_modules`, `.next`, `.turbo`, and nested worktree directories
-- **Copies, not links** - each worktree owns its env files, so a change in one never leaks into the main checkout or another worktree
-- **Leaves production files behind** - a `.env.prod*` file or Sentry's `.env.sentry-build-plugin` token, or a symlink to one, is never copied; secrets inside other env files still are
-- **Leaves backups behind** - a `.env*.bak*` file such as `.env.local.bak-2026-10-06` is an old snapshot, so it is never copied
-- **Skips detached checkouts** - a worktree on a detached HEAD, which is how the review skill checks out a pull request, gets neither secrets nor an install; a branch checkout is treated as yours, including a pull request checked out onto a branch with `gh pr checkout`
-- **Silent when done** - a worktree that is already set up costs a few git calls and one scan of the main checkout, and prints nothing
-- **Keeps dependencies current** - it installs again when `node_modules` is gone or the lockfile changed since the last successful install, and a failed install is retried next session with the error shown until it is fixed; a `package.json` with no lockfile gets `npm install`
-- **Used by Fathom** - the fan-out installs each task worktree's dependencies through this skill when it is installed
-- **Checked** - `bin/test-worktree-setup.sh` runs the script against scratch repositories and stub package managers, and CI runs it
-
 ### verification-audit (v1.0.0)
 
-Verification audit checks how well a repository proves that agent work is correct, then closes each gap.
-It checks six things in order: static gates in CI, a `verify-<app>` skill, its feature map, a formal check on the riskiest code, a scheduled drive, and risk-scaled review in `.ship/config.md`.
-Each fix comes from a pstack verification skill, read from its `SKILL.md`.
+`verification-audit` checks how well a repository proves agent work is correct, layer by layer, then closes each gap.
+It uses the verification skills from [pstack](https://github.com/crodris/pstack-claude) to fix gaps, and only reports them without it.
 
-#### Prerequisites
+## Security scanning
 
-- The [pstack](https://github.com/crodris/pstack-claude) plugin, for `create-verification-skill`, `maintain-verification-skill`, `create-formal-verification-skill`, and `maintain-formal-verification-skill`; without it, the skill reports the gaps and does not fix them
-
-#### Install
-
-```bash
-npx skills@latest add crodris/skills -s verification-audit -g
-```
-
-#### Skills
-
-| Skill | Description |
-|-------|-------------|
-| `verification-audit` | Reports each verification check as present, partial, outdated, missing, or blocked, with evidence, then closes the gaps in order, one pull request each. |
-
-```bash
-audit verification in this repo
-how verified is this repo
-```
-
-#### Features
-
-- **Strongest layer first** - a gap closes as a type, lint, or test before it becomes prose
-- **Report before fixing** - every check runs first, and one table shows state, evidence, and fix
-- **Judges the target** - the formal check names the riskiest code first, so a check on easy code does not count as covered
-- **Several repositories** - checks all of them first, then fixes one at a time
-
-## Workflow
-
-1. **Scaffold requirements**: talk to the scaffold skill, for example "scaffold these requirements"
-2. **Execute the issue**: talk to the execute skill, for example "execute ONC-5"
-3. **Resume if interrupted**: re-invoke execute on the same issue; it picks up where the last run left off
-4. **Review the pull request**: talk to the review skill, for example "review #107", to verify it against its issue on a running build
-5. **Ship the branch**: talk to the ship skill, for example "ship and merge", to carry the reviewed branch through merge and release; plain "ship it" stops at a green pull request
-
-## Repository Layout
-
-Every skill lives in a flat `skills/<name>/` directory, and `.claude-plugin/marketplace.json` decides which plugin owns which skill through a per-entry `skills` array.
-A skill claimed by no entry, such as `review`, `rewrite`, `frontend-design-pipeline`, `html-comms`, `worktree-setup`, or `verification-audit`, is still published by skills.sh and is simply unreachable through `/plugin install`; list it under `## Standalone Skills` in this README to make the omission deliberate.
-`bin/sync-versions.sh` stays silent about a skill listed there and fails on one that is in neither a plugin entry nor that section.
-Both plugins therefore share one marketplace root (`source: "./"`), and there is deliberately no `.claude-plugin/plugin.json`: with that source a single root manifest would apply to every entry and its version would silently win over each entry's own.
-`bin/sync-versions.sh` syncs the plugin versions (`fathom`, `ship`) from `marketplace.json` into this README's plugin headings and into the `SKILL.md` frontmatter of every skill each plugin claims, syncs each standalone skill's `SKILL.md` version into its heading here, and fails when a skill directory is claimed by no plugin and not listed as standalone, claimed by more than one, or claimed but missing.
-`bin/hooks/pre-commit` runs the sync before each commit and never blocks one; enable it with `git config core.hooksPath bin/hooks`.
-`claude plugin validate --strict .` checks the marketplace manifest itself, and CI runs it with a pinned Claude Code version.
-CI has four workflows: `skillspector.yml` (the scan, plus `bin/test-scan-skills.sh`, `bin/test-worktree-setup.sh`, `bin/test-watch.sh`, and `bin/test-check-pipeline-skills.sh`), `frontmatter.yml` (the frontmatter check and a check that `bin/sync-versions.sh` leaves no diff, each with its test), `prose.yml` (the dash check and its test), and `plugin-validate.yml`.
-`bin/check-dashes.sh` fails on any em or en dash in `skills/`, `bin/`, this README, `CODING_STANDARDS.md`, and `docs/fathom.md`, and CI runs it and its test on every pull request.
-The dated records in `docs/plans/` and `docs/superpowers/` are not checked.
-`bin/check-frontmatter.sh` parses the frontmatter of every `skills/*/SKILL.md` with a pinned `yaml` package, the parser the skills CLI uses.
-It fails on a parse error, or when an unquoted ` #` cuts a description short.
-It installs `yaml` from npm on each run, so it needs network access.
-CI runs it and its test on every pull request.
-`CODING_STANDARDS.md` holds the judgment rules ship's Standards reviewer checks a change against.
-
-## Security Scanning
-
-Every skill in `skills/` is scanned by [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) in CI, and the build fails on any non-suppressed finding.
-Run the same scan locally before committing:
+CI scans every skill with [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) and fails on any finding not suppressed in `.skillspector-baseline.yaml`.
+To run the same scan locally:
 
 ```bash
 uv tool install git+https://github.com/NVIDIA/skillspector.git@c7958a3268d9498644b22edb75d0f051bbc8cbfc # v2.12.0
-bin/scan-skills.sh            # all skills; or name specific ones: bin/scan-skills.sh execute
+bin/scan-skills.sh
 ```
-
-A local scan is static only.
-Set `SKILLSPECTOR_LLM=1` plus provider credentials, for example `SKILLSPECTOR_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`, to add the LLM stage.
-CI adds that stage on its own when `ANTHROPIC_API_KEY` is set.
-Set `REPORT_DIR=<dir>` to write per-skill reports.
-
-The install pins the same SkillSpector commit as `.github/workflows/skillspector.yml`, so a local scan and CI run the same scanner.
-Bump both pins together.
-
-When a finding is a reviewed false positive, suppress it in the repo-root `.skillspector-baseline.yaml` with a written reason; never suppress a finding you have not understood.
 
 ## License
 
 MIT
 
-Some rules adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including ship's merge-danger line, the summary visuals and before-and-after evidence in ship's pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
+Some rules are adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including ship's merge-danger line, the summary visuals and before-and-after evidence in ship's pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
 Ship's hold mode, CI, and pull request title and body rules, and execute's title and body rules, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
+`html-comms` is adapted from Theo Browne's html-communication, with its chart heuristic from [ruesato/agent-skill-floreo](https://github.com/ruesato/agent-skill-floreo) (MIT).
 The `rewrite` skill's floor rows for arguing with no one, re-explained context, dramatic closers, and the document-describing half of meta commentary, and rewrite mode's no-new-facts rule, are adapted from Siqi Chen's (blader) humanizer (MIT).

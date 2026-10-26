@@ -36,9 +36,14 @@ printf 'Untracked %s dash.\n' "$DASH" > "$dir/skills/demo/new.md"
 expect "untracked file with a dash fails" 1 "$dir"
 
 dir=$(scratch)
-mkdir -p "$dir/docs/plans"
-printf 'Dated %s record.\n' "$DASH" > "$dir/docs/plans/old.md"
-git -C "$dir" add docs
-expect "docs/plans is not checked" 0 "$dir"
+printf 'Agent rules %s here.\n' "$DASH" > "$dir/AGENTS.md"
+git -C "$dir" add AGENTS.md
+expect "AGENTS.md with a dash fails" 1 "$dir"
+
+dir=$(scratch)
+mkdir -p "$dir/notes"
+printf 'Outside %s scope.\n' "$DASH" > "$dir/notes/old.md"
+git -C "$dir" add notes
+expect "a path outside the checked list is not checked" 0 "$dir"
 
 [ "$failures" = 0 ]

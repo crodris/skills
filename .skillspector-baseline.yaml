@@ -28,6 +28,55 @@ rules:
       leaves out secrets, private URLs, and local paths, and the only
       deletion is of the placeholder Site that same run created.
 
+  # skills/execute/README.md is the human guide to Fathom, moved there from
+  # docs/fathom.md. No SKILL.md loads it as instructions; memory.md and
+  # memory/beads.md only name its sections for the user to follow. Each rule
+  # below names the rule id and the flagged text it covers, so a new finding in
+  # that file still fails.
+
+  - id: "AS2"
+    path: "README.md"
+    message: "*read OAuth token*"
+    reason: >-
+      False positive: the security boundary section reports that a test run
+      with its tracker MCP disabled tried to edit mcp.json and read OAuth token
+      caches, as the reason the skills refuse instead. It describes behavior
+      the skills forbid.
+
+  - id: "EA2"
+    path: "README.md"
+    message: "*without asking*"
+    reason: >-
+      False positive: the guide explains auto mode to the user (loading a
+      profile the branch already carries, the scaffold hand-off, and applying
+      a proposed stack split). Auto mode is a setting the user picks, and the
+      same behavior is covered by the SKILL.md rule above.
+
+  - id: "RA2"
+    path: "README.md"
+    message: "*generic-git fallback still pushes*"
+    reason: >-
+      False positive: the prerequisites line says the generic-git fallback
+      pushes the branch and hands the review to the user. It persists nothing
+      across sessions.
+
+  - id: "RA2"
+    path: "README.md"
+    message: "*forges/TEMPLATE.md*"
+    reason: >-
+      False positive: the forge section tells the user to copy the adapter
+      template into their own repository. The user does the write, by hand.
+
+  - id: "RP1"
+    path: "README.md"
+    message: "*npx skills*"
+    reason: >-
+      False positive: RP1 flags the guide's `npx skills@latest add
+      crodris/skills` and `npx skills update` install lines, which a person
+      runs to install or update these skills. Following the latest release is
+      the intended install path, and the README at the repository root shows
+      the same commands.
+
   # fathom-shared carries the contract files execute and scaffold read;
   # its SKILL.md exists so directory-copying installers (npx skills) bring it
   # along. Scanning it flags documentation text, not executable skill behavior.

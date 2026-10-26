@@ -23,7 +23,7 @@ cd "$repo_root"
 
 if ! command -v skillspector >/dev/null 2>&1; then
   echo "skillspector not found. Install it with the pinned command in README.md" >&2
-  echo "(Security Scanning section), so a local scan matches CI." >&2
+  echo "(Security scanning section), so a local scan matches CI." >&2
   exit 1
 fi
 
