@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # sync-versions.sh - marketplace.json is the source of truth for plugin
-# versions; this syncs those versions into README.md and into the SKILL.md
-# frontmatter of each skill the plugin claims, syncs each standalone skill's
+# versions; this syncs those versions into README.md, into the SKILL.md
+# frontmatter of each skill the plugin claims, and into the plugin.json of a
+# plugin with its own source folder, syncs each standalone skill's
 # SKILL.md version into its README heading, and checks that every skill
 # directory is claimed by exactly one plugin entry.
 #
@@ -66,9 +67,11 @@ for p in data.get('plugins', []):
     print('%s\t%s' % (p.get('name', ''), p.get('version', '')))
 " < "$MARKETPLACE")
 
-# --- Sync SKILL.md frontmatter versions ---
+# --- Sync SKILL.md frontmatter and plugin.json versions ---
 #
 # A plugin skill's frontmatter takes its plugin's version from marketplace.json.
+# A plugin with its own source folder, such as a mod under mods/, keeps a
+# plugin.json there, and its "version" takes the marketplace version too.
 # A standalone skill's README heading takes the version from its frontmatter.
 
 skill_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" "$README" <<'PY'
@@ -81,10 +84,23 @@ VERSION = re.compile(r'^version:[ \t]*(\S*)[ \t]*$', re.M)
 def frontmatter(text):
     return re.match(r'---\n(.*?\n)---\n', text, re.S)
 
+MANIFEST_VERSION = re.compile(r'("version"[ \t]*:[ \t]*")([^"]*)(")')
+
 for plugin in data.get('plugins', []):
     version = plugin.get('version')
     if not version:
         continue
+    source = plugin.get('source')
+    if isinstance(source, str):
+        manifest = os.path.join(repo_root, os.path.normpath(source), '.claude-plugin', 'plugin.json')
+        if os.path.isfile(manifest):
+            text = open(manifest).read()
+            found = MANIFEST_VERSION.search(text)
+            if not found:
+                print('nomanifestversion\t%s' % os.path.relpath(manifest, repo_root))
+            elif found.group(2) != version:
+                open(manifest, 'w').write(text[:found.start(2)] + version + text[found.end(2):])
+                print('synced\t%s\t%s' % (os.path.relpath(manifest, repo_root), version))
     for path in plugin.get('skills', []) or []:
         skill_md = os.path.join(repo_root, os.path.normpath(path.lstrip('./')), 'SKILL.md')
         if not os.path.isfile(skill_md):
@@ -126,6 +142,7 @@ if [ -n "$skill_report" ]; then
       synced)    echo "  $path -> version $version"; changed=1 ;;
       readme)    echo "  README.md: standalone headings synced from SKILL.md"; changed=1 ;;
       noversion) echo "  WARNING: $path has no version: line in its frontmatter"; problems=$((problems + 1)) ;;
+      nomanifestversion) echo "  WARNING: $path has no \"version\" field"; problems=$((problems + 1)) ;;
     esac
   done <<< "$skill_report"
 fi

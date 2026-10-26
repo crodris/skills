@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - ".claude-plugin/**"
+      - "mods/**"
       - ".github/workflows/plugin-validate.yml"
   pull_request:
     paths:
       - ".claude-plugin/**"
+      - "mods/**"
       - ".github/workflows/plugin-validate.yml"
   workflow_dispatch:
 
@@ -17,15 +19,22 @@ permissions:
 
 jobs:
   validate:
-    name: Validate marketplace manifest
+    name: Validate plugins and test mods
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
       # Pinned so a new CLI release cannot change what passes here with no
-      # change in this repo. Bump deliberately. Validation needs no auth.
+      # change in this repo. Bump deliberately. Validation and mod tests need
+      # no auth.
       - name: Install Claude Code
-        run: npm i -g @anthropic-ai/claude-code@2.1.283
+        run: npm i -g @anthropic-ai/claude-code@2.1.310
 
-      - name: Validate
+      - name: Validate the marketplace
         run: claude plugin validate --strict .
+
+      - name: Validate the fathom-progress mod
+        run: claude plugin validate --strict mods/fathom-progress
+
+      - name: Test the fathom-progress mod
+        run: claude plugin test mods/fathom-progress

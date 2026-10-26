@@ -1,5 +1,7 @@
 # fathom-progress
 
+Ryan Uesato built fathom-progress, and "I" in this README is Ryan.
+
 fathom-progress is a Claude Code mod that draws a progress band above the prompt while Fathom works through an issue. The band shows the issue, how many of its tasks are done, and the task in progress. It is for people who run Fathom's `execute` skill and want to see where a run stands without reading the transcript.
 
 A mod is a plugin that changes Claude Code's own interface or behavior. Fathom is a Claude Code plugin that takes an Asana or Linear issue from breakdown through implementation to an open code review, and records its tasks in Beads, a local issue tracker with a command-line tool called `bd`. In a repository that doesn't use Beads, Fathom records them in a checklist file instead. fathom-progress reads the tasks from either place and draws them. It never changes them.
@@ -25,16 +27,16 @@ I built it with Claude Code. It works in the terminal and in the Claude Code Des
 
 ### Install
 
-fathom-progress is a plugin, and this repository is its marketplace. Add the marketplace, then install the plugin.
+fathom-progress is a plugin in the `crodris` marketplace, the same one that carries Fathom. Add the marketplace, then install the plugin.
 
 ```sh
-claude plugin marketplace add ruesato/claude-mods-fathom-progress
-claude plugin install fathom-progress@claude-mods-fathom
+claude plugin marketplace add crodris/skills
+claude plugin install fathom-progress@crodris
 ```
 
-In a session that is already running, run `/reload-plugins`. Otherwise it loads the next time you start Claude Code. I have installed it from a local copy of this repository. I have not yet installed it from GitHub.
+In a session that is already running, run `/reload-plugins`. Otherwise it loads the next time you start Claude Code.
 
-To update, run `claude plugin marketplace update claude-mods-fathom` and then `claude plugin update fathom-progress@claude-mods-fathom`. According to the Claude Code documentation, a copy installed from GitHub updates only when `version` in `plugin.json` changes.
+To update, run `claude plugin marketplace update crodris` and then `claude plugin update fathom-progress@crodris`. According to the Claude Code documentation, a copy installed from GitHub updates only when its `version` changes.
 
 If you also use `beads-status`, install fathom-progress first. Both draw in the same spot above the prompt, and when both are installed, the one installed first gets the slot. I saw this in both orders. With fathom-progress installed first, the `beads-status` band shows while no Fathom run is active, and the Fathom band takes its place when a run starts. With `beads-status` installed first, its band stayed on screen for the 25 seconds I watched and the Fathom band never appeared, although the mod armed and followed the issue. The order is the order you installed them in, which is also the order of the two entries under `enabledPlugins` in `~/.claude/settings.json`. `claude plugin list` sorts by name, so it does not show it. Reinstalling fathom-progress by itself puts it last, and its band goes behind `beads-status`. Reinstalling `beads-status` by itself is safe. To put the order right, uninstall `beads-status` and install it again.
 
@@ -47,15 +49,15 @@ A mod loaded from a folder runs ahead of an installed one. `beads-status` draws 
 1. Clone this repository.
 
    ```sh
-   git clone git@github.com:ruesato/claude-mods-fathom-progress.git
+   git clone git@github.com:crodris/skills.git
    ```
 
-2. Add the mod's folder to `CLAUDE_CODE_PLUGIN_DIRS` in the `env` block of your Claude Code settings file (`~/.claude/settings.json`). Use the absolute path to `plugins/fathom-progress`.
+2. Add the mod's folder to `CLAUDE_CODE_PLUGIN_DIRS` in the `env` block of your Claude Code settings file (`~/.claude/settings.json`). Use the absolute path to `mods/fathom-progress`.
 
    ```json
    {
      "env": {
-       "CLAUDE_CODE_PLUGIN_DIRS": "/absolute/path/to/claude-mods-fathom-progress/plugins/fathom-progress"
+       "CLAUDE_CODE_PLUGIN_DIRS": "/absolute/path/to/skills/mods/fathom-progress"
      }
    }
    ```
@@ -251,8 +253,8 @@ To see whether your account does this, run a Fathom skill with `claude -p "<prom
 ### Repository Layout
 
 ```
-.claude-plugin/marketplace.json the marketplace: lists plugins/fathom-progress
-plugins/fathom-progress/
+.claude-plugin/marketplace.json the marketplace at the repository root: lists mods/fathom-progress
+mods/fathom-progress/
   .claude-plugin/plugin.json    manifest: name, version, the types file
   types.d.ts                    RunTask, Snapshot, Plan and the mod's state
   tsconfig.json                 extends .claude-plugin/types/tsconfig.json
@@ -271,8 +273,8 @@ plugins/fathom-progress/
     cmux.ts                     pure: a snapshot to the cmux row's pill and bar
     fixtures.ts                 real bd output, captured by the seed script
     *.test.ts, *.test.tsx       unit and render tests
-scripts/seed-fathom-fixture.sh  drives a scratch Beads repo and writes fixtures.ts
-.beads/                         this project's own issue tracker
+  bin/seed-fathom-fixture.sh    drives a scratch Beads repo and writes fixtures.ts
+  bench/                        drives the band through checklist runs in tmux (see bench/README.md)
 ```
 
 ### Working on the Mod
@@ -280,15 +282,15 @@ scripts/seed-fathom-fixture.sh  drives a scratch Beads repo and writes fixtures.
 Add your clone as a marketplace from its path, and install from it.
 
 ```sh
-claude plugin marketplace add /path/to/claude-mods-fathom-progress
-claude plugin install fathom-progress@claude-mods-fathom
+claude plugin marketplace add /path/to/skills
+claude plugin install fathom-progress@crodris
 ```
 
-The plugin then loads in place from `plugins/fathom-progress`. According to the Claude Code documentation, your edits take effect at the next session start or `/reload-plugins`, and you don't change `version` while you work. `claude plugin list` shows where it reads from.
+The plugin then loads in place from `mods/fathom-progress`. According to the Claude Code documentation, your edits take effect at the next session start or `/reload-plugins`, and you don't change `version` while you work. `claude plugin list` shows where it reads from.
 
 Don't load that folder through `--plugin-dir` or `CLAUDE_CODE_PLUGIN_DIRS` in the session where Claude Code edits it. The documentation makes a folder loaded that way a protected path. In auto mode an edit to it goes to the classifier, which returned no verdict every time I tried, and an allow rule in settings can't change that. I saw the same edit refused in a session that loaded the folder and accepted in a session where the mod was installed. If you also run `beads-status` from a folder, see the note under Install.
 
-To release a version, raise `version` in `plugins/fathom-progress/.claude-plugin/plugin.json` and push. People who installed from GitHub get the new copy when the version changes.
+To release a version, raise the `fathom-progress` entry's `version` in `.claude-plugin/marketplace.json` at the repository root, and run `bin/sync-versions.sh`, which copies it into `plugin.json` and the main README. People who installed from GitHub get the new copy when the version changes.
 
 ### How a Run Becomes a Band
 
@@ -365,7 +367,7 @@ What I learned while building this, on Claude Code 2.1.295 and 2.1.296:
 Run the tests with the engine's own runner.
 
 ```sh
-claude plugin test plugins/fathom-progress
+claude plugin test mods/fathom-progress
 ```
 
 It runs every `*.test.ts` and `*.test.tsx` under the folder you give it, each in a child process that is set up like the mod's hooks. A test imports its kit from `claude-code/testing`, and the sandbox allows relative imports and `claude-code` only, so a test can't read a file from disk. That is why the captured `bd` output is a TypeScript module (`fixtures.ts`) and not a JSON file. The render tests mount the band on both the terminal and Desktop surfaces.
@@ -373,25 +375,25 @@ It runs every `*.test.ts` and `*.test.tsx` under the folder you give it, each in
 Validate the manifest and hooks.
 
 ```sh
-claude plugin validate plugins/fathom-progress
+claude plugin validate --strict mods/fathom-progress
 ```
 
-This passes. It reports three notes of "gating hook without .catch" for `prompt.submit` and the two `tool.call` hooks. They are notes, not errors.
+This passes. On Claude Code 2.1.310 it reports four notes of "gating hook without .catch", for `prompt.submit` and the three `tool.call` hooks. They are notes, not errors.
 
 Type-check with TypeScript. This repository has no `package.json`, so use any TypeScript install you have.
 
 ```sh
-tsc -p plugins/fathom-progress --noEmit
+tsc -p mods/fathom-progress --noEmit
 ```
 
-The config extends `.claude-plugin/types/tsconfig.json`, which turns on strict mode and `noUncheckedIndexedAccess`. With TypeScript 6.0.3 the check reports no errors. Under `noUncheckedIndexedAccess` an array index can be `undefined`, so `bar.ts` reads each one with `?? 0`. The types the mod is checked against declare `key` as a string, so `draw.tsx` passes `String(i)`, and `$.fs.read(path)` returns text unless you pass `{ as: 'bytes' }`.
+The config extends `.claude-plugin/types/tsconfig.json`, which turns on strict mode and `noUncheckedIndexedAccess`. Claude Code writes that folder when a session loads the mod from its folder (see "Loading a Folder Instead"), so the type-check needs one such session first. CI runs the tests and the validation on every change under `mods/`, and does not type-check, because no session loads the mod there. With TypeScript 6.0.3 the check reports no errors. Under `noUncheckedIndexedAccess` an array index can be `undefined`, so `bar.ts` reads each one with `?? 0`. The types the mod is checked against declare `key` as a string, so `draw.tsx` passes `String(i)`, and `$.fs.read(path)` returns text unless you pass `{ as: 'bytes' }`.
 
 ### Fixtures
 
-`hooks/fixtures.ts` holds real `bd` output for one Fathom run at each stage, so the state tests run against what `bd` prints and not against a guess. `scripts/seed-fathom-fixture.sh` regenerates it.
+`hooks/fixtures.ts` holds real `bd` output for one Fathom run at each stage, so the state tests run against what `bd` prints and not against a guess. `bin/seed-fathom-fixture.sh` regenerates it.
 
 ```sh
-bash scripts/seed-fathom-fixture.sh [scratch-dir] [out-file]
+bash mods/fathom-progress/bin/seed-fathom-fixture.sh [scratch-dir] [out-file]
 ```
 
 The script runs the commands Fathom's Beads adapter runs (Fathom 2.2.0) in a scratch repository, and writes what `bd` printed to `hooks/fixtures.ts`. It refuses a scratch folder inside this repository or one that isn't empty, checks that `bd` resolves to the scratch repository before it writes anything, and deletes nothing. The fixtures in the repository were captured with `bd` 1.1.0. Re-run the script after a `bd` upgrade that changes its JSON (a text format for data), since `parseEpics` and the task parsing read a missing key as a missing field and don't trust it.
@@ -430,27 +432,13 @@ Three things in the section I read rather than copied. The task line says `plann
 
 ### Issue Tracking
 
-This project tracks its work in Beads, in `.beads/`. The epic is `claude-mods-fathom-5l2`.
-
-```sh
-bd ready              # work with no blockers
-bd show <id>          # one issue's details and comments
-```
-
-`bd` keeps the database locally and syncs it through the `refs/dolt/data` ref on the git remote.
-
-```sh
-bd dolt push
-bd dolt pull
-```
-
-I have run `bd dolt push`. I haven't run `bd dolt pull` from a second clone.
+I track work on the mod in my own tracker, so ids such as `claude-mods-fathom-5l2.10` above are mine.
 
 ## Status
 
 The terminal band's three-row layout with the thin bar is new. Its unit and render tests pass, and the type-check and `claude plugin validate` are clean. I watched it in an interactive Claude Code session inside tmux, on a scratch repository, through the creating, executing (two tasks in review) and finished states at 100, 80 and 50 columns. The `[-]` sat on the bar's row, and the band needed no row of padding above the bar. That run drew a 55-character bar with `▂`. After I let the bar fill the window, I read the row at 200, 150, 100, 80 and 60 columns: the bar grew with the window, the percent started one character after it each time, and six characters separated the percent from the `[-]`. I then switched it to `━` with half-line gaps and saw the new bar come up after `/reload-plugins`, but I haven't compared it with the design's bar. tmux drew the colors from the 256-color palette, so I haven't seen the exact theme colors. At 22 columns the bar gives way to the count, and the label wraps onto a second line. Before that change, the terminal band, the Desktop's dark-theme SVG bar and the arming on a Team organization account had each been seen working: the first two in a scratch repository, the third in a work profile. The typed-ref and branch-fallback logic has unit tests and headless runs in a real repository, and I haven't yet watched it in a live session. I haven't seen the Desktop's non-dark bar, or the new arming signals in the Desktop app. The Desktop's dark-theme bar that I saw working was the earlier one, with the track and the pill. The new one, with thin segments in three rows, has unit and render tests, and I haven't type-checked it or seen it in the Desktop app. I haven't checked whether the app centers the 6-pixel bar on the percent's line, or how it sets the 12 pixels before the percent.
 
-The checklist reader is new. Its unit tests pass, and the type-check and `claude plugin validate` are clean. I wrote it from the format in Fathom's `memory/checklist.md` and wrote the test text by hand to match it, so no line in the tests comes from a real Fathom run. I watched the band follow checklists that a script wrote (`scripts/bench`), in a live Claude Code session in tmux where `bd` failed on every call, through a chain, a parallel run and a file that wasn't a checklist. A real Fathom run on a one-task issue in a scratch repository with no Beads wrote a checklist that reads as the format says, and the `fathom unavailable` line the band showed before the checklist existed went away once Fathom started working. I haven't watched the band's progress through a real run. Beads wins whenever `bd` returns an epic to follow. When only the branch names the issue and the branch's ref has no epic, `pickRun` can still return another issue's epic (one made since the invocation, or the latest open one), and the band then shows that run and not the branch's checklist. A ref you type avoids it, because a typed ref matches only its own epic. I haven't seen how Fathom writes the `Review` line on a checklist: the reader takes an id and a URL, as the format describes, and the band doesn't need it to draw.
+The checklist reader is new. Its unit tests pass, and the type-check and `claude plugin validate` are clean. I wrote it from the format in Fathom's `memory/checklist.md` and wrote the test text by hand to match it, so no line in the tests comes from a real Fathom run. I watched the band follow checklists that a script wrote (`bench/`), in a live Claude Code session in tmux where `bd` failed on every call, through a chain, a parallel run and a file that wasn't a checklist. A real Fathom run on a one-task issue in a scratch repository with no Beads wrote a checklist that reads as the format says, and the `fathom unavailable` line the band showed before the checklist existed went away once Fathom started working. I haven't watched the band's progress through a real run. Beads wins whenever `bd` returns an epic to follow. When only the branch names the issue and the branch's ref has no epic, `pickRun` can still return another issue's epic (one made since the invocation, or the latest open one), and the band then shows that run and not the branch's checklist. A ref you type avoids it, because a typed ref matches only its own epic. I haven't seen how Fathom writes the `Review` line on a checklist: the reader takes an id and a URL, as the format describes, and the band doesn't need it to draw.
 
 The scaffold band is new. Its tests pass, including ones that raise the real hooks and move the band from `resolve` through `create` to `done`, and the type-check and `claude plugin validate` are clean. The calls it reads come from one Linear run. In a terminal session I saw it end a Linear scaffold on `done, 3 issues made` with all four steps checked (this was before the redesign: the row now reads `Scaffold · Done, 3 issues made`, the steps carry dots, and the time is new), and the transcript shows that run made three issues and one earlier update, which the band didn't count. I haven't checked the steps before `done` by eye, or the Desktop app or cmux, so the yellow dot, the elapsed time, the Desktop layout and the three cmux icon names (`pencil`, `questionmark.circle` and `plus.circle`) are unchecked.
 

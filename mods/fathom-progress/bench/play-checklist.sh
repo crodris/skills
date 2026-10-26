@@ -3,7 +3,7 @@
 # .fathom/plans/<ref>.md step by step, the way a Fathom run on the checklist backend
 # would, so the band can be watched with no Fathom run and no model tokens.
 #
-#   bash scripts/bench/play-checklist.sh --bench <work> [--timeline chain] [--ref BENCH-1]
+#   bash mods/fathom-progress/bench/play-checklist.sh --bench <work> [--timeline chain] [--ref BENCH-1]
 #        [--step N | --pause 15 | --clean]
 #
 #   --step N     write step N and stop (watch-band.sh drives it this way)

@@ -66,6 +66,25 @@
         "workflow",
         "automation"
       ]
+    },
+    {
+      "name": "fathom-progress",
+      "source": "./mods/fathom-progress",
+      "description": "A Claude Code mod that shows a Fathom run's progress above the prompt, in the terminal and the Claude Code Desktop app, and mirrors it on the cmux sidebar row. Built by Ryan Uesato.",
+      "version": "0.2.0",
+      "author": {
+        "name": "Ryan Uesato"
+      },
+      "homepage": "https://github.com/crodris/skills",
+      "repository": "https://github.com/crodris/skills",
+      "license": "MIT",
+      "keywords": [
+        "fathom",
+        "progress",
+        "mod",
+        "beads",
+        "cmux"
+      ]
     }
   ]
 }
