@@ -4,7 +4,9 @@
 #
 # Install: git config core.hooksPath bin/hooks
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# The checkout being committed, which differs from this file's own checkout in a
+# linked worktree, since core.hooksPath can point every worktree at one bin/hooks.
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 SYNC_SCRIPT="$REPO_ROOT/bin/sync-versions.sh"
 
 # Silently skip if sync script doesn't exist

@@ -106,12 +106,26 @@ git -C "$dir" commit -q --no-verify --no-gpg-sign -m fixture
 marketplace 2.4.0 0.4.0
 printf -- 'Unrelated edit.\n' >> "$dir/skills/lint/SKILL.md"
 got=0
-"$dir/bin/hooks/pre-commit" > /dev/null 2>&1 || got=$?
+(cd "$dir" && "$dir/bin/hooks/pre-commit") > /dev/null 2>&1 || got=$?
 staged=$(git -C "$dir" diff --cached --name-only)
 if [ "$got" = 0 ]; then echo "ok: the hook exits 0"; else echo "FAIL: the hook exited $got"; failures=$((failures + 1)); fi
 if grep -qxF skills/build/SKILL.md <<< "$staged"; then echo "ok: the hook stages the SKILL.md the sync wrote"; else echo "FAIL: the hook did not stage skills/build/SKILL.md"; failures=$((failures + 1)); fi
 if grep -qxF mods/band/.claude-plugin/plugin.json <<< "$staged"; then echo "ok: the hook stages the plugin.json the sync wrote"; else echo "FAIL: the hook did not stage mods/band/.claude-plugin/plugin.json"; failures=$((failures + 1)); fi
 if ! grep -qxF skills/lint/SKILL.md <<< "$staged"; then echo "ok: the hook leaves an unrelated SKILL.md edit unstaged"; else echo "FAIL: the hook staged skills/lint/SKILL.md"; failures=$((failures + 1)); fi
+
+git -C "$dir" add -A
+git -C "$dir" commit -q --no-verify --no-gpg-sign -m synced
+git -C "$dir" worktree add -q "$root/hook-wt" 2>/dev/null
+marketplace 2.5.0
+cp "$dir/.claude-plugin/marketplace.json" "$root/hook-wt/.claude-plugin/marketplace.json"
+git -C "$dir" checkout -q -- .claude-plugin/marketplace.json
+(cd "$root/hook-wt" && "$dir/bin/hooks/pre-commit" > /dev/null 2>&1)
+if grep -qxF 'version: 2.5.0' "$root/hook-wt/skills/build/SKILL.md" &&
+  git -C "$root/hook-wt" diff --cached --name-only | grep -qxF skills/build/SKILL.md; then
+  echo "ok: the hook syncs and stages the linked worktree it runs in"
+else echo "FAIL: the hook did not sync the linked worktree"; failures=$((failures + 1)); fi
+if git -C "$dir" diff --quiet && git -C "$dir" diff --cached --quiet; then echo "ok: the hook leaves the hook file's own checkout alone"; else
+  echo "FAIL: the hook changed the checkout that holds it"; failures=$((failures + 1)); fi
 
 [ "$failures" -eq 0 ] || { echo "$failures failure(s)"; exit 1; }
 echo "all passed"
