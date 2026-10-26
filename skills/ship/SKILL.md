@@ -334,7 +334,8 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
 4. Apply every blocking fix, from every reviewer, in ONE batch.
    Re-run `verify` under stage 1's rules, steps 1 to 4, until it is clean, re-check the lane, then commit and push once, behind the same branch guard stage 2 uses; the drive is step 5's to run, not this step's.
    When the pull request conflicts with `base`, or `base` requires an up-to-date branch and this one is behind, the batch also runs `git fetch origin "$base"` and merges `origin/$base` into the branch, resolving any conflict the way the change intends; a squash merge in step 7 drops that merge commit.
-   With `merge-method: rebase`, rebase the branch onto `origin/$base` instead, since a rebase merge needs a branch with no merge commits.
+   When the resolved merge method is `rebase`, rebase the branch onto `origin/$base` instead, before committing the fixes, since a rebase merge needs a branch with no merge commits.
+   Record the merge base and the head from before the rebase as `<old-base>` and `<old-head>`, and the rebased tip as `<rebased-head>`.
    Push it with `--force-with-lease` set to the head the reviewers read, and only when the branch is exclusively this run's; otherwise stop and report.
    A run takes at most one base update, riding a push or buying one, and a branch that needs a second is a stop-and-report.
    Update this run's section of the pull request body with the review outcome and every disposition recorded so far.
@@ -343,7 +344,7 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    The push buys one confirmation pass on the new head: each bot that reviews every push re-reviews it on its own, and concurrently the code reviewer's subagents read the fix commits alone, at the same bar, without re-reading the whole change.
    Standards checks the fix commits against the documented conventions, and Spec checks that each one resolves the finding it was pushed for and adds nothing else; a fix that does not resolve its finding leaves that finding open under step 6, whether or not a bot repeats it.
    A base merge is confirmed on its conflict resolutions alone (`git show --remerge-diff <merge-sha>`).
-   A base rebase is confirmed on `git range-diff <old-base>..<old-head> origin/$base..<rebased-head>`, read before the fix commits are added.
+   A base rebase is confirmed on `git range-diff <old-base>..<old-head> origin/$base..<rebased-head>`, with the values step 4 recorded.
    A base update with no conflicts needs verify and the checks, not a subagent read.
    A first-push-only bot is re-requested here when the push fixed a confirmed critical or major that bot raised.
    For a bot that labels its own findings, such as CodeRabbit, that finding must carry the bot's own Critical or Major label; triage's higher grade does not count, and watch.sh refuses the re-request when no finding on the pull request carries that label, as the Re-request section of `bots.md` says.
@@ -370,7 +371,7 @@ A full-diff round reads the whole change, and a confirmation pass reads only fix
    Otherwise merge that SHA explicitly with the resolved method: `gh pr merge <n> --<merge-method> --match-head-commit <settled-sha>`, adding `--delete-branch` only when this run did NOT use a worktree.
    With `squash`, keep the subject identical to the pull request title, because release tooling may parse it.
    On a worktree run, leave both deletions to the cleanup step, which removes the worktree first and then deletes the local and remote branch in the right order.
-   Record the SHA `gh pr view <n> --json mergeCommit` reports, which is the commit the merge put at the tip of `base`; the next step needs it to know which run is this run's.
+   Record the SHA `gh pr view <n> --json mergeCommit --jq .mergeCommit.oid` prints, which is the commit the merge put at the tip of `base`; the next step needs it to know which run is this run's.
    From the merge through step 9 and the final report, run every command in the foreground and do not end the turn.
    This replaces step 1's background default for the rest of this ship run, and step 8's repeated calls are the one wait that step 1's ban on polling loops does not cover.
    Once the pull request has merged, a host may close the agent's session as soon as the turn goes idle, which kills every background command.
