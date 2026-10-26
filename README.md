@@ -69,11 +69,11 @@ These install through skills.sh only.
 It reads its build, serving, and measuring steps from `ui.md` only when the pull request changes what the app renders.
 It needs the GitHub CLI, plus a browser driver such as Playwright for visual changes, and answers whether a pull request is safe to merge with `land`'s merge gate.
 
-### rewrite (v3.0.0)
+### rewrite (v3.1.0)
 
 `rewrite` drafts and rewrites prose you post under your name, in your voice, and removes the patterns that mark text as machine-written.
-It reads the voice file that `~/.config/voice/config.md` points at, and builds one with you on first run.
-It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when that is installed.
+It reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset, empty, or not an absolute path, and builds one with you on first run from `setup.md`.
+It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when that is installed, and keeps a short fallback floor for installs without it.
 To move from an old name, run `npx skills@latest remove my-voice -g` (or `npx skills@latest remove voice -g` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
 
 ### frontend-design-pipeline (v1.3.0)

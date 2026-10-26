@@ -30,8 +30,9 @@ skills/review-loop/lanes.md 315
 skills/review-loop/SKILL.md 1188
 skills/review/SKILL.md 2074
 skills/review/ui.md 2476
-skills/rewrite/SKILL.md 4092
-skills/rewrite/template.md 624
+skills/rewrite/setup.md 1089
+skills/rewrite/SKILL.md 1753
+skills/rewrite/template.md 627
 skills/scaffold/SKILL.md 1965
 skills/ship/boundary.md 1021
 skills/ship/config.md 547
