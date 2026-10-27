@@ -11,4 +11,5 @@ release: none
 cross-review: cursor
 post-merge: none
 merge: yes
+merge-method: rebase   # asked
 ```
