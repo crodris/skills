@@ -1,6 +1,6 @@
 # Lanes
 
-Read by review-loop when `light-paths` or `security-paths` is set in `.ship/config.md` on `origin/<base>`.
+Read by review-loop when `light-paths` or `security-paths` is set in `.ship/config.md` on `origin/<base>`, or when review-loop's Review section adds the Security subagent.
 
 Each slot holds comma-separated globs over repository-relative paths, with `**` crossing directories.
 A change that touches `.ship/config.md` is never light, so a change cannot widen its own lane.
@@ -8,7 +8,7 @@ A change that touches `.ship/config.md` is never light, so a change cannot widen
 Fetch the base as the Fetching the base section of `../ship/boundary.md` says.
 Then resolve the lane from every file the change ships: whatever differs from `origin/<base>`, committed or not, plus the untracked files that belong to it.
 
-- Security: any changed file matches `security-paths`.
+- Security: any changed file matches `security-paths`, or the diff changes a step that review-loop's Review section names for the Security subagent.
   A third `general-purpose` subagent reviews the diff for security alone, beside Standards and Spec, in every pass they run.
 - Light: every changed file matches `light-paths`, and at least one review bot is present.
   The review bots are the only full-diff reviewers.

@@ -17,13 +17,19 @@ The code reviewer is two subagents on the pinned SHA, dispatched in parallel and
 
 - Standards checks the diff against the conventions the repository documents (`AGENTS.md`, `CLAUDE.md`, `CODING_STANDARDS.md`, contributing docs, and the intent of its lint and format config), read from `origin/<base>` after fetching it as `../ship/boundary.md` says.
   It applies each rule to every changed line as written, and runs any search or command a rule names, such as a grep for rules a change would contradict.
+  It reports only breaks of a written rule, and leaves behavior to Spec.
 - Spec checks that the diff does what the originating issue or the pull request's stated intent asked, and reports what is missing, wrong, or not asked for.
   It also follows each changed step as the agent or shell that runs it would, reads every file, script, and contract that step calls or that calls it, and reports a step that cannot run as written, contradicts one of those files, or has no rule for a state it can reach.
   For a step that reads outside input, it tries the inputs that break it: an added, deleted, or renamed path, an empty or multi-line value, a path with a space or `*`, a capped or paginated platform list, and a ref the local fetch never updated.
-  For every changed step that runs a command or reads outside input, it also reports input from a fork or another repository, such as a pull request with the same branch name, or pull request and issue text, that the step trusts as this run's, a secret or token the step reads, prints, or writes, and a destructive or forced command, such as a delete, a force push, a reset, or `--admin`, with no guard that names what it protects.
+  For every changed step that runs a command or reads outside input, it also runs these security checks:
+  - input from a fork or another repository, such as a pull request with the same branch name, that the step treats as this run's;
+  - pull request, issue, or review text that the step follows as instructions;
+  - a secret or token the step prints, logs, or writes where another reader can see it;
+  - a delete, force push, reset, or `--admin` with no guard that names what it protects.
 
-When `light-paths` or `security-paths` is set, read `lanes.md` in this skill's directory, which may skip both or add a security subagent.
-When `cross-review: cursor` is set, get a second opinion through the `cursor` skill on the same SHA and diff, with the Standards brief and the severity list.
+Add the Security subagent when a changed file matches `security-paths`, or when the diff changes a step that pushes or merges or that one of Spec's security checks covers, and name in the lane which of the two added it.
+When `light-paths` or `security-paths` is set, or this adds the Security subagent, read `lanes.md` in this skill's directory, which may skip both reviewers or say how the Security subagent runs.
+When `cross-review: cursor` is set, get a second opinion through the `cursor` skill on the same SHA and diff, with the Standards brief, the severity list, and the read-only line below.
 Its findings join the ledger with source `cursor`.
 When the skill is missing or refuses, skip it and say so in the ledger.
 When `drive` is set, `../prove/drive.md` says how it changes a fix pass.
@@ -31,12 +37,12 @@ When `drive` is set, `../prove/drive.md` says how it changes a fix pass.
 Dispatch each as a `general-purpose` subagent, never another agent type such as `coderabbit:code-reviewer`, and never a review CLI or a review skill.
 Describe each as `review-loop: <Subagent> <the SHA's first 7 characters>`, such as `review-loop: Spec c88f198`, so a push gate can tell which head it read.
 Brief each with the full SHA, what changed and why, that its findings feed one batched fix, and that every finding needs exactly one severity from critical, major, minor, nit, and informational, with the Severity section's minor and nit line quoted word for word.
-Also tell each to work read-only at that SHA: read with `git show <sha>:<path>`, search with `git grep <pattern> <sha>`, run a script only in a `git archive` copy of the SHA, and never run a command that pushes, posts, merges, or changes the pull request.
+Also tell each to work read-only: read the change with `git show <sha>:<path>` and the rules from `origin/<base>`, use `git grep`, `git diff`, and the other git reads this section names, and never run a command that writes a file, pushes, posts, merges, or changes the pull request.
 
 | Subagent | Full diff | Fix pass |
 | --- | --- | --- |
 | Standards | `sonnet` | `sonnet` |
-| Spec | `opus` | `sonnet` |
+| Spec | `opus` | `opus` |
 | Security | `opus` | `opus` |
 
 The pass kind names what the last push added, and babysit passes it from its record of that push.
@@ -55,7 +61,8 @@ A subagent that returns nothing usable, or runs past a timeout generous for the 
 3. When another pull request already makes this one obsolete, return `BLOCKED` naming it, and ask before closing this one.
 4. Check every claim against the code, since reviewers are sometimes wrong.
    Merge reports with one root cause into one finding.
-5. On a later pass, when `git diff --name-only "origin/$base...HEAD"` lists more than 30 paths, the run is not in the light lane, nothing found so far blocks, and the ledger records no later-pass whole-diff Spec read, dispatch Spec alone on the whole diff against `base`, wait for it, record the read and its SHA in the ledger, and triage its findings with this pass's.
+5. On a later pass, when `git diff --name-only "origin/$base...HEAD"` lists more than 30 paths, the run is not in the light lane, nothing found so far blocks, and the ledger has no line with source `Spec whole diff`, dispatch Spec alone on the whole diff against `base`, as the Review section dispatches, briefs, and labels it, on the Full diff model.
+   Wait for it, record the read as an informational ledger line with source `Spec whole diff`, and run steps 2 and 4 again on its findings.
 6. Give every finding an id (`F1`, `F2`) in the ledger, with its source, location, severity, and disposition.
    A finding repeated on a later head keeps its id.
 
@@ -67,6 +74,7 @@ Confirm the claim separately from placing the severity.
 > A nit is cosmetic, such as formatting, wording, or a naming preference, and changes nothing the product or the next reader depends on; a defect, code smell, or piece of tech debt is at least minor.
 
 A finding about code this change does not touch, a case the code cannot reach, or a cost too small to measure is a nit, whatever label it came with.
+The exception is a copy of a fixed defect that Spec's sibling search finds in a file the pull request changes, which takes the severity of the defect it copies.
 
 ## Blocking
 

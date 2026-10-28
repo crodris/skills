@@ -55,7 +55,8 @@ A branch babysit found already pushed is not, whoever wrote its commits.
 | 8 | Go on to triage, with a base update due. |
 | other | `BLOCKED`, quoting the verdict line. |
 
-5. Follow review-loop's Triage and Fix sections with every finding, including the whole-diff Spec read its Triage step 5 can add on a large pull request.
+5. Follow review-loop's Triage and Fix sections with every finding.
+   On a large pull request, Triage step 5 can add a whole-diff Spec read.
    On `RESTART`, restart the pass on the new head.
    A second restart in a row, from watch.sh or review-loop, is `BLOCKED`, since something outside this run keeps pushing.
    On `BLOCKED <reason>`, return `BLOCKED <reason>` and push nothing.
