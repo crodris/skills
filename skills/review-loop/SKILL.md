@@ -16,7 +16,7 @@ Inputs: the pull request, the pinned head SHA, `base`, the pass kind, the merge 
 The code reviewer is two subagents on the pinned SHA, dispatched in parallel and in the background:
 
 - Standards checks the diff against the conventions the repository documents (`AGENTS.md`, `CLAUDE.md`, `CODING_STANDARDS.md`, contributing docs, and the intent of its lint and format config), read from `origin/<base>` after fetching it as `../ship/boundary.md` says.
-  It applies each rule to every changed line as written, and runs any search or command a rule names, such as a grep for rules a change would contradict.
+  It applies each rule to every changed line as written, and runs any search a rule names as a read-only git command at the SHA, such as `git grep` for rules a change would contradict.
   It reports only breaks of a written rule, and leaves behavior to Spec.
 - Spec checks that the diff does what the originating issue or the pull request's stated intent asked, and reports what is missing, wrong, or not asked for.
   It also follows each changed step as the agent or shell that runs it would, reads every file, script, and contract that step calls or that calls it, and reports a step that cannot run as written, contradicts one of those files, or has no rule for a state it can reach.
