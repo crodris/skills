@@ -1,6 +1,6 @@
 # Word budgets read by bin/check-skill-size.sh. AGENTS.md says when to change them.
 skills/babysit/bots.md 1034
-skills/babysit/SKILL.md 1581
+skills/babysit/SKILL.md 1597
 skills/execute/agents.md 309
 skills/execute/agents/claude-code.md 531
 skills/execute/agents/kiro.md 214
@@ -32,7 +32,7 @@ skills/land/SKILL.md 1190
 skills/prove/drive.md 345
 skills/prove/SKILL.md 853
 skills/review-loop/lanes.md 315
-skills/review-loop/SKILL.md 1392
+skills/review-loop/SKILL.md 1547
 skills/review/SKILL.md 2074
 skills/review/ui.md 2476
 skills/rewrite/setup.md 1089

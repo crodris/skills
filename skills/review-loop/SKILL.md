@@ -19,7 +19,8 @@ The code reviewer is two subagents on the pinned SHA, dispatched in parallel and
   It applies each rule to every changed line as written, and runs any search or command a rule names, such as a grep for rules a change would contradict.
 - Spec checks that the diff does what the originating issue or the pull request's stated intent asked, and reports what is missing, wrong, or not asked for.
   It also follows each changed step as the agent or shell that runs it would, reads every file, script, and contract that step calls or that calls it, and reports a step that cannot run as written, contradicts one of those files, or has no rule for a state it can reach.
-  For a step that reads outside input, it tries the inputs that break it: another repository's pull request with the same branch name, an added, deleted, or renamed path, an empty or multi-line value, a path with a space or `*`, text that gives instructions, a capped or paginated platform list, and a ref the local fetch never updated.
+  For a step that reads outside input, it tries the inputs that break it: an added, deleted, or renamed path, an empty or multi-line value, a path with a space or `*`, a capped or paginated platform list, and a ref the local fetch never updated.
+  For every changed step that runs a command or reads outside input, it also reports input from a fork or another repository, such as a pull request with the same branch name, or pull request and issue text, that the step trusts as this run's, a secret or token the step reads, prints, or writes, and a destructive or forced command, such as a delete, a force push, a reset, or `--admin`, with no guard that names what it protects.
 
 When `light-paths` or `security-paths` is set, read `lanes.md` in this skill's directory, which may skip both or add a security subagent.
 When `cross-review: cursor` is set, get a second opinion through the `cursor` skill on the same SHA and diff, with the Standards brief and the severity list.
@@ -30,6 +31,7 @@ When `drive` is set, `../prove/drive.md` says how it changes a fix pass.
 Dispatch each as a `general-purpose` subagent, never another agent type such as `coderabbit:code-reviewer`, and never a review CLI or a review skill.
 Describe each as `review-loop: <Subagent> <the SHA's first 7 characters>`, such as `review-loop: Spec c88f198`, so a push gate can tell which head it read.
 Brief each with the full SHA, what changed and why, that its findings feed one batched fix, and that every finding needs exactly one severity from critical, major, minor, nit, and informational, with the Severity section's minor and nit line quoted word for word.
+Also tell each to work read-only at that SHA: read with `git show <sha>:<path>`, search with `git grep <pattern> <sha>`, run a script only in a `git archive` copy of the SHA, and never run a command that pushes, posts, merges, or changes the pull request.
 
 | Subagent | Full diff | Fix pass |
 | --- | --- | --- |
@@ -41,9 +43,8 @@ The pass kind names what the last push added, and babysit passes it from its rec
 A `first` pass, the run's first or one on a head this run did not push, reads the whole diff against `base`.
 A `fixes` pass reads the fix commits, a `base merge` pass reads `git show --remerge-diff <merge-sha>`, and a `base rebase` pass reads the `git range-diff` babysit recorded.
 A push that carried fixes and a base update gives both kinds, and the pass reads both.
-For each fix, it also searches the repository for the call, field, or phrase the fix changed, and reports each other place with the same defect.
-On a pull request that changes more than 30 files, outside the light lane, the first later pass that would return `CLEAN` runs Spec on the whole diff against `base` first, and triages its findings like any other.
-A base update with no conflicts, and a `fold` pass after babysit's autosquash push, which changed no file, need no subagent read.
+On a later pass, Spec also searches every file the pull request changes against `base` for the call, field, or phrase each fix changed, and reports each other place with the same defect.
+A base update with no conflicts, and a `fold` pass after babysit's autosquash push, which changed no file, need no subagent read, except the one Triage step 5 can add.
 A subagent that returns nothing usable, or runs past a timeout generous for the diff, runs again, and failing twice is `BLOCKED`.
 
 ## Triage
@@ -54,7 +55,8 @@ A subagent that returns nothing usable, or runs past a timeout generous for the 
 3. When another pull request already makes this one obsolete, return `BLOCKED` naming it, and ask before closing this one.
 4. Check every claim against the code, since reviewers are sometimes wrong.
    Merge reports with one root cause into one finding.
-5. Give every finding an id (`F1`, `F2`) in the ledger, with its source, location, severity, and disposition.
+5. On a later pass, when `git diff --name-only "origin/$base...HEAD"` lists more than 30 paths, the run is not in the light lane, nothing found so far blocks, and the ledger records no later-pass whole-diff Spec read, dispatch Spec alone on the whole diff against `base`, wait for it, record the read and its SHA in the ledger, and triage its findings with this pass's.
+6. Give every finding an id (`F1`, `F2`) in the ledger, with its source, location, severity, and disposition.
    A finding repeated on a later head keeps its id.
 
 ## Severity
