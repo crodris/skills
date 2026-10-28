@@ -37,7 +37,7 @@ When `drive` is set, `../prove/drive.md` says how it changes a fix pass.
 Dispatch each as a `general-purpose` subagent, never another agent type such as `coderabbit:code-reviewer`, and never a review CLI or a review skill.
 Describe each as `review-loop: <Subagent> <the SHA's first 7 characters>`, such as `review-loop: Spec c88f198`, so a push gate can tell which head it read.
 Brief each with the full SHA, what changed and why, that its findings feed one batched fix, and that every finding needs exactly one severity from critical, major, minor, nit, and informational, with the Severity section's minor and nit line quoted word for word.
-Also tell each to work read-only: read the change with `git show <sha>:<path>` and the rules from `origin/<base>`, use `git grep`, `git diff`, and the other git reads this section names, and never run a command that writes a file, pushes, posts, merges, or changes the pull request.
+Also tell each to work read-only: read the change with `git show <sha>:<path>` and the rules from `origin/<base>`, search with `git grep <pattern> <sha>`, compare with `git diff`, `git show --remerge-diff`, or `git range-diff`, and never run a command that writes a file, pushes, posts, merges, or changes the pull request.
 
 | Subagent | Full diff | Fix pass |
 | --- | --- | --- |
@@ -91,6 +91,7 @@ Past the budget, return `BLOCKED` with the open findings.
 A pass whose new findings are all nits dispositions them and returns `CLEAN`.
 A finding disputed twice is `BLOCKED`, and the user decides it.
 A confirmed critical or major whose root cause an earlier push already carried a fix for is `BLOCKED`, since the fixes are going in circles.
+A copy of a fixed defect that Spec's search finds in another place is a new finding, so it does not count as going in circles.
 
 ## Fix
 
