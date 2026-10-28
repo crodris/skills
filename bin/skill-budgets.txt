@@ -32,7 +32,7 @@ skills/land/SKILL.md 1190
 skills/prove/drive.md 345
 skills/prove/SKILL.md 853
 skills/review-loop/lanes.md 315
-skills/review-loop/SKILL.md 1188
+skills/review-loop/SKILL.md 1392
 skills/review/SKILL.md 2074
 skills/review/ui.md 2476
 skills/rewrite/setup.md 1089
