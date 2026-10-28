@@ -13,6 +13,7 @@ on:
       - "bin/test-guard.sh"
       - "bin/test-resolve-verify.sh"
       - "bin/test-land.sh"
+      - "bin/test-verify-each.sh"
       - "bin/test-settle-branch.sh"
       - "bin/check-pipeline-skills.sh"
       - "bin/test-check-pipeline-skills.sh"
@@ -28,6 +29,7 @@ on:
       - "bin/test-guard.sh"
       - "bin/test-resolve-verify.sh"
       - "bin/test-land.sh"
+      - "bin/test-verify-each.sh"
       - "bin/test-settle-branch.sh"
       - "bin/check-pipeline-skills.sh"
       - "bin/test-check-pipeline-skills.sh"
@@ -64,6 +66,9 @@ jobs:
 
       - name: Check land's release-watch.sh and cleanup.sh against fakes and scratch repositories
         run: bin/test-land.sh
+
+      - name: Check prove's verify-each.sh against scratch repositories
+        run: bin/test-verify-each.sh
 
       - name: Check check-pipeline-skills.sh against scratch repositories
         run: bin/test-check-pipeline-skills.sh

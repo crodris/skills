@@ -39,6 +39,7 @@ Shipping covers these commands:
 - Opening, reading, commenting on, editing, and merging the run's own pull request.
 - Resolving the run's review threads, polling its pull request, and rerunning its checks.
 - Reading the repository's other pull requests, and never changing one.
+- Creating and removing the detached worktree and log per commit that `../prove/verify-each.sh` makes under the system temp directory.
 
 Writing and deleting a temporary file this run made, outside the repository, is part of shipping when it holds a pull request body or a bot-thread reply.
 Stop and ask before anything outside that shape, however it is framed: piping a downloaded script into a shell, `sudo`, reading credentials or key material, writing anything else outside the repository, deleting outside the build output, or contacting a host other than the package registries and this repository's forge.

@@ -109,16 +109,19 @@ Return on a pass that pushed nothing and that review-loop returned `CLEAN` for.
    4. Push with the reviewed head as `guard.sh`'s lease.
       When the lane is light, add the comment `../review-loop/lanes.md` names to the command.
    5. Start another pass on the pushed head, since the bots that review every push have not read it, and return from that pass's Result instead.
-2. Check the pull request once more for a table bot no pass waited on, and run a pass for it as `bots.md` says when one shows up.
-3. Run watch.sh with no `--bot` on the current head, the way step 2 of each pass does.
+2. With `merge-method: rebase` and more than one commit in `origin/$base..HEAD`, run `bash <this skill's directory>/../prove/verify-each.sh "$(git rev-parse --show-toplevel)" "origin/$base..HEAD" '<verify>'`, with `<verify>` as the `verify:` command in the last `PASS` line prove printed, as its header says.
+   When only earlier commits fail, return `BLOCKED` naming the first failing commit.
+   When the head fails too, its worktree lacks something verify needs, since prove passed the head in this checkout, so say so in the run section and go on.
+3. Check the pull request once more for a table bot no pass waited on, and run a pass for it as `bots.md` says when one shows up.
+4. Run watch.sh with no `--bot` on the current head, the way step 2 of each pass does.
    Exit 0 goes on.
    Exit 1 goes back to triage.
    Exit 4 runs it again as the exit table says.
    Exit 8 makes the base update, pushes as Each pass step 7 does, then runs another pass.
    Any other exit is `BLOCKED`.
    Result starts its own count of 3 for these exit 4 reruns.
-4. Re-read the pull request, and return `BLOCKED` unless it is open, targets `base`, and its head is the current head.
-5. Read `mergeable,mergeStateStatus,reviewDecision` with `gh pr view <n> --json mergeable,mergeStateStatus,reviewDecision`.
+5. Re-read the pull request, and return `BLOCKED` unless it is open, targets `base`, and its head is the current head.
+6. Read `mergeable,mergeStateStatus,reviewDecision` with `gh pr view <n> --json mergeable,mergeStateStatus,reviewDecision`.
    While `mergeable` is `UNKNOWN`, re-read as Each pass step 6 does.
    When a base update is due, make that update.
    Push as Each pass step 7 does.
