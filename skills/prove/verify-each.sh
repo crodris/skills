@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # verify-each.sh - run verify on every commit in a range, oldest first, each in
-# its own detached worktree under the system temp directory, so a caller can
-# stop a rebase merge from putting a commit on the base that fails on its own tree.
-# Each commit runs the `verify:` line of its own .ship/config.md, with any
-# trailing comment dropped, so a gate a later commit adds never runs on an
-# earlier one. A commit whose config sets no verify, only a comment, or the
-# corrupt value `none` runs <verify-command>.
+# its own detached worktree under a private directory in the system temp
+# directory, so a caller can stop a rebase merge from putting a commit on the
+# base that fails on its own tree.
+# Each commit runs the `verify:` line of its own .ship/config.md, read from
+# git, with any trailing comment dropped, so a gate a later commit adds never
+# runs on an earlier one. A symlinked config counts as absent. A commit whose
+# config sets no verify, only a comment, or the corrupt value `none` runs
+# <verify-command>.
 # The worktree holds only tracked files, so a verify that needs installed
 # dependencies has to install them itself.
 #
@@ -25,33 +27,37 @@ repo=$1 range=$2 cmd=$3
 shas=$(git -C "$repo" rev-list --reverse "$range")
 [ -n "$shas" ] || { echo "verify-each.sh: no commits in $range" >&2; exit 2; }
 
-wt=''
+base=''
 cleanup() {
-  if [ -n "$wt" ]; then
-    git -C "$repo" worktree remove --force "$wt" 2>/dev/null || rm -rf "$wt"
-    rm -f "$wt.log"
+  if [ -n "$base" ]; then
+    git -C "$repo" worktree remove --force "$base/wt" 2>/dev/null || true
+    rm -rf "$base"
   fi
 }
 trap cleanup EXIT
 
 failed=0
 for sha in $shas; do
-  wt=$(mktemp -d "${TMPDIR:-/tmp}/verify-each.XXXXXX")
-  git -C "$repo" worktree add -q --detach "$wt" "$sha"
+  base=$(mktemp -d "${TMPDIR:-/tmp}/verify-each.XXXXXX")
+  git -C "$repo" worktree add -q --detach "$base/wt" "$sha"
   own=''
-  if [ -f "$wt/.ship/config.md" ]; then
-    own=$(sed -n '/^verify:/{s/^verify:[[:space:]]*//;s/[[:space:]][[:space:]][[:space:]]*#.*$//;p;q;}' "$wt/.ship/config.md")
-    case $own in '#'* | none) own='' ;; esac
-  fi
+  meta=$(git -C "$repo" ls-tree "$sha" -- .ship/config.md)
+  mode=${meta%% *}
+  case "$mode" in
+    100644 | 100755)
+      own=$(git -C "$repo" show "$sha:.ship/config.md" | sed -n '/^verify:/{s/^verify:[[:space:]]*//;s/[[:space:]][[:space:]][[:space:]]*#.*$//;p;q;}')
+      case $own in '#'* | none) own='' ;; esac
+      ;;
+  esac
   code=0
-  (cd "$wt" && bash -c "${own:-$cmd}") > "$wt.log" 2>&1 || code=$?
+  (cd "$base/wt" && bash -c "${own:-$cmd}") > "$base/log" 2>&1 || code=$?
   echo "$(git -C "$repo" log -1 --format='%h %s' "$sha"): exit $code"
   if [ "$code" -ne 0 ]; then
     failed=1
-    tail -n 20 "$wt.log" | sed 's/^/  | /'
+    tail -n 20 "$base/log" | sed 's/^/  | /'
   fi
   cleanup
-  wt=''
+  base=''
 done
 
 exit "$failed"

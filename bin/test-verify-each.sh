@@ -80,5 +80,15 @@ commit "config verify is none" 'mkdir -p .ship && printf "verify: none   # asked
 each base..HEAD true
 expect "a corrupt verify: none runs the passed command" 0
 
+case_dir
+commit "config file is a symlink" 'mkdir -p .ship && printf "verify: false\n" > .ship/real.md && ln -s real.md .ship/config.md'
+each base..HEAD true
+expect "a symlinked config file runs the passed command" 0
+
+case_dir
+commit "ship directory is a symlink" 'mkdir -p shipdir && printf "verify: false\n" > shipdir/config.md && ln -s shipdir .ship'
+each base..HEAD true
+expect "a symlinked ship directory runs the passed command" 0
+
 if [ "$failures" -gt 0 ]; then echo "$failures failed"; exit 1; fi
 echo "all passed"
