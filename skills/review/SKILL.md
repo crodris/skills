@@ -1,7 +1,7 @@
 ---
 name: review
 description: This skill should be used when the user asks to "review this PR", "review PR 107", "review these PRs the same way", "do a visual pass on this branch", "verify this against the issue", pastes a pull request URL to review, or asks for a UI change to be checked before merge. Also use when the user asks whether a reviewed PR is safe to merge, or asks to escalate or downgrade a finding's severity. Verifies a pull request against the tracker issue it claims to close, on a running build, with measured evidence, then posts one review with line-specific findings inline and general findings in the summary body.
-version: 1.2.0
+version: 1.2.1
 ---
 
 # Review
@@ -85,13 +85,13 @@ Cite the file and rule for every breach that no stage 3 gate already enforces, a
 
 ### 5. Prove the new tests are load-bearing
 
-Revert the changed source, re-run the new tests, and confirm they fail.
-`$LIST`, a file outside the worktree, lists every changed path except the new tests, including fixtures and config the changed source needs.
+Revert the changed source, re-run the test files the PR adds or modifies, and confirm the new or changed tests in them fail.
+`$LIST`, a file outside the worktree, lists every changed path except the test files the PR adds or modifies, including fixtures and config the changed source needs.
 `--no-overlay` deletes listed paths the source lacks, so paths the PR adds or deletes flip too.
 
 ```bash
 # $LIST holds the changed paths, one per NUL byte, such as from printf '%s\0' <path>...
-GIT_LITERAL_PATHSPECS=1 git -C "$PR_WT" checkout --no-overlay "$MB" --pathspec-from-file="$LIST" --pathspec-file-nul      # rebuild, run the new specs, expect failures
+GIT_LITERAL_PATHSPECS=1 git -C "$PR_WT" checkout --no-overlay "$MB" --pathspec-from-file="$LIST" --pathspec-file-nul      # rebuild, run the added or modified test files, expect failures
 GIT_LITERAL_PATHSPECS=1 git -C "$PR_WT" checkout --no-overlay "$PR_REF" --pathspec-from-file="$LIST" --pathspec-file-nul  # restore, rebuild
 ```
 

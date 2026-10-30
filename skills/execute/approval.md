@@ -13,7 +13,7 @@ Resolve it once at the start of a run, first match winning:
 2. The `approval` field of `.fathom/config.md`, read on its own since the profile may not be loaded yet.
 3. `ask`.
 
-When first-run setup records a mode later in the same run, that mode governs the rest of the run.
+When first-run setup records a mode later in the same run and the invocation set none, the recorded mode governs the rest of the run.
 State the resolved mode and the source that decided it.
 
 ## What auto mode skips

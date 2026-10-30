@@ -55,7 +55,7 @@ Ask whether they keep rules about their writing in a file of their own.
 When they do, list it under `voice` ahead of the built file, and keep the built file to samples and what they show about register.
 
 **Path C: the user has nothing yet.**
-Run the interview and build the voice file from `template.md` in this directory.
+Run the interview, build the voice file from `template.md` in this directory, save it as `voice.md` in the config directory, and list it under `voice`.
 Save the pasted samples to `samples.md` in the config directory and list that file under `samples`.
 
 The user can rerun setup at any time, and an existing config is edited in place.

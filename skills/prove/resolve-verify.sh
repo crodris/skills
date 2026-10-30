@@ -118,7 +118,7 @@ for path in sorted((root / ".github/workflows").glob("*.y*ml")):
                 control = {"if", "then", "elif", "else", "fi", "for", "while", "until", "do", "done", "case", "esac"}
                 operators = ("\\", "&&", "||", "|")
                 if value[:1] == ">" or any(
-                    line.split()[0] in control or line.endswith(operators) or line.startswith(operators[1:]) or line in ("{", "}")
+                    line.split()[0] in control or line.endswith(operators) or line.startswith(operators[1:]) or line in ("{", "}") or "<<" in line
                     for line in block
                 ):
                     value = f"read the multi-line run step at line {run_line}"
