@@ -37,7 +37,7 @@ When `drive` is set, `../prove/drive.md` says how it changes a fix pass.
 Dispatch each as a `general-purpose` subagent, never another agent type such as `coderabbit:code-reviewer`, and never a review CLI or a review skill.
 Describe each as `review-loop: <Subagent> <the SHA's first 7 characters>`, such as `review-loop: Spec c88f198`, so a push gate can tell which head it read.
 Brief each with the full SHA, what changed and why, that its findings feed one batched fix, and that every finding needs exactly one severity from critical, major, minor, nit, and informational, with the Severity section's minor and nit line quoted word for word.
-Also tell each to work read-only: read the change with `git show <sha>:<path>` and the rules from `origin/<base>`, search with `git grep <pattern> <sha>`, compare with `git diff`, `git show --remerge-diff`, or `git range-diff`, and never run a command that writes a file, pushes, posts, merges, or changes the pull request.
+Also tell each to work read-only: read the change with `git show <sha>:<path>` and the rules from `origin/<base>`, search with `git grep <pattern> <sha>`, compare with `git diff`, `git show --remerge-diff`, or `git range-diff`, never run the pull request's code, such as its tests, builds, or package scripts, and never run a command that writes a file, pushes, posts, merges, or changes the pull request.
 
 | Subagent | Full diff | Fix pass |
 | --- | --- | --- |

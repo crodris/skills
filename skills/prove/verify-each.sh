@@ -4,7 +4,8 @@
 # stop a rebase merge from putting a commit on the base that fails on its own tree.
 # Each commit runs the `verify:` line of its own .ship/config.md, with any
 # trailing comment dropped, so a gate a later commit adds never runs on an
-# earlier one. A commit whose config sets no verify runs <verify-command>.
+# earlier one. A commit whose config sets no verify, only a comment, or the
+# corrupt value `none` runs <verify-command>.
 # The worktree holds only tracked files, so a verify that needs installed
 # dependencies has to install them itself.
 #
@@ -40,6 +41,7 @@ for sha in $shas; do
   own=''
   if [ -f "$wt/.ship/config.md" ]; then
     own=$(sed -n '/^verify:/{s/^verify:[[:space:]]*//;s/[[:space:]][[:space:]][[:space:]]*#.*$//;p;q;}' "$wt/.ship/config.md")
+    case $own in '#'* | none) own='' ;; esac
   fi
   code=0
   (cd "$wt" && bash -c "${own:-$cmd}") > "$wt.log" 2>&1 || code=$?
