@@ -27,14 +27,14 @@ On Claude Code, Fathom and ship also install as plugins, and so does the fathom-
 
 ## Plugins
 
-### fathom (v3.0.0)
+### fathom (v3.0.1)
 
 `execute` takes a tracker issue through breakdown, implementation, tests, commits, and an open review, and resumes where the last run stopped.
 `scaffold` turns requirements into a main issue with linked sub-issues, then offers to hand off to `execute`.
 They need an Asana or Linear MCP, and the GitHub CLI for reviews on GitHub.
 The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacked reviews, and troubleshooting.
 
-### ship (v3.1.0)
+### ship (v3.1.1)
 
 Six skills that carry the current branch to a green pull request, and on to a merged release when you ask to merge.
 Each one ends with a result line that the next one reads.
@@ -66,13 +66,13 @@ Its [README](./mods/fathom-progress/README.md) covers setup, what the band shows
 
 These install through skills.sh only.
 
-### review (v1.2.0)
+### review (v1.2.1)
 
 `review` checks a pull request against the issue it claims to close, on running builds of the branch and its base, and posts one review with inline findings.
 It reads its build, serving, and measuring steps from `ui.md` only when the pull request changes what the app renders.
 It needs the GitHub CLI, plus a browser driver such as Playwright for visual changes, and answers whether a pull request is safe to merge with `land`'s merge gate.
 
-### rewrite (v3.1.0)
+### rewrite (v3.1.1)
 
 `rewrite` drafts and rewrites prose you post under your name, in your voice, and removes the patterns that mark text as machine-written.
 It reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset, empty, or not an absolute path, and builds one with you on first run from `setup.md`.
@@ -120,7 +120,7 @@ npx skills@latest add crodris/skills -s worktree-setup -g
 }
 ```
 
-### verification-audit (v1.1.0)
+### verification-audit (v1.1.1)
 
 `verification-audit` checks how well a repository proves agent work is correct, layer by layer, then closes each gap.
 It uses the verification skills from [pstack](https://github.com/crodris/pstack-claude) to fix gaps, and only reports them without it.

@@ -1,7 +1,7 @@
 ---
 name: land
 description: Merges a pull request that babysit reported ready, after a merge gate, with the repository's merge method, then watches the release run and cleans up what the ship run created. Read by ship in merge mode; use when the user asks to land a ready pull request.
-version: 3.1.0
+version: 3.1.1
 ---
 
 # Land

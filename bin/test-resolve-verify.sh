@@ -128,6 +128,22 @@ on: pull_request
 jobs:
   ci:
     steps:
+      - run: |
+          python - <<'PY'
+          print(1)
+          PY
+YML
+run
+expect "a block scalar with a heredoc is an instruction" \
+  'ci\t.github/workflows/ci.yml\tread the multi-line run step at line 5'
+
+case_dir
+mkdir -p "$dir/.github/workflows"
+cat > "$dir/.github/workflows/ci.yml" <<'YML'
+on: pull_request
+jobs:
+  ci:
+    steps:
       - run: >
           npm run lint
           --max-warnings 0

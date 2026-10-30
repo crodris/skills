@@ -1,7 +1,7 @@
 ---
 name: execute
 description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5, or several at once like "execute ONC-5 ONC-6". Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
-version: 3.0.0
+version: 3.0.1
 ---
 
 # Execute
@@ -103,7 +103,8 @@ Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `
     - On a failure you cannot fix, hold: keep the change, leave the task in progress, report the failure, and exit, naming on a stack the bundles with open reviews and those never built.
     Make one commit per task, even when two tasks touch the same file.
 11. Once nothing is claimable, finish the issue.
-    When the plan document carries `- Finalization: complete` per `conventions.md`, push its commit per step 7 if unpushed, change nothing else, and go to step 12.
+    When `git show HEAD:.fathom/plans/<ISSUE-REF>.md` carries `- Finalization: complete` per `conventions.md`, push its commit per step 7 if unpushed, change nothing else, and go to step 12.
+    When only the working tree carries it, make and push the final closing commit and run the beads sync after it, as the closing actions below say, then go to step 12.
     When a stacked issue lacks it, follow Interrupted finalization in `resume.md`.
     A single-review issue runs this path:
     - Commit leftover changes from this issue's tasks, leaving unrelated edits alone, then run the commit reconciliation in `conventions.md`, stopping when the counts disagree.

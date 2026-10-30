@@ -13,6 +13,7 @@ Run each command below on its own, as the Permissions section of `agents.md` say
    Name the branches that carry each commit with `git branch --contains <commit>`.
    Read each branch's current profile with `git show <branch>:.fathom/config.md`, and skip a branch where that fails, since its tip deleted the profile.
    Before any setup question, offer each branch that still has a profile once, ordered by its newest listed commit.
+   When the user accepts an offer, write that branch's profile, as `git show <branch>:.fathom/config.md` prints it, to `.fathom/config.md`, and skip the setup questions.
 3. When no profile is found, or the user declines every offer, ask the setup questions.
 
 ## Setup questions

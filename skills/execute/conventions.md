@@ -57,7 +57,7 @@ Include these sections:
 - **Merge-closer.** Only for an issue split into a stack: the line `- Merge-closer: suppressed`, written when the split is confirmed.
   The merge-closer Action skips an issue carrying it, so the sweep closes the issue once every bundle merges, instead of the Action closing it on the first.
 - **Finalization.** The line `- Finalization: complete`, written by the last of the issue's closing actions, so it rides the final closing commit.
-  `execute` stops finalizing when it is present, so no closing action runs twice.
+  `execute` stops finalizing when the committed plan document carries it, as step 11 of `SKILL.md` says, so no closing action runs twice.
 - **Testing strategy.** Which tests prove the work, and which could regress.
 - **Notes.** Open questions, risks, and decisions.
 
