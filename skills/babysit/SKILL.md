@@ -109,9 +109,11 @@ Return on a pass that pushed nothing and that review-loop returned `CLEAN` for.
    4. Push with the reviewed head as `guard.sh`'s lease.
       When the lane is light, add the comment `../review-loop/lanes.md` names to the command.
    5. Start another pass on the pushed head, since the bots that review every push have not read it, and return from that pass's Result instead.
-2. With `merge-method: rebase` and more than one commit in `origin/$base..HEAD`, run `bash <this skill's directory>/../prove/verify-each.sh "$(git rev-parse --show-toplevel)" "origin/$base..HEAD" '<verify>'`, with `<verify>` as the `verify:` command in the last `PASS` line prove printed, as its header says.
-   When only earlier commits fail, return `BLOCKED` naming the first failing commit.
-   When the head fails too, its worktree lacks something verify needs, since prove passed the head in this checkout, so say so in the run section and go on.
+2. With `merge-method: rebase` and more than one commit in `origin/$base..HEAD`, resolve the verify command as the Resolve verify section of `../prove/SKILL.md` says, hold it in `$verify`, and run `bash <this skill's directory>/../prove/verify-each.sh "$(git rev-parse --show-toplevel)" "origin/$base..HEAD" "$verify"`.
+   Exit 0 goes on.
+   On exit 1, when only earlier commits fail, return `BLOCKED` naming the first failing commit.
+   When the head fails too, run `bash -c "$verify"` from this checkout's root: when it passes there, the worktree lacks something verify needs, so say so in the run section and go on, and otherwise return `BLOCKED` naming the head.
+   Any other exit is `BLOCKED`, quoting the script's output.
 3. Check the pull request once more for a table bot no pass waited on, and run a pass for it as `bots.md` says when one shows up.
 4. Run watch.sh with no `--bot` on the current head, the way step 2 of each pass does.
    Exit 0 goes on.

@@ -274,7 +274,10 @@ rules:
     reason: >-
       Reviewed, intentional: prove's resolve-verify.sh reads the repository's
       own manifests (package.json, Makefile, CI workflows) to print verify
-      candidates, and runs nothing it finds. Declaring allowed-tools would
+      candidates, and runs nothing it finds. prove's verify-each.sh reads the
+      verify line of each commit's own .ship/config.md and runs it, the same
+      gate prove runs on the head, in a detached worktree of that commit.
+      Declaring allowed-tools would
       pre-approve tools in Claude Code, which widens what the skill may do
       instead of narrowing it. The glob ends on "file_read." so a skill whose
       scripts also show shell, network, file_write, or env capabilities still
