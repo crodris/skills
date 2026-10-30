@@ -86,7 +86,7 @@ Cite the file and rule for every breach that no stage 3 gate already enforces, a
 ### 5. Prove the new tests are load-bearing
 
 Revert the changed source, re-run the test files the PR adds or modifies, and confirm the new or changed tests in them fail.
-`$LIST`, a file outside the worktree, lists every changed path except the test files the PR adds or modifies and the fixtures and config only those tests use, and keeps the fixtures and config the changed source needs.
+`$LIST`, a file outside the worktree, lists every changed path except the test files the PR adds or modifies and any file only those tests use, such as a fixture, helper, snapshot, config, or test-only package, and keeps every file the changed source needs.
 `--no-overlay` deletes listed paths the source lacks, so paths the PR adds or deletes flip too.
 
 ```bash
