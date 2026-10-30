@@ -109,9 +109,12 @@ Return on a pass that pushed nothing and that review-loop returned `CLEAN` for.
    4. Push with the reviewed head as `guard.sh`'s lease.
       When the lane is light, add the comment `../review-loop/lanes.md` names to the command.
    5. Start another pass on the pushed head, since the bots that review every push have not read it, and return from that pass's Result instead.
-2. With `merge-method: rebase` and more than one commit in `origin/$base..HEAD`, resolve the verify command as the Resolve verify section of `../prove/SKILL.md` says, hold it in `$verify`, and run `bash <this skill's directory>/../prove/verify-each.sh "$(git rev-parse --show-toplevel)" "origin/$base..HEAD" "$verify"`.
+2. With `merge-method: rebase` and more than one commit in `origin/$base..HEAD`, resolve the verify command as the Resolve verify section of `../prove/SKILL.md` says, and hold it in `$verify`.
+   For each commit in that range, read the `verify:` line of its `.ship/config.md` with `git show <sha>:.ship/config.md`, where a missing file or a line that is only a comment or `none` means that commit runs `$verify`.
+   Return `BLOCKED` naming the commit and the command when a line falls outside the Command shape section of `../ship/boundary.md`.
+   Then run `bash <this skill's directory>/../prove/verify-each.sh "$(git rev-parse --show-toplevel)" "origin/$base..HEAD" "$verify"`.
    Exit 0 goes on.
-   On exit 1, when the head alone fails, or every commit fails, run `bash -c "$verify"` from this checkout's root: when it passes there, the worktree lacks something verify needs, so say so in the run section and go on, and otherwise return `BLOCKED` naming the head.
+   On exit 1, when every commit fails, the worktree may lack something verify needs, so say in the run section that the per-commit check could not judge these commits and go on.
    On exit 1 with any other set of failing commits, return `BLOCKED` naming the first failing commit, since a commit that passed shows the worktree has what verify needs.
    Any other exit is `BLOCKED`, quoting the script's output.
 3. Check the pull request once more for a table bot no pass waited on, and run a pass for it as `bots.md` says when one shows up.
