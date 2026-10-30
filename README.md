@@ -34,7 +34,7 @@ On Claude Code, Fathom and ship also install as plugins, and so does the fathom-
 They need an Asana or Linear MCP, and the GitHub CLI for reviews on GitHub.
 The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacked reviews, and troubleshooting.
 
-### ship (v3.1.1)
+### ship (v3.2.0)
 
 Six skills that carry the current branch to a green pull request, and on to a merged release when you ask to merge.
 Each one ends with a result line that the next one reads.
