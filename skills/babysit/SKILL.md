@@ -1,7 +1,7 @@
 ---
 name: babysit
 description: Watches one pull request until it is ready to merge, running CI, the review bots, and review-loop on each pass, pushing each pass's fixes, and keeping the branch current with its base. Use when the user asks to babysit, watch, or monitor a pull request, or to get it green without merging.
-version: 3.1.1
+version: 3.2.0
 ---
 
 # Babysit

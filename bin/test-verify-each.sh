@@ -29,7 +29,16 @@ expect_line() {
 }
 check() { if eval "$2"; then echo "ok: $1"; else echo "FAIL: $1"; failures=$((failures + 1)); fi; }
 
-each() { got=0; TMPDIR="$dir/tmp" bash "$EACH" "$dir/repo" "$@" > "$dir/out" 2>&1 || got=$?; }
+each() {
+  got=0
+  if [ "${1:-}" = "--print" ]; then
+    shift
+    set -- --print "$dir/repo" "$@"
+  else
+    set -- "$dir/repo" "$@"
+  fi
+  TMPDIR="$dir/tmp" bash "$EACH" "$@" > "$dir/out" 2>&1 || got=$?
+}
 VERIFY='test ! -e broken'
 
 case_dir
@@ -89,6 +98,35 @@ case_dir
 commit "ship directory is a symlink" 'mkdir -p shipdir && printf "verify: false\n" > shipdir/config.md && ln -s shipdir .ship'
 each base..HEAD true
 expect "a symlinked ship directory runs the passed command" 0
+
+case_dir
+commit "no config" 'echo a > a'
+commit "config sets a gate" 'mkdir -p .ship && printf "verify: bash gate.sh   # asked\n" > .ship/config.md'
+commit "symlinked config" 'printf "verify: false\n" > .ship/real.md && rm .ship/config.md && ln -s real.md .ship/config.md'
+shorts=$(git -C "$dir/repo" log --reverse --format='%h' base..HEAD)
+first=$(printf '%s\n' "$shorts" | sed -n '1p')
+second=$(printf '%s\n' "$shorts" | sed -n '2p')
+third=$(printf '%s\n' "$shorts" | sed -n '3p')
+each --print base..HEAD passed
+expect "--print exits 0" 0
+expect_line "no config prints the passed command" "^${first}"$'\tpassed$'
+expect_line "a verify line prints without its comment" "^${second}"$'\tbash gate.sh$'
+expect_line "a symlinked config prints the passed command" "^${third}"$'\tpassed$'
+check "print writes the three commands oldest first" '[ "$(cat "$dir/out")" = "$(printf "%s\t%s\n" "$first" passed "$second" "bash gate.sh" "$third" passed)" ]'
+check "print writes three lines" '[ "$(wc -l < "$dir/out")" -eq 3 ]'
+check "no worktree is left behind" '[ "$(git -C "$dir/repo" worktree list | wc -l)" -eq 1 ]'
+check "the temp directory is empty afterwards" '[ -z "$(ls -A "$dir/tmp")" ]'
+
+case_dir
+commit "config would touch a file" 'mkdir -p .ship && printf "verify: touch ran\n" > .ship/config.md'
+each --print base..HEAD true
+expect "--print runs nothing" 0
+expect_line "print shows the touch command it did not run" $'^[0-9a-f]+\ttouch ran$'
+check "no ran file was created in the repo" '[ -z "$(find "$dir/repo" -name ran)" ]'
+
+case_dir
+each --print base..HEAD
+expect "--print without a verify command exits 2" 2
 
 if [ "$failures" -gt 0 ]; then echo "$failures failed"; exit 1; fi
 echo "all passed"
