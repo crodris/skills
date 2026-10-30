@@ -118,11 +118,29 @@ check "no worktree is left behind" '[ "$(git -C "$dir/repo" worktree list | wc -
 check "the temp directory is empty afterwards" '[ -z "$(ls -A "$dir/tmp")" ]'
 
 case_dir
-commit "config would touch a file" 'mkdir -p .ship && printf "verify: touch ran\n" > .ship/config.md'
+commit "config would touch a file" 'mkdir -p .ship && printf "verify: touch %s\n" "$dir/ran" > .ship/config.md'
 each --print base..HEAD true
 expect "--print runs nothing" 0
-expect_line "print shows the touch command it did not run" $'^[0-9a-f]+\ttouch ran$'
-check "no ran file was created in the repo" '[ -z "$(find "$dir/repo" -name ran)" ]'
+expect_line "print shows the touch command it did not run" "^[0-9a-f]+"$'\t'"touch ${dir}/ran$"
+check "print does not create the touched file" '[ ! -e "$dir/ran" ]'
+
+case_dir
+commit "config blob will be removed" 'mkdir -p .ship && printf "verify: false\n" > .ship/config.md'
+blob=$(git -C "$dir/repo" rev-parse 'HEAD:.ship/config.md')
+rm -f "$dir/repo/.git/objects/${blob:0:2}/${blob:2}"
+each --print base..HEAD true
+check "a missing config blob makes --print exit nonzero" '[ "$got" -ne 0 ]'
+check "a missing config blob prints no line for that commit" '! grep -q "^$(git -C "$dir/repo" log -1 --format=%h)" "$dir/out"'
+
+case_dir
+commit "one commit" 'echo a > a'
+each base..HEAD --print
+expect "--print as the third argument exits 2" 2
+
+case_dir
+commit "one commit" 'echo a > a'
+each --print base..HEAD "$(printf 'true\nfalse')"
+expect "a verify command containing a newline exits 2" 2
 
 case_dir
 each --print base..HEAD

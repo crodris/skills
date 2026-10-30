@@ -13,8 +13,11 @@
 #
 # usage: verify-each.sh [--print] <repo> <range> <verify-command>
 #
-# --print comes first. Any other argument count or an unknown flag is a usage
-# error.
+# --print comes first.
+# After it, any argument count other than three is a usage error, as is any of
+# the three arguments that starts with -.
+# A <verify-command> that contains a newline is a usage error, since --print
+# prints one line per commit.
 # Without --print, prints "<short sha> <subject>: exit <code>" for each commit,
 # plus the last 20 lines of output for each commit that failed.
 # With --print, prints one line "<short sha><TAB><command>" per commit, oldest
@@ -27,13 +30,16 @@ set -euo pipefail
 
 usage() { echo "usage: verify-each.sh [--print] <repo> <range> <verify-command>" >&2; exit 2; }
 
+# Bash turns errexit off inside $(...), so each git call returns its own failure,
+# and the callers' assignments stop the script with it.
 command_for() {
   own=''
-  meta=$(git -C "$repo" ls-tree "$1" -- .ship/config.md)
+  meta=$(git -C "$repo" ls-tree "$1" -- .ship/config.md) || return
   mode=${meta%% *}
   case "$mode" in
     100644 | 100755)
-      own=$(git -C "$repo" show "$1:.ship/config.md" | sed -n '/^verify:/{s/^verify:[[:space:]]*//;s/[[:space:]][[:space:]][[:space:]]*#.*$//;p;q;}')
+      cfg=$(git -C "$repo" show "$1:.ship/config.md") || return
+      own=$(sed -n '/^verify:/{s/^verify:[[:space:]]*//;s/[[:space:]][[:space:]][[:space:]]*#.*$//;p;q;}' <<< "$cfg")
       case $own in '#'* | none) own='' ;; esac
       ;;
   esac
@@ -45,8 +51,13 @@ if [ "${1:-}" = "--print" ]; then
   print=1
   shift
 fi
-case ${1:-} in -*) usage ;; esac
 [ $# -eq 3 ] || usage
+case "$1" in -*) usage ;; esac
+case "$2" in -*) usage ;; esac
+case "$3" in
+  -*) usage ;;
+  *$'\n'*) echo "verify-each.sh: <verify-command> must be one line; join several commands with &&" >&2; exit 2 ;;
+esac
 repo=$1 range=$2 cmd=$3
 
 shas=$(git -C "$repo" rev-list --reverse "$range")
@@ -54,7 +65,8 @@ shas=$(git -C "$repo" rev-list --reverse "$range")
 
 if [ "$print" -eq 1 ]; then
   for sha in $shas; do
-    printf '%s\t%s\n' "$(git -C "$repo" log -1 --format='%h' "$sha")" "$(command_for "$sha")"
+    c=$(command_for "$sha")
+    printf '%s\t%s\n' "$(git -C "$repo" log -1 --format='%h' "$sha")" "$c"
   done
   exit 0
 fi
