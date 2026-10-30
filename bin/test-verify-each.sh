@@ -70,5 +70,15 @@ commit "config gate fails" 'mkdir -p .ship && printf "verify: false   # asked\n"
 each base..HEAD true
 expect "a commit's own config verify wins over the passed command" 1
 
+case_dir
+commit "config verify is only a comment" 'mkdir -p .ship && printf "verify:   # asked\n" > .ship/config.md'
+each base..HEAD false
+expect "a comment-only config verify runs the passed command" 1
+
+case_dir
+commit "config verify is none" 'mkdir -p .ship && printf "verify: none   # asked\n" > .ship/config.md'
+each base..HEAD true
+expect "a corrupt verify: none runs the passed command" 0
+
 if [ "$failures" -gt 0 ]; then echo "$failures failed"; exit 1; fi
 echo "all passed"
