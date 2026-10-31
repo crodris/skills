@@ -22,7 +22,7 @@ export const checklistExample = "# ONC-5: Add login flow\n\n- Issue: https://lin
 
 // The bd create commands memory/beads.md states, placeholders included.
 export const beadsCreates: readonly string[] = [
-  "bd create '<title>' -d '<description>' -l \"<issueRef>\" --external-ref \"<subIssueRef>\" --deps \"<comma-separated blocker ids>\" --silent",
+  "bd create --title '<title>' -d '<description>' -l \"<issueRef>\" --external-ref \"<subIssueRef>\" --deps \"<comma-separated blocker ids>\" --silent",
   "bd create \"<issueRef>\" --type epic --external-ref \"<issueRef>\" -l \"<issueRef>\" -p 1 --silent",
 ]
 

@@ -56,9 +56,8 @@ Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `
    Otherwise the branch is the type prefix (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` otherwise), the issue ref cased as the tracker adapter says, and a short title slug.
    Resolve the base and fetch it as the Base branch resolution section of `forges.md` says.
    When `git status --porcelain -- .fathom/config.md` prints a line, follow Committing the profile in `first-run.md`, before switching branches and once on the branch.
-   Look for the issue branch by its ref before naming one, since a slug can differ between runs: run `git ls-remote --heads origin "*/<ref>-*"` and `git branch --list "*/<ref>-*"`, with the ref cased as the tracker adapter says.
-   With several names, take the shortest one that starts every other name, and ask the user when none does.
-   When a branch is found, fetch it the way the base is fetched and follow Existing branch in `resume.md`.
+   When no branch of that name exists and the issue has children, follow Interrupted branch in `resume.md` first.
+   When the issue branch exists, follow Existing branch in `resume.md`.
    Otherwise create it from `origin/<base>` with `--no-track`, so a plain `git push` never pushes to the base.
    Every push of the issue branch uses `git push -u origin <branch>`, plus the lease flag `stack.md` names where it pushes a rebased branch.
    On a stack these rules describe bundle 1's branch, and `stack.md` handles the later bundles.
@@ -78,8 +77,10 @@ Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `
    - Write the plan document from `conventions.md` with `- Breakdown: pending` and a `- Unit` line per planned unit, plus the `Bundles` and `Merge-closer` lines on a split.
      A new unit's line deps on the units it builds on.
      An adopted child's line carries its ref and deps on the sibling units its `Blocked by:` line names: none for `none`, and the previous unit for a missing line or a blocker in a cycle.
-     Read the document as the Secrets check of `../file-pr/SKILL.md` says, then commit it as a bookkeeping commit and push it per step 7, even under `pushesForYou`, before the first tracker write.
-     A failed push is a hold, and the rerun pushes again.
+     On a split, every line deps on its predecessor instead, as `stack.md`'s step 8 section says.
+     Read the document as the Secrets check of `../file-pr/SKILL.md` says, and hold when that check would return `FAIL`.
+     Then commit it as a bookkeeping commit and push it per step 7, even under `pushesForYou`, before the first tracker write.
+     A failed push in this step is a hold.
    - Call `listTasks`, then settle each unit in planned order.
      When its `- Unit` line reads `pending`, call `createSubIssue` and write the returned ref on that line, uncommitted.
      When no task carries the unit's ref, call `createTask` with that ref as `subIssueRef` and the tasks of the units its line deps on as `deps`, since deps cannot be added later, then write the task id back onto its sub-issue.

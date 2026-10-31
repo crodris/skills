@@ -55,8 +55,8 @@ With the ship skill, read each `.ship/config.md` slot the way `../ship/config.md
    The script runs on a fresh checkout of the default branch, opens or updates one issue on failure, and ships through the repo's delivery flow.
    Install or enable the schedule where the user named, then trigger one run.
    Leave the check partial until a scheduled run exists.
-6. **Review setup.** The delivery flow runs the static gates, runs the configured drive on a diff that changes product behavior and skips it on a diff of only documentation, comments, tests, or tooling, and gives risky paths a deeper review.
-   With the ship skill, `.ship/config.md` sets `verify` to the static gates, `drive` to a value `../prove/drive.md` accepts, and `security-paths` to the riskiest code, and the audit checks the Verify skill whether or not `drive` names one.
+6. **Review setup.** The delivery flow runs the static gates, runs the configured drive on a diff that changes behavior, and gives risky paths a deeper review.
+   With the ship skill, `.ship/config.md` sets `verify` to the static gates, `drive` to a value `../prove/drive.md` accepts, which also says which diffs skip the drive, and `security-paths` to the riskiest code, and the audit checks the Verify skill whether or not `drive` names one.
    Another flow, such as Fathom, meets the same bar in its own config.
    The repo also has the review bots the user's instructions name, and a paused bot counts as missing.
    Fix a gap in the flow's config, and ask before adding a bot to a repo the user does not own.

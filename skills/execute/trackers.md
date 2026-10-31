@@ -43,7 +43,7 @@ Run this before any other tracker operation on every invocation, even when an ea
 
 Infer the tracker by this precedence, which is also how every skill resolves the tracker for the run:
 1. A tracker the invocation names explicitly.
-2. The shape of a reference in the invocation or a pasted URL, per Runtime resolution below.
+2. The shape of a reference in the invocation or a pasted URL, or, for a skill that works on an existing issue, an `asana-` ref in the current branch name, per Runtime resolution below.
 3. The profile's `tracker` field.
 4. For a skill that works on an existing issue, the shape of a reference in the current branch name, per Runtime resolution below.
 5. The connected tracker MCPs.
