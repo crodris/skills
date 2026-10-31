@@ -69,7 +69,7 @@ Fetch the base first, as the Fetching the base section of `../ship/boundary.md` 
 Skip this section when `release` is `none`, or when `git ls-tree <merge-sha> .github/workflows/` lists no workflow in the merged tree, and say which.
 Run `bash <this skill's directory>/release-watch.sh <merge-sha> --repo <owner/name> --base "$base"` with a `--deadline` below the tool's timeout.
 Exit 0 is a passed release.
-On exit 4, run it again, until 60 minutes after the first run of the script, then report that the release did not settle.
+On exit 4, run it again with a `--deadline` no longer than the time left, until 60 minutes after the first run of the script, then report that the release did not settle.
 Exit 1 is a failed release.
 Exit 3 means the base started no run for the merge commit.
 After exit 0, exit 1, exit 3, exit 4 after its reruns, or any other exit, report the result and go on to Cleanup.

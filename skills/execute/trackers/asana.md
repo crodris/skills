@@ -54,7 +54,8 @@ claude mcp add --transport http --client-id YOUR_CLIENT_ID --client-secret --cal
 ```
 
 On Kiro, register the redirect URL `http://localhost:3334/oauth/callback` in the app, then add this entry to `~/.kiro/settings/mcp.json`.
-Never add it to the workspace-level settings, since the entry holds the client secret and that file can get committed.
+Never add it to the workspace-level settings, which can get committed.
+Put `{"client_id":"YOUR_CLIENT_ID","client_secret":"YOUR_CLIENT_SECRET"}` in a file in the home directory with mode 600, since every local process can read a value in `args`.
 It runs the `mcp-remote` proxy, which is community software, not an official Asana or Anthropic package.
 Keep its version pinned, and change the pin only after reviewing the new release.
 
@@ -69,7 +70,7 @@ Keep its version pinned, and change the pin only after reviewing the new release
         "https://mcp.asana.com/v2/mcp",
         "3334",
         "--static-oauth-client-info",
-        "{\"client_id\":\"YOUR_CLIENT_ID\",\"client_secret\":\"YOUR_CLIENT_SECRET\"}"
+        "@/ABSOLUTE/PATH/TO/asana-oauth-client.json"
       ]
     }
   }

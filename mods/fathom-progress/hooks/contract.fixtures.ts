@@ -7,7 +7,7 @@ export const planLines: readonly string[] = [
   "- Issue: <tracker url>",
   "- Ref: <issue ref>",
   "- Branch: <branch>",
-  "- Unit <n>: <title> -> sub-issue: pending",
+  "- Unit <n>: <title> (deps: <unit numbers>) -> sub-issue: pending",
   "- Bundle <k>/<N>: <branch> - <sub-issue refs, comma separated>",
   "- Review: pending (bundle k/N)",
   "- Review: <id> <url> (bundle k/N)",
@@ -18,11 +18,11 @@ export const planLines: readonly string[] = [
 ]
 
 // The example checklist in memory/checklist.md.
-export const checklistExample = "# ONC-5: Add login flow\n\n- Issue: https://linear.app/acme/issue/ONC-5\n- Branch: feat/onc-5-add-login\n- Review: (id and url, filled at open)\n- PR: (legacy, read but no longer written)\n\n## Plan\n\nOne-paragraph approach summary.\nTesting notes.\n\n## Tasks\n\n- [x] 1. Create login form component -> sub-issue: https://... (done 2026-07-28, a1b2c3d)\n- [>] 2. Wire auth API (deps: 1) -> sub-issue: https://...\n- [ ] 3. Add e2e test (deps: 2) -> sub-issue: https://...\n"
+export const checklistExample = "# ONC-5: Add login flow\n\n- Issue: https://linear.app/acme/issue/ONC-5\n- Branch: feat/onc-5-add-login\n- Review: (id and url, filled at open)\n- PR: (legacy, read but no longer written)\n\n## Plan\n\nOne-paragraph approach summary.\nTesting notes.\n\n## Tasks\n\n- [x] 1. Create login form component -> sub-issue: ONC-6 (done 2026-07-28, a1b2c3d)\n- [>] 2. Wire auth API (deps: 1) -> sub-issue: ONC-7\n- [ ] 3. Add e2e test (deps: 2) -> sub-issue: ONC-8\n"
 
 // The bd create commands memory/beads.md states, placeholders included.
 export const beadsCreates: readonly string[] = [
-  "bd create \"<title>\" -d \"<description>\" -l \"<issueRef>\" --external-ref \"<subIssueRef>\" --deps \"<comma-separated blocker ids>\" --silent",
+  "bd create '<title>' -d '<description>' -l \"<issueRef>\" --external-ref \"<subIssueRef>\" --deps \"<comma-separated blocker ids>\" --silent",
   "bd create \"<issueRef>\" --type epic --external-ref \"<issueRef>\" -l \"<issueRef>\" -p 1 --silent",
 ]
 

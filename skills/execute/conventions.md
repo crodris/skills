@@ -43,11 +43,11 @@ Include these sections:
 - **Issue description.** What the issue asks for, in your own words.
 - **Codebase context.** The files and patterns this work touches, with paths.
 - **Implementation approach.** How the change will be made, and what is out of scope.
-- **Tasks.** The planned units of work in planned order, one line each: `- Unit <n>: <title> -> sub-issue: pending`.
+- **Tasks.** The planned units of work in planned order, one line each: `- Unit <n>: <title> (deps: <unit numbers>) -> sub-issue: pending`, leaving out `(deps: ...)` for a unit with none, and keeping the title on one line.
   Replace `pending` with the sub-issue's ref as soon as it exists, using the ref `listSubIssues` or `createSubIssue` returned, since that ref is what matches a unit to its child and its task.
 - **Bundles.** Only for an issue split into a stack.
   Write it when the split is confirmed, one line per bundle in stack order: `- Bundle <k>/<N>: <branch> - <sub-issue refs, comma separated>`.
-  Until a sub-issue exists, its place in the list holds `unit <n>`, the number on its `- Unit` line.
+  Until the breakdown commit, a sub-issue's place in the list holds `unit <n>`, the number on its `- Unit` line.
   Every bundle line names its branch, since the sweep and a resumed run fetch each one and read the `- Review:` lines in its copy of this document.
   Beneath a bundle, write `- Review: pending (bundle k/N)` before calling `openReview` for it, and replace it with `- Review: <id> <url> (bundle k/N)` once the review exists.
   The pending marker names no id, so readers treat it as no record: the sweep leaves the issue undecided, and `execute` looks the review up rather than risk a duplicate.

@@ -94,11 +94,11 @@ export type ScaffoldPhase = 'resolving' | 'drafting' | 'waiting' | 'creating' | 
 // with no run found yet. `scaffold` is a scaffold run: its phase, and how many tracker
 // issues it has made so far (the main issue and its sub-issues), with no total: the draft
 // the person approves is text, so the count is known only as the issues appear. `creating`
-// has an epic and the tasks made so far, with no total: the plan document that fixes it
-// is written after the last task. `executing` and `finished` carry every task, and the
-// issue's `title` when the plan document names one. `creating` has no title because the
-// plan is written after the tasks, and bd holds none: Fathom makes the epic with the bare
-// ref as its title (a checklist carries its title, so one from a checklist may have it).
+// has an epic and the tasks made so far, with no total, since the breakdown is still open.
+// `executing` and `finished` carry every task, and the issue's `title` when the plan
+// document names one. `creating` has no title, since bd holds none: Fathom makes the epic
+// with the bare ref as its title (a checklist carries its title, so one from a checklist
+// may have it).
 // `unavailable` carries why neither bd nor a checklist could be read, so the band can
 // say so instead of showing zeros.
 export type Snapshot =

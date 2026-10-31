@@ -43,9 +43,10 @@ Run this before any other tracker operation on every invocation, even when an ea
 
 Infer the tracker by this precedence, which is also how every skill resolves the tracker for the run:
 1. A tracker the invocation names explicitly.
-2. The shape of a reference in the invocation, a pasted URL, or, for a skill that works on an existing issue, the current branch name, per Runtime resolution below.
+2. The shape of a reference in the invocation or a pasted URL, per Runtime resolution below.
 3. The profile's `tracker` field.
-4. The connected tracker MCPs.
+4. For a skill that works on an existing issue, the shape of a reference in the current branch name, per Runtime resolution below.
+5. The connected tracker MCPs.
 
 Verify that tracker's MCP with the one cheap read-only call its adapter file names.
 Treat any failure, missing tools, or a disabled server as unverified.
@@ -135,7 +136,7 @@ A review recorded after an abandoned one, for the same issue or bundle, replaces
 
 Decide which tracker owns a reference by the first rule that matches.
 - An Asana URL, a bare numeric GID, or a ref with the prefix `asana`, as in `feat/asana-482913-add-login`, is Asana.
-- A reference shaped like `ABC-123`, a short prefix, a dash, and digits, is Linear, with the prefix uppercase in a key and lowercase in a branch name, as in `feat/onc-5-add-webhooks`.
+- A reference shaped like `ABC-123`, a short prefix, a dash, and digits, is Linear, with the prefix uppercase in a key and lowercase in a branch name, as in `feat/onc-5-add-webhooks`, so uppercase a branch's ref before using it as `<ISSUE-REF>`.
 - When the shape is unclear and exactly one tracker MCP is connected, use that tracker.
 - When both are connected, ask the user once which tracker they mean.
 - When neither is connected, stop and name both supported trackers, Asana and Linear, telling the user to connect one.
