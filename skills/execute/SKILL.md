@@ -54,10 +54,13 @@ Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `
 7. Settle the branch this run implements on, and stay on it until step 10 moves a stack to its next bundle.
    When the plan document carries a `Bundles` section, follow the step 7 section of `stack.md`, and in the manual tier also follow Manual tier on a stack in `resume.md`.
    Otherwise the branch is the type prefix (`feat/` for a feature, `fix/` for a bug, `chore/` for a chore, `docs/` for docs, `feat/` otherwise), the issue ref cased as the tracker adapter says, and a short title slug.
+   When the current branch carries the issue ref after a type prefix, it is the issue branch.
    Resolve the base and fetch it as the Base branch resolution section of `forges.md` says.
    When `git status --porcelain -- .fathom/config.md` prints a line, follow Committing the profile in `first-run.md`, before switching branches and once on the branch.
-   When no branch of that name exists and the issue has children, follow Interrupted branch in `resume.md` first.
-   When the issue branch exists, follow Existing branch in `resume.md`.
+   Look for the issue branch locally and with `git ls-remote --heads origin "refs/heads/<branch>"`, and hold on a failed call.
+   When it exists, follow Existing branch in `resume.md`.
+   When it does not and the issue has children, run `git ls-remote --heads origin "refs/heads/<prefix>/<ref>-*"` for each of `feat`, `fix`, `chore`, and `docs`, with the ref cased as the tracker adapter says, and hold on a failed call.
+   When that lists a branch, hold, naming each one, and ask the user to switch to the right one and rerun, or to remove it, since a new branch would drop units an earlier run planned there.
    Otherwise create it from `origin/<base>` with `--no-track`, so a plain `git push` never pushes to the base.
    Every push of the issue branch uses `git push -u origin <branch>`, plus the lease flag `stack.md` names where it pushes a rebased branch.
    On a stack these rules describe bundle 1's branch, and `stack.md` handles the later bundles.
@@ -79,7 +82,7 @@ Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `
      An adopted child's line carries its ref and deps on the sibling units its `Blocked by:` line names: none for `none`, and the previous unit for a missing line or a blocker in a cycle.
      On a split, every line deps on its predecessor instead, as `stack.md`'s step 8 section says.
      Read the document as the Secrets check of `../file-pr/SKILL.md` says, and hold when that check would return `FAIL`.
-     Then commit it as a bookkeeping commit and push it per step 7, even under `pushesForYou`, before the first tracker write.
+     Then commit it as a bookkeeping commit and push it per step 7, unless the adapter declares `pushesForYou`, before the first tracker write.
      A failed push in this step is a hold.
    - Call `listTasks`, then settle each unit in planned order.
      When its `- Unit` line reads `pending`, call `createSubIssue` and write the returned ref on that line, uncommitted.
@@ -87,7 +90,7 @@ Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `
      A confirmed split creates them as `stack.md`'s step 8 section says.
    - Once every child task exists, add the parent's dependency edge on each child.
    - Replace each `unit <n>` on a `- Bundle` line with that unit's ref, and remove `- Breakdown: pending`.
-     Commit the plan document with the breakdown, with the checklist file on the checklist backend, and push it per step 7, even under `pushesForYou`.
+     Commit the plan document with the breakdown, with the checklist file on the checklist backend, and push it per step 7, unless the adapter declares `pushesForYou`.
      On beads, run the three export steps in One database per repository in `memory/beads.md` before that commit, and its Dolt remote sync steps after it.
 9. Move the issue to `inProgress` with `updateState`, unless `getIssue` shows the issue already in `inReview` and either this issue's file under `.fathom/` records its review, as the `- Review:` line of a single review or bundle 1's in the `Bundles` section, or the plan document carries `- Finalization: complete`.
 10. Before the first `claimNext`, finish any task a stopped run left half closed: in progress, or done with its sub-issue open or no commit recorded.

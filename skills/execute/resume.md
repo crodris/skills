@@ -16,20 +16,9 @@ Step 4 found a merge or a rebase that an earlier hold paused.
 
 Step 7 found that the issue branch already exists.
 - When it is checked out in another worktree, as a held issue from `fan-out.md` leaves it, continue the run from inside that worktree.
-- When the base branch has moved on since, bring the branch up to date before implementing, and report that you did.
+- Otherwise fetch it when it is on `origin`, the way the base is fetched, then run `git switch -- "<branch>"` when a local branch has that name, or `git switch -c "<branch>" --track "origin/<branch>"`.
+- When the base branch has moved on since, merge it into the branch before implementing, and report that you did.
 - When the update stops on a conflict, follow Finishing a base update below.
-
-## Interrupted branch
-
-Step 7 named a branch that does not exist for an issue with children, so an earlier run on another machine or with another slug may have stopped mid-breakdown.
-1. For each of `feat`, `fix`, `chore`, and `docs`, run `git ls-remote --heads origin "refs/heads/<prefix>/<ref>-*"`, with the ref cased as the tracker adapter says.
-   Hold on a failed call, since a failed lookup does not show that no branch exists.
-2. Drop any name with a character outside `A-Za-z0-9._/-`, and report it.
-3. Fetch each name left with `git fetch origin "+refs/heads/<name>:refs/remotes/origin/<name>"`.
-   Keep it only when `git show "origin/<name>:.fathom/plans/<ISSUE-REF>.md"` carries `- Breakdown: pending` and a `- Branch:` line equal to the name.
-4. With no name left, return to step 7, which creates the branch.
-   With several, ask the user which to use.
-5. With one, run `git switch -- "<name>"` when a local branch has that name, and `git switch -c "<name>" --track "origin/<name>"` otherwise, then go back to the start of step 7.
 
 ## Finishing a base update
 
@@ -68,7 +57,8 @@ Then go to step 9.
 
 Step 8 found `- Breakdown: pending`, so an earlier run stopped between committing the planned units and finishing the breakdown.
 - Read the units, their deps, the split, and the bundles from the plan document, and decide none of them again.
-- Push the branch per step 7, in case the first push failed, then call `init` and `parentTask`, then `listSubIssues`.
+- When the plan document carries a `Bundles` section but step 7 recovered no stack, go back to step 7 and recover it.
+- Push the branch per step 7, unless the adapter declares `pushesForYou`, in case the first push failed, then call `init` and `parentTask`, then `listSubIssues`.
 - When a `- Unit` line names a ref `listSubIssues` does not return, hold, naming it, create nothing, and ask the user to restore that child.
 - For each `pending` unit in planned order, take the first child that no `- Unit` line names and whose title is exactly the unit's, and write its ref on that line.
 - When a child still has no `- Unit` line, hold, naming it, and create nothing, since it may be a renamed child of a `pending` unit.
