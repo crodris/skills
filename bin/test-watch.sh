@@ -24,6 +24,7 @@ CREDIT='`crodris` has reached the 50-credit limit for trial accounts. Upgrade to
 failures=0
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
+export XDG_STATE_HOME="$tmp/state"
 
 mkdir "$tmp/bin"
 cat > "$tmp/bin/gh" <<'STUB'
@@ -678,5 +679,49 @@ got=0
 PATH="$tmp/bin" FIXTURES=$dir "$BASH" "$WATCH" 7 $SHA --repo o/r --interval 0 --deadline 1 > "$dir/out" 2> "$dir/err" || got=$?
 expect_exit "a missing jq is a usage error" 2
 expect_in "the missing tools are named" out "needs gh and jq"
+
+case_dir
+response OPEN "$SHA" '[]' "$(status CI PENDING running)" > "$dir/1.json"
+response OPEN "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/2.json"
+XDG_STATE_HOME="$dir/state" run 7 $SHA --repo o/r --interval 0
+expect_exit "a watched head passes" 0
+expect_count "a watched head is recorded once" state/ship/watch.log "$SHA " 1
+
+case_dir
+response OPEN "$OLD" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"
+mkdir -p "$dir/state/ship"
+touch "$dir/state/ship/watch.log"
+XDG_STATE_HOME="$dir/state" run 7 $SHA --repo o/r --interval 0
+expect_exit "a head that moved exits 3" 3
+expect_count "a head that moved is not recorded" state/ship/watch.log "$SHA " 0
+
+case_dir
+response CLOSED "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"
+mkdir -p "$dir/state/ship"
+touch "$dir/state/ship/watch.log"
+XDG_STATE_HOME="$dir/state" run 7 $SHA --repo o/r --interval 0
+expect_exit "a closed pull request exits 7" 7
+expect_count "a closed pull request is not recorded" state/ship/watch.log "$SHA " 0
+
+case_dir
+response OPEN "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"
+XDG_STATE_HOME=/dev/null run 7 $SHA --repo o/r --interval 0
+expect_exit "a log that cannot be written does not change the exit" 0
+expect_in "a log that cannot be written is named" err "could not record this watch"
+
+case_dir
+response OPEN "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"
+HOME="$dir/home" XDG_STATE_HOME=relative run 7 $SHA --repo o/r --interval 0
+expect_count "a relative XDG_STATE_HOME falls back to the home directory" home/.local/state/ship/watch.log "$SHA " 1
+
+case_dir
+response OPEN "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"
+(
+  unset HOME XDG_STATE_HOME
+  run 7 $SHA --repo o/r --interval 0
+  echo "$got" > "$dir/got"
+)
+got=$(cat "$dir/got")
+expect_exit "an unset HOME does not change the exit" 0
 
 [ "$failures" = 0 ]

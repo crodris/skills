@@ -40,7 +40,7 @@ skills/rewrite/setup.md 1101
 skills/rewrite/SKILL.md 1753
 skills/rewrite/template.md 627
 skills/scaffold/SKILL.md 1038
-skills/ship/boundary.md 1040
+skills/ship/boundary.md 1058
 skills/ship/config.md 547
 skills/ship/SKILL.md 1246
 skills/verification-audit/SKILL.md 890
