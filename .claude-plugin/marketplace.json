@@ -52,7 +52,7 @@
         "./skills/land"
       ],
       "description": "Six agent skills that carry the current branch from working tree to merged release: ship calls prove to run the project's own verify gates and commit, file-pr to open the pull request, babysit to run CI, CodeRabbit or Greptile, and review-loop's Standards and Spec subagents on each pass with one batched fix push, and in merge mode land to merge with the repository's merge method, watch the release, and clean up. Plain ship stops at a green pull request. No tracker required.",
-      "version": "3.2.0",
+      "version": "3.2.1",
       "author": {
         "name": "crodris"
       },

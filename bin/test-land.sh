@@ -255,5 +255,134 @@ expect "a branch another worktree holds still cleans up" 0
 check "the worktree that holds the branch keeps it" 'has_local feat/x && [ -d "$dir/wt" ]'
 check "the remote branch is still deleted when another worktree holds the branch" '! has_remote feat/x'
 
+# base_worktree_repo: the pull request's branch in worktree wt, the base held by work, and the remote base ahead of both.
+base_worktree_repo() {
+  repo
+  git -C "$dir/work" switch -q main
+  git -C "$dir/work" worktree add -q "$dir/wt" feat/x
+  git clone -q "$dir/remote.git" "$dir/ahead"
+  git -C "$dir/ahead" config user.email t@example.com
+  git -C "$dir/ahead" config user.name t
+  git -C "$dir/ahead" commit -q --allow-empty -m "merge"
+  git -C "$dir/ahead" push -q origin main
+}
+base_is_current='[ "$(git -C "$dir/work" rev-parse main)" = "$(git -C "$dir/remote.git" rev-parse main)" ]'
+
+case_dir
+base_worktree_repo
+clean "$dir/wt" feat/x main
+expect "the worktree that holds the branch cleans up while another worktree holds the base" 0
+check "that run fast-forwards the base in the worktree that holds it" "$base_is_current"
+check "that run keeps the branch in the worktree that holds it" 'has_local feat/x && [ -d "$dir/wt" ]'
+check "that run deletes the remote branch" '! has_remote feat/x'
+check "that run names the base checkout for post-merge" 'grep -qxF "post-merge checkout: $(cd "$dir/work" && pwd -P)" "$dir/out"'
+
+case_dir
+base_worktree_repo
+git -C "$dir/work" worktree add -q --detach "$dir/third"
+clean "$dir/third" feat/x main
+expect "a third worktree cleans up while another worktree holds the base" 0
+check "a third worktree fast-forwards the base where it is held" "$base_is_current"
+check "a third worktree names the base checkout for post-merge" 'grep -qxF "post-merge checkout: $(cd "$dir/work" && pwd -P)" "$dir/out"'
+
+no_post_merge='! grep -qF "post-merge checkout:" "$dir/out"'
+
+case_dir
+base_worktree_repo
+git -C "$dir/work" commit -q --allow-empty -m "local work on the base"
+clean "$dir/wt" feat/x main
+expect "a base that cannot fast-forward still cleans up" 0
+check "a base that cannot fast-forward names no post-merge checkout" "$no_post_merge"
+check "a base that cannot fast-forward still deletes the remote branch" '! has_remote feat/x'
+
+case_dir
+repo
+git -C "$dir/work" switch -q main
+git -C "$dir/work" worktree add -q "$dir/wt" feat/x
+git -C "$dir/work" commit -q --allow-empty -m "local work on the base"
+clean "$dir/wt" feat/x main
+expect "a base ahead of the remote still cleans up" 0
+check "a base ahead of the remote names no post-merge checkout" "$no_post_merge"
+
+case_dir
+base_worktree_repo
+touch "$dir/work/staged"
+git -C "$dir/work" add staged
+clean "$dir/wt" feat/x main
+expect "a base checkout with uncommitted changes still cleans up" 0
+check "a base checkout with uncommitted changes takes the fast-forward" "$base_is_current"
+check "a base checkout with uncommitted changes names no post-merge checkout" "$no_post_merge"
+
+case_dir
+base_worktree_repo
+git -C "$dir/work" tag origin/main feat/x
+clean "$dir/wt" feat/x main
+expect "a tag named origin/main does not stop cleanup" 0
+check "the base fast-forwards to the remote base past a tag named origin/main" "$base_is_current"
+
+case_dir
+base_worktree_repo
+git -C "$dir/work" worktree add -q --force "$dir/second" main
+clean "$dir/wt" feat/x main
+expect "two worktrees on the base still clean up" 0
+check "two worktrees on the base fast-forward the first one" 'grep -qxF "post-merge checkout: $(cd "$dir/work" && pwd -P)" "$dir/out"'
+
+case_dir
+repo
+git -C "$dir/work" worktree add -q "$dir/gone" main
+rm -rf "$dir/gone"
+clean "$dir/work" feat/x main
+expect "a worktree whose directory is gone does not stop cleanup" 0
+check "a gone worktree is named as not holding the base" 'grep -qF "is listed as holding it" "$dir/out"'
+check "a gone worktree is not the post-merge checkout" "$no_post_merge"
+check "a gone worktree still deletes the remote branch" '! has_remote feat/x'
+
+case_dir
+repo
+git -C "$dir/work" worktree add -q "$dir/gone" main
+rm -rf "$dir/gone"
+git clone -q "$dir/remote.git" "$dir/gone" 2>/dev/null
+git clone -q "$dir/remote.git" "$dir/ahead"
+git -C "$dir/ahead" config user.email t@example.com
+git -C "$dir/ahead" config user.name t
+git -C "$dir/ahead" commit -q --allow-empty -m "merge"
+git -C "$dir/ahead" push -q origin main
+clean "$dir/work" feat/x main
+expect "another repository at a listed worktree path does not stop cleanup" 0
+check "another repository at a listed worktree path stays where it was" '[ "$(git -C "$dir/gone" rev-parse main)" != "$(git -C "$dir/remote.git" rev-parse main)" ]'
+check "another repository at a listed worktree path is not the post-merge checkout" "$no_post_merge"
+
+case_dir
+repo
+git -C "$dir/work" worktree add -q "$dir/work/nested" main
+rm -rf "$dir/work/nested"
+mkdir "$dir/work/nested"
+clean "$dir/work" feat/x main
+expect "a listed worktree path that is now a plain directory does not stop cleanup" 0
+check "a plain directory inside another branch's checkout is not the post-merge checkout" "$no_post_merge"
+
+case_dir
+repo
+git -C "$dir/work" switch -q other
+clean "$dir/work" feat/x main
+expect "a run from another branch with no worktree on the base cleans up" 0
+check "a checkout on another branch is not the post-merge checkout" "$no_post_merge"
+check "a run with no worktree on the base says why post-merge has no checkout" 'grep -qF "no worktree holds main" "$dir/out"'
+
+case_dir
+repo
+git -C "$dir/work" switch -q other
+git -C "$dir/remote.git" tag main feat/x
+clean "$dir/work" feat/x main
+expect "a remote tag named like the base does not stop cleanup" 0
+check "the local base stays on the remote base past a remote tag" '[ "$(git -C "$dir/work" rev-parse refs/heads/main)" = "$(git -C "$dir/remote.git" rev-parse refs/heads/main)" ]'
+
+case_dir
+repo
+mkdir "$dir/work/sub"
+clean "$dir/work/sub" feat/x main
+expect "a run from a subdirectory cleans up" 0
+check "a run from a subdirectory names the checkout root for post-merge" 'grep -qxF "post-merge checkout: $(cd "$dir/work" && pwd -P)" "$dir/out"'
+
 if [ "$failures" != 0 ]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all land script cases passed"
