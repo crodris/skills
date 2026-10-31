@@ -17,9 +17,9 @@ skills/execute/memory.md 627
 skills/execute/memory/beads.md 1224
 skills/execute/memory/checklist.md 621
 skills/execute/progress.md 440
-skills/execute/README.md 7999
-skills/execute/resume.md 1277
-skills/execute/SKILL.md 2611
+skills/execute/README.md 8049
+skills/execute/resume.md 1172
+skills/execute/SKILL.md 2680
 skills/execute/stack.md 2421
 skills/execute/trackers.md 2062
 skills/execute/trackers/asana.md 847
@@ -43,5 +43,5 @@ skills/scaffold/SKILL.md 1100
 skills/ship/boundary.md 1098
 skills/ship/config.md 547
 skills/ship/SKILL.md 1246
-skills/verification-audit/SKILL.md 941
+skills/verification-audit/SKILL.md 929
 skills/worktree-setup/SKILL.md 249

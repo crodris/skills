@@ -38,6 +38,7 @@ On a forge without an adapter the last step is a handoff rather than an opened r
 The design goal is that **nothing is remembered between invocations**.
 Every run reads state from your repository and your tracker, so an interrupted run resumes by being re-invoked, in either agent.
 A run pushes its planned units before its first tracker write, so a breakdown interrupted partway creates only the units still missing.
+When a rerun computes a different branch name and finds an earlier branch for the issue, it stops and names that branch, and you switch to it and rerun.
 
 Resuming on a *different* machine works for whatever was committed and pushed.
 The checklist backend travels with each task commit; beads keeps its database off your branches and shares each issue's tasks through that issue's `.beads/<ref>.jsonl`, so a beads run commits that file with the breakdown and alongside each task for the same reason.
@@ -266,7 +267,7 @@ A held issue keeps its worktree.
 Answer its question by running `execute <ref>` from inside that worktree.
 When you name an issue that is a sub-issue of another issue you named, execute drops it and lets its parent's run cover it.
 The last task, or each bundle's last task on a stack, runs the typecheck and the full suite instead of its own test files.
-At the end it pushes, opens the review - or, in the manual tier, hands you everything needed to open it - and moves the issue to in review.
+It pushes the plan at breakdown, and at the end it pushes the work, opens the review - or, in the manual tier, hands you everything needed to open it - and moves the issue to in review.
 
 Re-invoking on the same issue resumes it.
 Guards see what already exists and skip it.
@@ -355,7 +356,7 @@ Auto mode removes friction, not judgment.
 **Every safety stop still fires in both modes:**
 
 - An unverified or disabled tracker MCP still refuses and prints setup instructions.
-- A test failure that cannot be fixed still stops and holds, with the work kept and nothing pushed.
+- A test failure that cannot be fixed still stops and holds, with the work kept and only the plan pushed.
 - A conflict while updating from the base branch still stops, naming the conflicting files and leaving the merge or rebase paused for you to resolve.
 - A review closed without merging still gets reported and asked about.
 - Accepting a forge CLI found on your `PATH` still asks; auto mode never drives an unfamiliar CLI unattended.
@@ -381,6 +382,7 @@ When auto mode accepts a setup answer rather than having you confirm it, the pro
 
 ```
 Did the invocation name one?            -> use it
+Does the branch carry an asana- ref?    -> use Asana
 Does .fathom/config.md name one?        -> use it
 Is exactly one tracker MCP connected?   -> use it
 Are both connected?                     -> ask once, save the answer
