@@ -211,7 +211,7 @@ test('terminal creating: the tasks made so far fill slots of the bar, 0% where t
 
   const three = await show({ kind: 'creating', ref: 'SLU-123', created: 3 }, 'terminal')
   expect(three.head).toBe(`${BAR_OF_THREE_SLOTS}0%`)
-  // The plan is written after the tasks, so a run being created has no title yet.
+  // bd holds no title, so a run being created shows the ref alone.
   expect(three.title).toBe('●SLU-123')
   expect(three.line).toBe('▸ planning  3 tasks so far')
   expect(barRuns(three.tree)).toEqual([{ text: BAR_OF_THREE_SLOTS, color: 'subtle' }])

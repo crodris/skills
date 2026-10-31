@@ -4,7 +4,7 @@ A stack is one issue delivered as several dependent reviews, one per bundle, on 
 Read the section that a step in `SKILL.md` points to; step numbers refer to that procedure.
 `conventions.md` defines the `Bundles` section, the pending marker, the `none confirmed` line, the `Merge-closer` line, per-bundle reconciliation, and stacked review bodies.
 
-A bookkeeping commit stages only the plan document, by explicit path, confirms the staged diff carries only the one `- Review:` line it adds, replaces, or removes, and names no task in its body.
+A bookkeeping commit for a `- Review:` line stages only the plan document, by explicit path, confirms the staged diff carries only the one `- Review:` line it adds, replaces, or removes, and names no task in its body.
 When the staged diff carries an unrelated edit as well, unstage that edit and leave it in the working tree for the run's final closing commit.
 
 ## Step 2: restack check
@@ -14,7 +14,7 @@ Never restack when any bundle reported `closed-unmerged`, is undetermined, or is
 Skip the restack, and say so, while this checkout holds an update paused by an earlier hold, as `SKILL.md` step 4 detects it.
 
 Before the first rebase, record `git branch --show-current`, or `git rev-parse HEAD` when it prints nothing.
-After the last rebase or a hold below, run `git checkout <recorded value>`, so step 4 reads the invoked issue and not a stack branch's.
+After the last rebase or a hold below, run `git switch -- "<recorded value>"`, or `git switch --detach "<recorded value>"` for a commit, so step 4 reads the invoked issue and not a stack branch's.
 
 Rebase the remaining stack branches bottom-up, each onto its updated base, and only when the merged bundle's content is not an ancestor of it.
 Rebase each one with `git rebase --onto <updated base> <cut point> <branch>`, where the cut point is the parent of the oldest commit in `<updated base>..<branch>` whose `Task:` trailer names one of that bundle's tasks, as the lower-bundle check finds it, so a squash-merged bundle's original commits are not replayed.
@@ -27,6 +27,7 @@ When the rebase conflicts, note the conflicting files from `git ls-files -u`, ru
 ## Step 7: recovering the stack
 
 Recover every bundle's index, branch, sub-issue refs, and recorded review id from the `Bundles` section, and carry that stack through the rest of this run.
+When the plan document carries `- Breakdown: pending`, read the sub-issue refs again after step 8's breakdown commit.
 The bundle in progress is the first one with no recorded review, and the run continues on its branch.
 When every bundle carries a recorded review, stay on bundle N's branch, the stack tip, and create no branch and return to no earlier one: only step 11's issue-level finalization remains.
 
@@ -54,9 +55,8 @@ This is a skip-list stop per `approval.md`: `ask` mode waits for an answer, and 
 
 ### Creating a confirmed stack
 
-Take step 8's create-versus-adopt decision as for a single review: create a sub-issue for each planned unit when the issue has no children, and adopt the existing children, skipping `createSubIssue` for each, when it has them.
-Create them one at a time in the planned order, first unit to last.
-Chain every task sequentially, so each task deps on its predecessor across bundle boundaries too, per the `createTask` row in `memory.md`.
+Step 8 settles the units as for a single review, one at a time in the planned order.
+Chain every `- Unit` line sequentially, so each deps on its predecessor across bundle boundaries too, per the `createTask` row in `memory.md`.
 Write the `Bundles` section, with each bundle's index, branch, and units, and the `- Merge-closer: suppressed` line into the plan document before the first tracker write, both per `conventions.md`.
 
 ## Step 10: bundles in the loop

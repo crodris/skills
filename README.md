@@ -76,7 +76,7 @@ It needs the GitHub CLI, plus a browser driver such as Playwright for visual cha
 
 `rewrite` drafts and rewrites prose you post under your name, in your voice, and removes the patterns that mark text as machine-written.
 It reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset, empty, or not an absolute path, and builds one with you on first run from `setup.md`.
-It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when that is installed, and keeps a short fallback floor for runs that cannot invoke it.
+It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when it can be invoked, and keeps a short fallback floor otherwise.
 To move from an old name, run `npx skills@latest remove my-voice -g` (or `npx skills@latest remove voice -g` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
 
 ### frontend-design-pipeline (v1.3.1)

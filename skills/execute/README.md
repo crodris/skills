@@ -227,6 +227,7 @@ When the requirements leave the approach open, it proposes two or three approach
 Sub-issues are vertical slices, each demoable on its own, and each names the sub-issues that block it; blockers are created first.
 
 When the scaffold exists, it offers to hand straight off to `execute`, or does so without asking in auto mode.
+When `createSubIssue` fails partway, scaffold stops without the handoff and lists the drafts it didn't create, and you can ask it to create only those.
 Execute then reads the issue and each sub-issue back from the tracker, so it works from what the tracker stored.
 
 ## Using execute

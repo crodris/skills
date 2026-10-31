@@ -1,8 +1,9 @@
 import type { Plan, PlanBundle, PlanReview } from '../types'
 
 // The plan document at .fathom/plans/<ref>.md, read back as data. Fathom writes it
-// before the breakdown's first tracker write and afterwards only fills in sub-issue refs
-// and adds its review lines and the Finalization line, so this reads structure and never task status: status is bd's. The labels are the
+// before the breakdown's first tracker write and afterwards only fills in sub-issue refs,
+// drops the Breakdown line, and adds its review lines and the Finalization line, so this
+// reads structure and never task status: status is bd's. The labels are the
 // exact ones conventions.md fixes (fathom 2.2.0), because other readers match them
 // too.
 const FIELD = /^\s*- (Issue|Ref|Branch): (.+?)\s*$/

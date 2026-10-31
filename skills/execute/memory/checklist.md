@@ -2,7 +2,7 @@
 
 This adapter keeps the issue's tasks in `.fathom/tasks/<ISSUE-REF>.md`, committed on the feature branch, once `memory.md`'s resolution has chosen the checklist.
 The file is the issue's parent record and the only store for its task status, and it stays in the repository after the review merges.
-Commit it with every change this adapter makes, except the in-progress marker and the hash append under `close`, which wait for a later commit.
+Commit it with every change this adapter makes, except the in-progress marker, `createTask`'s line, and the hash append under `close`, which wait for a later commit.
 
 ## File format
 
@@ -21,9 +21,9 @@ Testing notes.
 
 ## Tasks
 
-- [x] 1. Create login form component -> sub-issue: https://... (done 2026-07-28, a1b2c3d)
-- [>] 2. Wire auth API (deps: 1) -> sub-issue: https://...
-- [ ] 3. Add e2e test (deps: 2) -> sub-issue: https://...
+- [x] 1. Create login form component -> sub-issue: ONC-6 (done 2026-07-28, a1b2c3d)
+- [>] 2. Wire auth API (deps: 1) -> sub-issue: ONC-7
+- [ ] 3. Add e2e test (deps: 2) -> sub-issue: ONC-8
 ```
 
 `Review` holds the id and URL `openReview` returns, since the done-on-merge sweep looks a review up by id.
