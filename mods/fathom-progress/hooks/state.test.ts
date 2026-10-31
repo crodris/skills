@@ -15,8 +15,8 @@ function snapshotOf(stage: Stage, plan: Plan | null, armedAt = 0) {
   return epic === null ? null : toSnapshot({ epic, tasks: stage.tasks, ready: stage.ready, plan })
 }
 
-// A plan document exists once the breakdown is done; its contents do not matter to
-// most of these tests.
+// A plan document with no pending line means the breakdown is done; its contents do not
+// matter to most of these tests.
 const PLAN = parsePlan('- Ref: SLU-123\n')
 const PLAN_2 = parsePlan('- Ref: SLU-124\n')
 
@@ -272,6 +272,12 @@ test('an executing or finished run carries the issue\'s title from the plan docu
   }
 })
 
-test('a run still being created has no title, since the plan document is written after its tasks', async () => {
+test('a pending breakdown is still creating, even with a plan document, and a claimed task ends that', async () => {
+  const pending = parsePlan('- Ref: SLU-123\n- Breakdown: pending\n')
+  expect(snapshotOf(fx.created3, pending)).toEqual({ kind: 'creating', ref: 'SLU-123', created: 3 })
+  expect(snapshotOf(fx.claimedThird, pending)?.kind).toBe('executing')
+})
+
+test('a run still being created has no title', async () => {
   expect(snapshotOf(fx.created3, null)).toEqual({ kind: 'creating', ref: 'SLU-123', created: 3 })
 })

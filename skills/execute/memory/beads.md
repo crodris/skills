@@ -38,7 +38,8 @@ The sync steps are these two commands, each on its own:
 2. `bd dolt push`, only when the pull exited 0.
 
 `bd dolt push` sends the whole database, every issue and any schema migration, so never push without a pull that just succeeded.
-When either command fails, report bd's error, name "Execute stops because `bd dolt pull` failed or a schema migration ran" in Fathom's `execute/README.md`, and continue the run.
+`init`'s pull stops the run on failure, as its row in Operation mapping says.
+When a sync step fails, report bd's error, name "Execute stops because `bd dolt pull` failed or a schema migration ran" in Fathom's `execute/README.md`, and continue the run.
 `.beads/<issueRef>.jsonl` on the branch still holds the tasks, and the next sync sends them.
 Never pass `--force` or `--strategy`, never run `bd dolt commit`, and never move or re-bootstrap the database to make a sync succeed, since each decides whose history wins and that is the user's call.
 
@@ -48,6 +49,7 @@ Never pass `--force` or `--strategy`, never run `bd dolt commit`, and never move
 | --- | --- |
 | `init(issueRef)` | 1. When `grep -q '"backend"' .beads/metadata.json` fails, stop and point the user to "From bd 0.x to bd 1.x" in Fathom's `execute/README.md`; never migrate it yourself. 2. Run `mkdir -p <main checkout>.fathom`, taking `<main checkout>` from the first line of `git worktree list --porcelain`. 3. Run `bd bootstrap`, which creates the database on a fresh clone and prints "Nothing to do" otherwise. 4. Run `bd config get issue_prefix --json` and stop when its `value` is empty, pointing the user to "Execute stops because the beads database has no issue prefix" in that README; never move `.beads/embeddeddolt` yourself. 5. When the repository has a Dolt remote, run `bd dolt pull`. Stop when it exits nonzero or when any `bd` command in this `init` printed `schema migration`: show bd's output, say the fix decides whose history wins so Fathom will not commit or force anything, and point the user to "Execute stops because `bd dolt pull` failed or a schema migration ran". 6. When `.beads/<issueRef>.jsonl` exists, run `bd import .beads/<issueRef>.jsonl`. |
 | `createTask(title, description, subIssueRef, deps)` | Run one `bd create "<title>" -d "<description>" -l "<issueRef>" --external-ref "<subIssueRef>" --deps "<comma-separated blocker ids>" --silent` and return its one output line as the task id. Omit `--external-ref` when no `subIssueRef` was passed and `--deps` when `deps` is empty. Use the title as passed. |
+| `listTasks()` | Run `bd list -l "<issueRef>" --type task --all --limit 0 --json` and return each task's `id` and `external_ref`. |
 | `claimNext()` | Run `bd list -l "<issueRef>" --type task --status in_progress --limit 0 --json`, and when it returns a task, return the oldest without claiming it. Otherwise run `bd ready -l "<issueRef>" --type task --sort oldest --claim --json` and return element 0's id, or null for `[]`. |
 | `ready()` | Run `bd ready -l "<issueRef>" --type task --sort oldest --limit 0 --json` and return its tasks. |
 | `claim(taskId)` | Run `bd update <taskId> --claim`. |

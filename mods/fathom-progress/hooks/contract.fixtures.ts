@@ -7,11 +7,13 @@ export const planLines: readonly string[] = [
   "- Issue: <tracker url>",
   "- Ref: <issue ref>",
   "- Branch: <branch>",
+  "- Unit <n>: <title> -> sub-issue: pending",
   "- Bundle <k>/<N>: <branch> - <sub-issue refs, comma separated>",
   "- Review: pending (bundle k/N)",
   "- Review: <id> <url> (bundle k/N)",
   "- Review: none confirmed (bundle k/N)",
   "- Merge-closer: suppressed",
+  "- Breakdown: pending",
   "- Finalization: complete",
 ]
 

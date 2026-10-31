@@ -32,7 +32,7 @@ function filled(template: string): string {
 const linesStarting = (prefix: string) => planLines.filter(line => line.startsWith(prefix))
 
 test('conventions.md states every plan document line the band reads', async () => {
-  for (const prefix of ['# ', '- Issue: ', '- Ref: ', '- Branch: ', '- Bundle ', '- Finalization: ']) {
+  for (const prefix of ['# ', '- Issue: ', '- Ref: ', '- Branch: ', '- Bundle ', '- Breakdown: ', '- Finalization: ']) {
     expect(linesStarting(prefix)).toHaveLength(1)
   }
   expect(linesStarting('- Review: ').length).toBeGreaterThan(0)
@@ -40,13 +40,14 @@ test('conventions.md states every plan document line the band reads', async () =
 
 test('the band reads a plan document written to conventions.md', async () => {
   const plan = parsePlan(
-    ['# ', '- Issue: ', '- Ref: ', '- Branch: ', '- Bundle ', '- Finalization: '].map(prefix => filled(linesStarting(prefix)[0] ?? '')).join('\n'),
+    ['# ', '- Issue: ', '- Ref: ', '- Branch: ', '- Bundle ', '- Breakdown: ', '- Finalization: '].map(prefix => filled(linesStarting(prefix)[0] ?? '')).join('\n'),
   )
   expect(plan.title).toBe('Add login flow')
   expect(plan.issue).toBe('https://linear.app/acme/issue/ONC-5')
   expect(plan.ref).toBe('ONC-5')
   expect(plan.branch).toBe('feat/onc-5-login')
   expect(plan.bundles).toEqual([{ index: 1, of: 2, branch: 'feat/onc-5-login', refs: ['ONC-6', 'ONC-7'], review: null }])
+  expect(plan.isBreakdownPending).toBe(true)
   expect(plan.isFinalized).toBe(true)
 })
 

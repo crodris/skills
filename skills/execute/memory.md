@@ -4,13 +4,14 @@ Task state lives in exactly one durable backend per issue, resolved by probing.
 
 ## The contract
 
-Use exactly these eight operations, which each adapter implements.
+Use exactly these nine operations, which each adapter implements.
 Every operation reads and claims only the issue being worked, so a run never implements another issue's task or closes the wrong sub-issue.
 
 | Operation | Purpose |
 | --- | --- |
 | `init(issueRef)` | Prepare the backend for this issue. A repeated call never duplicates, rolls back, or drops tasks, though it may update them from a newer committed copy. |
 | `createTask(title, description, subIssueRef, deps)` | Create a task tagged with the issue ref and `subIssueRef`, and return its id. Only this operation sets `deps`, so create tasks in planned order and decide whether the issue is split before the first call. In a split issue every task deps on its predecessor, so a later bundle's task is never claimable while an earlier task is open. |
+| `listTasks()` | Return every task of this issue, open or closed, each with its id and `subIssueRef`. |
 | `claimNext()` | Mark in progress and return the first open task whose deps are all closed, or null. When a task is already in progress from an interrupted run, return it instead. |
 | `ready()` | Return the open tasks whose deps are all closed, in creation order, claiming none. |
 | `claim(taskId)` | Mark one task from `ready()` in progress, so several can run at once. |

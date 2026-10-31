@@ -272,6 +272,7 @@ test('a done task is in review while its bundle has a recorded review and the ru
 
 test('tasks made but no plan document yet is a run being created, and counts the tasks', async () => {
   expect(snapshotOf(listOf('- [ ] 1. One', '- [ ] 2. Two'), null)).toEqual({ kind: 'creating', ref: 'ONC-5', created: 2 })
+  expect(snapshotOf(listOf('- [ ] 1. One', '- [ ] 2. Two'), parsePlan('- Breakdown: pending\n'))).toEqual({ kind: 'creating', ref: 'ONC-5', created: 2 })
 })
 
 test('once the plan document exists the run is executing, whatever the markers', async () => {

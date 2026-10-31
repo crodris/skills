@@ -1,7 +1,7 @@
 ---
 name: verification-audit
 description: Audit how well a repository proves that agent work is correct, layer by layer, then close each gap with the matching pstack skill. Use when the user says "audit verification", "verification audit", "how verified is this repo", "set up verification here", or asks whether a repo has a verify skill, a formal check, a scheduled drive, or risk-scaled review.
-version: 1.1.1
+version: 1.1.2
 ---
 
 # Verification audit
@@ -48,13 +48,14 @@ With the ship skill, read each `.ship/config.md` slot the way `../ship/config.md
    Prove it from a recent run, not from the schedule's file.
    A schedule on a machine you cannot reach is partial, so say what stays unproven.
    Report that nothing checks the schedule itself runs, since a run that never starts files no issue.
-   Missing: read the delivery flow's drive, then ask the user where the schedule runs.
+   Missing: read the delivery flow's drive, which is the schedule's entrypoint, then ask the user where the schedule runs.
+   When the flow has no drive and the user gives no command, leave the check missing and report that nothing defines what a schedule would run.
    A script cannot start the agent session a `skill:<name>` drive needs, so only a cloud routine can run that drive and open or update the issue.
    A CI cron or timer runs a script, which runs the drive when it is a command, and otherwise a command the user gives.
    The script runs on a fresh checkout of the default branch, opens or updates one issue on failure, and ships through the repo's delivery flow.
    Install or enable the schedule where the user named, then trigger one run.
    Leave the check partial until a scheduled run exists.
-6. **Review setup.** The delivery flow runs the static gates and the configured drive and gives risky paths a deeper review.
+6. **Review setup.** The delivery flow runs the static gates, runs the configured drive on a diff that changes behavior as `../prove/drive.md` defines it, and gives risky paths a deeper review.
    With the ship skill, `.ship/config.md` sets `verify` to the static gates, `drive` to a value `../prove/drive.md` accepts, and `security-paths` to the riskiest code, and the audit checks the Verify skill whether or not `drive` names one.
    Another flow, such as Fathom, meets the same bar in its own config.
    The repo also has the review bots the user's instructions name, and a paused bot counts as missing.

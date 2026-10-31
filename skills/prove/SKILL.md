@@ -1,7 +1,7 @@
 ---
 name: prove
 description: Runs the repository's own verify gates on the working tree until they pass, commits when the caller asks it to, and prints a one-line proof. Use when the user asks to verify or prove a change before pushing it.
-version: 3.3.0
+version: 3.3.1
 ---
 
 # Prove

@@ -1,7 +1,7 @@
 ---
 name: execute
 description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5, or several at once like "execute ONC-5 ONC-6". Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
-version: 3.0.1
+version: 3.1.0
 ---
 
 # Execute
@@ -61,7 +61,8 @@ Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `
    On a stack these rules describe bundle 1's branch, and `stack.md` handles the later bundles.
    Once on the branch, resolve the memory backend per `memory.md`, including its stop when the base tracks beads but `bd where` fails, so a checklist that lives only on this branch is found.
 8. Ensure the breakdown exists.
-   When it already exists, follow Existing breakdown in `resume.md` and skip the rest of this step.
+   When the plan document carries `- Breakdown: pending`, follow Interrupted breakdown in `resume.md`.
+   Otherwise, when the breakdown already exists, follow Existing breakdown in `resume.md` and skip the rest of this step.
    - Plan before writing to the tracker or the memory backend.
      With no children, plan up to seven units, each one reviewable commit that verifies alone, and only as many as the requirements support.
      With children, adopt them through `listSubIssues`, then call `getIssue` on each for the `Blocked by:` line scaffold ends its description with, even right after a scaffold handoff.
@@ -71,13 +72,16 @@ Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `
      In the manual tier never split, and say the split was not offered when the breakdown has five or more units.
      When the profile's `stacking` field reads `propose`, follow the step 8 section of `stack.md`; when it reads `never` or is absent, use one review, per `approval.md`.
    - Then call `init` and `parentTask`, the step's first writes.
-   - Create each sub-issue and task in planned order, passing final `deps` to `createTask`, since deps cannot be added later.
-     For a new unit, call `createSubIssue`, then `createTask` with that ref as `subIssueRef` and `deps` on the tasks it builds on.
-     For an adopted child, skip `createSubIssue`, and dep on the sibling tasks its `Blocked by:` line names: none for `none`, and the previous task for a missing line or a blocker in a cycle.
-     Write each task id back onto its sub-issue.
+   - Write the plan document from `conventions.md` with `- Breakdown: pending` and a `- Unit` line per planned unit, an adopted child's carrying its ref, plus the `Bundles` and `Merge-closer` lines on a split.
+     Commit it as a bookkeeping commit and push it per step 7, even under `pushesForYou`, before the first tracker write.
+   - Call `listTasks`, then settle each unit in planned order, passing final `deps` to `createTask`, since deps cannot be added later.
+     When its `- Unit` line reads `pending`, call `createSubIssue`, and write the returned ref on that line and on its bundle's line, uncommitted.
+     When no task carries the unit's ref, call `createTask` with that ref as `subIssueRef`, then write the task id back onto its sub-issue.
+     A new unit deps on the tasks it builds on.
+     An adopted child deps on the sibling tasks its `Blocked by:` line names: none for `none`, and the previous task for a missing line or a blocker in a cycle.
      A confirmed split creates them as `stack.md`'s step 8 section says.
    - Once every child task exists, add the parent's dependency edge on each child.
-   - Commit the plan document from `conventions.md` with the breakdown, with the `Bundles` and `Merge-closer` lines on a split.
+   - Remove `- Breakdown: pending`, then commit the plan document with the breakdown and push it per step 7.
      On beads, run the three export steps in One database per repository in `memory/beads.md` before that commit, and its Dolt remote sync steps after it.
    - Write `.fathom/tasks/<ISSUE-REF>.md` only on the checklist backend.
 9. Move the issue to `inProgress` with `updateState`, unless `getIssue` shows the issue already in `inReview` and either this issue's file under `.fathom/` records its review, as the `- Review:` line of a single review or bundle 1's in the `Bundles` section, or the plan document carries `- Finalization: complete`.

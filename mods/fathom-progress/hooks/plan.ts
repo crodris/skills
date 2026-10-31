@@ -1,8 +1,8 @@
 import type { Plan, PlanBundle, PlanReview } from '../types'
 
 // The plan document at .fathom/plans/<ref>.md, read back as data. Fathom writes it
-// at breakdown and afterwards only adds its review lines and the Finalization line,
-// so this reads structure and never task status: status is bd's. The labels are the
+// before the breakdown's first tracker write and afterwards only fills in sub-issue refs
+// and adds its review lines and the Finalization line, so this reads structure and never task status: status is bd's. The labels are the
 // exact ones conventions.md fixes (fathom 2.2.0), because other readers match them
 // too.
 const FIELD = /^\s*- (Issue|Ref|Branch): (.+?)\s*$/
@@ -14,6 +14,7 @@ const BUNDLE = /^\s*- Bundle (\d+)\/(\d+): (\S+) - (.+?)\s*$/
 const REVIEW = /^\s*- Review: (.+?)\s*$/
 const SUFFIX = /^(.*?)(?: \(bundle (\d+)\/(\d+)\))?$/
 const FINALIZED = /^\s*- Finalization: complete\s*$/
+const BREAKDOWN_PENDING = /^\s*- Breakdown: pending\s*$/
 const FENCE = /^\s*(```|~~~)/
 
 // When one bundle carries several review lines, a recorded review beats a
@@ -44,6 +45,7 @@ export function parsePlan(text: string): Plan {
     title: null,
     bundles: [],
     review: null,
+    isBreakdownPending: false,
     isFinalized: false,
   }
   const reviews: { review: PlanReview; index: number | null }[] = []
@@ -99,6 +101,7 @@ export function parsePlan(text: string): Plan {
       continue
     }
 
+    if (BREAKDOWN_PENDING.test(line)) plan.isBreakdownPending = true
     if (FINALIZED.test(line)) plan.isFinalized = true
   }
 

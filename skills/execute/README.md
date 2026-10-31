@@ -37,6 +37,7 @@ On a forge without an adapter the last step is a handoff rather than an opened r
 
 The design goal is that **nothing is remembered between invocations**.
 Every run reads state from your repository and your tracker, so an interrupted run resumes by being re-invoked, in either agent.
+A run pushes its planned units before its first tracker write, so a breakdown interrupted partway creates only the units still missing.
 
 Resuming on a *different* machine works for whatever was committed and pushed.
 The checklist backend travels with each task commit; beads keeps its database off your branches and shares each issue's tasks through that issue's `.beads/<ref>.jsonl`, so a beads run commits that file with the breakdown and alongside each task for the same reason.
@@ -443,7 +444,7 @@ In the manual tier the "review merged" line never fires, because nothing can obs
 | --- | --- |
 | `.fathom/config.md` | The committed profile: tracker, forge, destination, state mapping, base branch, closer choice, approval mode, and an optional `stacking` line. |
 | `.fathom/forge.md` | Only if you wrote an adapter for a forge Fathom does not ship. See [Forges](#forges). |
-| `.fathom/plans/<ref>.md` | The per-issue plan, under a `# <ref>: <title>` heading: issue link, branch, codebase context, approach, tasks, testing strategy, and a `- Review:` line once a review exists. A stacked issue adds a `Bundles` section and a `- Merge-closer: suppressed` line, and a finished issue records `- Finalization: complete`. Written for people, never carries task status. The branch sits on its own `- Branch:` line, which the merge-closer matches to find this issue. |
+| `.fathom/plans/<ref>.md` | The per-issue plan, under a `# <ref>: <title>` heading: issue link, branch, codebase context, approach, tasks, testing strategy, and a `- Review:` line once a review exists. It carries `- Breakdown: pending` until the breakdown finishes. A stacked issue adds a `Bundles` section and a `- Merge-closer: suppressed` line, and a finished issue records `- Finalization: complete`. Written for people, never carries task status. The branch sits on its own `- Branch:` line, which the merge-closer matches to find this issue. |
 | `.fathom/tasks/<ref>.md` | Task statuses as checkboxes. Only when the checklist backend is active. |
 | `.beads/` | Beads task state, when beads is the backend: one ignored database in `.beads/embeddeddolt/` that the repository's checkouts and worktrees share, plus one committed `.beads/<ref>.jsonl` per issue, which carries only that issue's tasks. With a Dolt remote, the database also lives on your git remote as `refs/dolt/data`. |
 | `.github/workflows/fathom-close.yml` | Only if you accepted the optional merge-closer Action. GitHub only; never offered on a forge without CI hooks. |

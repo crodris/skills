@@ -13,6 +13,9 @@ Run this only when the sweep's partial-progress case decided a stacked issue: so
 Never restack when any bundle reported `closed-unmerged`, is undetermined, or is unrecorded.
 Skip the restack, and say so, while this checkout holds an update paused by an earlier hold, as `SKILL.md` step 4 detects it.
 
+Before the first rebase, record `git branch --show-current`, or `git rev-parse HEAD` when it prints nothing.
+After the last rebase or a hold below, run `git checkout <recorded value>`, so step 4 reads the invoked issue and not a stack branch's.
+
 Rebase the remaining stack branches bottom-up, each onto its updated base, and only when the merged bundle's content is not an ancestor of it.
 Rebase each one with `git rebase --onto <updated base> <cut point> <branch>`, where the cut point is the parent of the oldest commit in `<updated base>..<branch>` whose `Task:` trailer names one of that bundle's tasks, as the lower-bundle check finds it, so a squash-merged bundle's original commits are not replayed.
 After each rebase and before pushing that branch, re-record every closed task whose recorded commit left the branch's range, as step 3 of The lower-bundle check below does.
@@ -54,7 +57,7 @@ This is a skip-list stop per `approval.md`: `ask` mode waits for an answer, and 
 Take step 8's create-versus-adopt decision as for a single review: create a sub-issue for each planned unit when the issue has no children, and adopt the existing children, skipping `createSubIssue` for each, when it has them.
 Create them one at a time in the planned order, first unit to last.
 Chain every task sequentially, so each task deps on its predecessor across bundle boundaries too, per the `createTask` row in `memory.md`.
-At breakdown time, write the `Bundles` section, with each bundle's index, branch, and sub-issue refs, and the `- Merge-closer: suppressed` line into the plan document, both per `conventions.md`.
+Write the `Bundles` section, with each bundle's index, branch, and units, and the `- Merge-closer: suppressed` line into the plan document before the first tracker write, both per `conventions.md`.
 
 ## Step 10: bundles in the loop
 
@@ -77,7 +80,7 @@ For bundle k of N, in this order:
 4. Call `resolveBase` on bundle k's base: the resolved base branch for bundle 1, and branch k-1 for later bundles unless the lower-bundle check moved bundle k onto the resolved base branch.
 5. Settle whether bundle k needs a review opened, per Reusing a bundle's review.
    A reused review skips the marker, `openReview`, `publishReview`, and the recorded line below.
-6. Write `- Review: pending (bundle k/N)` beneath the bundle's line in the `Bundles` section, as a bookkeeping commit `chore(<issue-ref>): mark bundle k review pending` on branch k, before branch k reaches the remote.
+6. Write `- Review: pending (bundle k/N)` beneath the bundle's line in the `Bundles` section, as a bookkeeping commit `chore(<issue-ref>): mark bundle k review pending` on branch k, before the next item's push.
 7. Push branch k, unless the adapter declares `pushesForYou`.
 8. Title the review as step 11's single-review path in `SKILL.md` says, reading that `git log` from the resolved base, since a later bundle's base is a bundle branch, and name the bundle in the title.
    Build the body from Body steps 1 to 4 of `../file-pr/SKILL.md` and the stack rules in `conventions.md`.
