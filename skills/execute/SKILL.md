@@ -86,7 +86,7 @@ Read every other file this procedure names, such as `fan-out.md`, `resume.md`, `
      A failed push in this step is a hold.
    - Call `listTasks`, then settle each unit in planned order.
      When its `- Unit` line reads `pending`, call `createSubIssue` and write the returned ref on that line, uncommitted.
-     When no task carries the unit's ref, call `createTask` with that ref as `subIssueRef` and the tasks of the units its line deps on as `deps`, since deps cannot be added later, then write the task id back onto its sub-issue.
+     When no task carries the unit's ref, call `createTask` with that ref as `subIssueRef` and the tasks of the units its line deps on as `deps`, since deps cannot be added later.
      A confirmed split creates them as `stack.md`'s step 8 section says.
    - Once every child task exists, add the parent's dependency edge on each child.
    - Replace each `unit <n>` on a `- Bundle` line with that unit's ref, and remove `- Breakdown: pending`.

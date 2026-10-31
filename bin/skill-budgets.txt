@@ -18,8 +18,8 @@ skills/execute/memory/beads.md 1224
 skills/execute/memory/checklist.md 621
 skills/execute/progress.md 440
 skills/execute/README.md 8049
-skills/execute/resume.md 1172
-skills/execute/SKILL.md 2680
+skills/execute/resume.md 1192
+skills/execute/SKILL.md 2671
 skills/execute/stack.md 2421
 skills/execute/trackers.md 2062
 skills/execute/trackers/asana.md 847

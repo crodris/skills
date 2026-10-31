@@ -17,6 +17,7 @@ Step 4 found a merge or a rebase that an earlier hold paused.
 Step 7 found that the issue branch already exists.
 - When it is checked out in another worktree, as a held issue from `fan-out.md` leaves it, continue the run from inside that worktree.
 - Otherwise fetch it when it is on `origin`, the way the base is fetched, then run `git switch -- "<branch>"` when a local branch has that name, or `git switch -c "<branch>" --track "origin/<branch>"`.
+  On a branch that is on `origin`, run `git merge --ff-only "origin/<branch>"`, and hold when it fails, naming both SHAs.
 - When the base branch has moved on since, merge it into the branch before implementing, and report that you did.
 - When the update stops on a conflict, follow Finishing a base update below.
 
