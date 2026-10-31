@@ -1,5 +1,5 @@
 import type { Checklist, ChecklistTask, Plan, RunTask, Snapshot, TaskState } from '../types'
-import { reviewedRefs, shortTitle } from './state'
+import { isBreakdownOpen, reviewedRefs, shortTitle } from './state'
 import type { Epic } from './state'
 
 // The checklist file at .fathom/tasks/<ref>.md, read back as data: the memory backend
@@ -133,8 +133,8 @@ function stateOf(task: ChecklistTask, tasks: readonly ChecklistTask[]): TaskStat
 
 // The snapshot for a checklist run, the counterpart of `toSnapshot` for beads. `ref` is
 // the issue the band follows. A checklist has no epic to tell when the tasks are all made,
-// so the plan document stands in as it does for beads: it is written after the last task,
-// and until it exists a run whose tasks are all still open is being created.
+// so the plan document stands in as it does for beads: while its breakdown is open, a run
+// whose tasks are all still open is being created.
 //
 // - A file that names no issue and holds no task is not a checklist at all: unavailable,
 //   with the reason, not an empty run.
@@ -148,7 +148,7 @@ export function toChecklistSnapshot(input: { ref: string; checklist: Checklist; 
       ? { kind: 'unavailable', reason: `.fathom/tasks/${ref}.md is not a Fathom checklist` }
       : { kind: 'creating', ref, created: 0 }
   }
-  if (plan === null && tasks.every(t => t.marker === 'open')) {
+  if (isBreakdownOpen(plan) && tasks.every(t => t.marker === 'open')) {
     return { kind: 'creating', ref, created: tasks.length }
   }
 

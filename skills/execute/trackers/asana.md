@@ -53,8 +53,10 @@ On Claude Code, register the redirect URL `http://localhost:8080/callback` in th
 claude mcp add --transport http --client-id YOUR_CLIENT_ID --client-secret --callback-port 8080 asana https://mcp.asana.com/v2/mcp
 ```
 
-On Kiro, register the redirect URL `http://localhost:3334/oauth/callback` in the app, then add this entry to `~/.kiro/settings/mcp.json` (user level) or `.kiro/settings/mcp.json` (workspace level).
+On Kiro, register the redirect URL `http://localhost:3334/oauth/callback` in the app, then add this entry to `~/.kiro/settings/mcp.json`.
+Never add it to the workspace-level settings, since the entry holds the client secret and that file can get committed.
 It runs the `mcp-remote` proxy, which is community software, not an official Asana or Anthropic package.
+Keep its version pinned, and change the pin only after reviewing the new release.
 
 ```json
 {
@@ -63,7 +65,7 @@ It runs the `mcp-remote` proxy, which is community software, not an official Asa
       "command": "npx",
       "args": [
         "-y",
-        "mcp-remote@latest",
+        "mcp-remote@0.15.2",
         "https://mcp.asana.com/v2/mcp",
         "3334",
         "--static-oauth-client-info",

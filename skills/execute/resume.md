@@ -52,6 +52,17 @@ Step 8 found that this issue already has a breakdown.
 
 Then go to step 9.
 
+## Interrupted breakdown
+
+Step 8 found `- Breakdown: pending`, so an earlier run stopped between committing the planned units and finishing the breakdown.
+- Read the units, the split, and the bundles from the plan document, and decide none of them again.
+- Call `init` and `parentTask`, then `listSubIssues`.
+- When a `- Unit` line names a ref `listSubIssues` does not return, hold, naming it, and create nothing.
+- For each `pending` unit in planned order, take the first child that no `- Unit` line names and whose title is exactly the unit's, and write its ref on that line and on its bundle's line.
+- When a child still has no `- Unit` line, hold, naming it, and create nothing, since it may be a renamed child of a `pending` unit.
+  Ask the user to write its ref on the right unit line, or to remove the child.
+- Go on from the `listTasks` bullet of step 8, and treat a parent edge that already exists as done.
+
 ## Interrupted finalization
 
 Step 11 found a stacked issue with no `- Finalization: complete` line, so an earlier run stopped before its closing actions finished.

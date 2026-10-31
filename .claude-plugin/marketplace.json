@@ -17,7 +17,7 @@
         "./skills/scaffold"
       ],
       "description": "Two agent skills, scaffold and execute, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter. Works with Asana or Linear, runs on Claude Code and Kiro, tracks tasks in beads or a committed markdown checklist, and resumes from repository state.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "author": {
         "name": "crodris"
       },
@@ -52,7 +52,7 @@
         "./skills/land"
       ],
       "description": "Six agent skills that carry the current branch from working tree to merged release: ship calls prove to run the project's own verify gates and commit, file-pr to open the pull request, babysit to run CI, CodeRabbit or Greptile, and review-loop's Standards and Spec subagents on each pass with one batched fix push, and in merge mode land to merge with the repository's merge method, watch the release, and clean up. Plain ship stops at a green pull request. No tracker required.",
-      "version": "3.3.0",
+      "version": "3.3.1",
       "author": {
         "name": "crodris"
       },
@@ -75,7 +75,7 @@
       "name": "fathom-progress",
       "source": "./mods/fathom-progress",
       "description": "A Claude Code mod that shows a Fathom run's progress above the prompt, in the terminal and the Claude Code Desktop app, and mirrors it on the cmux sidebar row. Built by Ryan Uesato.",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "author": {
         "name": "Ryan Uesato"
       },

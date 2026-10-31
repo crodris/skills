@@ -31,7 +31,7 @@ Name the task in the body as a `Task: <id>` line, with the id the memory backend
 
 ## The plan document
 
-At breakdown, write a plan for the issue at `.fathom/plans/<ISSUE-REF>.md` and commit it with the breakdown.
+At breakdown, write a plan for the issue at `.fathom/plans/<ISSUE-REF>.md`, and commit it before the first tracker write and again with the breakdown.
 It carries structure a resumed run reads back, such as the branch, the review ids, and a stack's bundles, and never task status, which lives only in the memory backend.
 Update it when something material changes.
 
@@ -43,19 +43,24 @@ Include these sections:
 - **Issue description.** What the issue asks for, in your own words.
 - **Codebase context.** The files and patterns this work touches, with paths.
 - **Implementation approach.** How the change will be made, and what is out of scope.
-- **Tasks.** The planned units of work with their sub-issue links.
+- **Tasks.** The planned units of work in planned order, one line each: `- Unit <n>: <title> -> sub-issue: pending`.
+  Replace `pending` with the sub-issue's ref as soon as it exists, using the ref `listSubIssues` or `createSubIssue` returned, since that ref is what matches a unit to its child and its task.
 - **Bundles.** Only for an issue split into a stack.
   Write it when the split is confirmed, one line per bundle in stack order: `- Bundle <k>/<N>: <branch> - <sub-issue refs, comma separated>`.
+  Until a sub-issue exists, its place in the list holds `unit <n>`, the number on its `- Unit` line.
   Every bundle line names its branch, since the sweep and a resumed run fetch each one and read the `- Review:` lines in its copy of this document.
   Beneath a bundle, write `- Review: pending (bundle k/N)` before calling `openReview` for it, and replace it with `- Review: <id> <url> (bundle k/N)` once the review exists.
   The pending marker names no id, so readers treat it as no record: the sweep leaves the issue undecided, and `execute` looks the review up rather than risk a duplicate.
   A bundle with no `- Review:` line never had a review attempted.
   When the lookup cannot settle whether a review exists, hold, report the marker, and ask the user.
   When the user confirms none exists, replace the marker with `- Review: none confirmed (bundle k/N)`, which readers also treat as no record, so the next run opens that review.
-  Commit and push each of these lines as a `chore` bookkeeping commit as soon as it is written, on the branch the run is on.
+  The first `Bundles` section goes in the commit that records the planned units, and the breakdown commit carries its refs.
+  Commit and push each `- Review:` line as a `chore` bookkeeping commit as soon as it is written, on the branch the run is on.
   That is the bundle's own branch, except when a recovery finds that branch deleted or reused and records the outcome on its current branch.
 - **Merge-closer.** Only for an issue split into a stack: the line `- Merge-closer: suppressed`, written when the split is confirmed.
   The merge-closer Action skips an issue carrying it, so the sweep closes the issue once every bundle merges, instead of the Action closing it on the first.
+- **Breakdown.** The line `- Breakdown: pending`, written with the planned units and removed in the breakdown commit.
+  While it is there, the breakdown is unfinished, whatever else the document holds.
 - **Finalization.** The line `- Finalization: complete`, written by the last of the issue's closing actions, so it rides the final closing commit.
   `execute` stops finalizing when the committed plan document carries it, as step 11 of `SKILL.md` says, so no closing action runs twice.
 - **Testing strategy.** Which tests prove the work, and which could regress.

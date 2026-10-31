@@ -35,6 +35,8 @@ export type Plan = {
   title: string | null
   bundles: PlanBundle[]
   review: PlanReview | null
+  // The `- Breakdown: pending` line: Fathom is still making the run's sub-issues and tasks.
+  isBreakdownPending: boolean
   isFinalized: boolean
 }
 

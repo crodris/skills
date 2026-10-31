@@ -1,7 +1,7 @@
 ---
 name: ship
 description: Use when the user says "ship", "ship it", "/ship", "ship and merge", "take this all the way", or "get this merged and released", or asks to carry the current branch or its open pull request from working tree to a ready or merged pull request. Plain "ship" stops at a green pull request, and it merges only when the request says to merge or `.ship/config.md` sets `merge` to `yes`. Not for a single commit or a release cut from an already-merged main.
-version: 3.3.0
+version: 3.3.1
 ---
 
 # Ship

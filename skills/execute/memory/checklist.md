@@ -38,7 +38,8 @@ An older file may end with a `- Closed: <date>` line; leave it in place, never c
 | Contract operation | Checklist file mapping |
 | --- | --- |
 | `init(issueRef)` | When the file is missing, create it with the header, `Issue`, `Branch`, and `Review` lines and empty `## Plan` and `## Tasks` sections, and commit it. Never overwrite an existing file. |
-| `createTask(title, description, subIssueRef, deps)` | Append `- [ ] N. <title> (deps: <dep-ids>) -> sub-issue: <subIssueRef>` with the next unused `N`, omitting `(deps: ...)` when `deps` is empty and folding any `description` into the title. Commit it with the scaffold commit that creates the sub-issue, or with the breakdown commit for an adopted sub-issue. Return `N`. |
+| `createTask(title, description, subIssueRef, deps)` | Append `- [ ] N. <title> (deps: <dep-ids>) -> sub-issue: <subIssueRef>` with the next unused `N`, omitting `(deps: ...)` when `deps` is empty and folding any `description` into the title. Commit it with the breakdown commit. Return `N`. |
+| `listTasks()` | Return each `## Tasks` line's number and sub-issue tail. |
 | `claimNext()` | Read the working tree. Return the first `- [>]` line to resume when one exists. Otherwise rewrite the first `- [ ]` line whose deps are all `- [x]` to `- [>]`, uncommitted, so it rides the task's commit. This adapter has no lock: when the file changes between read and rewrite, or the branch has commits this runner did not make, stop and report a second runner. |
 | `ready()` | Return every `- [ ]` line whose deps are all `- [x]`, in number order, changing nothing. |
 | `claim(taskId)` | Rewrite that task's `- [ ]` to `- [>]`, uncommitted. |

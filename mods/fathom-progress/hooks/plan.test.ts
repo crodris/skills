@@ -38,7 +38,7 @@ const STACK = `# SLU-200: Split the importer
 - Merge-closer: suppressed
 `
 
-const EMPTY = { issue: null, ref: null, branch: null, title: null, bundles: [], review: null, isFinalized: false }
+const EMPTY = { issue: null, ref: null, branch: null, title: null, bundles: [], review: null, isBreakdownPending: false, isFinalized: false }
 
 test('parsePlan reads the title, the Issue, Ref and Branch lines, and finds no bundles in a plan that was not split', async () => {
   expect(parsePlan(SINGLE)).toEqual({
@@ -48,6 +48,7 @@ test('parsePlan reads the title, the Issue, Ref and Branch lines, and finds no b
     title: 'Add the progress band',
     bundles: [],
     review: null,
+    isBreakdownPending: false,
     isFinalized: false,
   })
 })
@@ -102,6 +103,12 @@ test('a recorded review outranks the pending marker and none confirmed, whicheve
     expect(parsePlan([bundle, ...lines].join('\n')).bundles[0]?.review?.kind).toBe('recorded')
   }
   expect(parsePlan([bundle, pending, none].join('\n')).bundles[0]?.review?.kind).toBe('none')
+})
+
+test('parsePlan sees the Breakdown line only when it reads pending, outside a fence', async () => {
+  expect(parsePlan('- Breakdown: pending\n').isBreakdownPending).toBe(true)
+  expect(parsePlan('- Breakdown: done\n').isBreakdownPending).toBe(false)
+  expect(parsePlan('```\n- Breakdown: pending\n```\n').isBreakdownPending).toBe(false)
 })
 
 test('parsePlan sees the Finalization line only when it reads complete', async () => {

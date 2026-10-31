@@ -27,14 +27,14 @@ On Claude Code, Fathom and ship also install as plugins, and so does the fathom-
 
 ## Plugins
 
-### fathom (v3.0.1)
+### fathom (v3.1.0)
 
 `execute` takes a tracker issue through breakdown, implementation, tests, commits, and an open review, and resumes where the last run stopped.
 `scaffold` turns requirements into a main issue with linked sub-issues, then offers to hand off to `execute`.
 They need an Asana or Linear MCP, and the GitHub CLI for reviews on GitHub.
 The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacked reviews, and troubleshooting.
 
-### ship (v3.3.0)
+### ship (v3.3.1)
 
 Six skills that carry the current branch to a green pull request, and on to a merged release when you ask to merge.
 Each one ends with a result line that the next one reads.
@@ -56,7 +56,7 @@ It merges with the `merge-method` in `.ship/config.md` (`squash`, `rebase`, or `
 When a review bot is rate limited, out of credits, or silent, `babysit` goes on without it on a low-risk pull request, and on a high-risk one runs a stand-in review and waits only for a short rate limit.
 The skills need a git remote, an authenticated GitHub CLI, and `jq`.
 
-### fathom-progress (v0.2.1)
+### fathom-progress (v0.2.2)
 
 Ryan Uesato built `fathom-progress`, a Claude Code mod that draws a progress band above the prompt while `execute` or `scaffold` runs.
 It reads the run's tasks from beads or the committed checklist, and never changes them.
@@ -72,11 +72,11 @@ These install through skills.sh only.
 It reads its build, serving, and measuring steps from `ui.md` only when the pull request changes what the app renders.
 It needs the GitHub CLI, plus a browser driver such as Playwright for visual changes, and answers whether a pull request is safe to merge with `land`'s merge gate.
 
-### rewrite (v3.1.1)
+### rewrite (v3.1.2)
 
 `rewrite` drafts and rewrites prose you post under your name, in your voice, and removes the patterns that mark text as machine-written.
 It reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset, empty, or not an absolute path, and builds one with you on first run from `setup.md`.
-It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when that is installed, and keeps a short fallback floor for installs without it.
+It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when that is installed, and keeps a short fallback floor for runs that cannot invoke it.
 To move from an old name, run `npx skills@latest remove my-voice -g` (or `npx skills@latest remove voice -g` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
 
 ### frontend-design-pipeline (v1.3.1)
@@ -120,7 +120,7 @@ npx skills@latest add crodris/skills -s worktree-setup -g
 }
 ```
 
-### verification-audit (v1.1.1)
+### verification-audit (v1.1.2)
 
 `verification-audit` checks how well a repository proves agent work is correct, layer by layer, then closes each gap.
 It uses the verification skills from [pstack](https://github.com/crodris/pstack-claude) to fix gaps, and only reports them without it.

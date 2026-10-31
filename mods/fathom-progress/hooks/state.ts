@@ -146,6 +146,13 @@ function earlier(a: Task, b: Task): number {
   return a.createdAt - b.createdAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 }
 
+// Until the breakdown finishes, tasks may still be added, so the total is not known. A
+// plan document written by an older Fathom has no pending line and exists only once the
+// breakdown is done, so a plan without the line counts as finished.
+export function isBreakdownOpen(plan: Plan | null): boolean {
+  return plan === null || plan.isBreakdownPending
+}
+
 // The tasks in the order the chain runs them. bd lists in no useful order and
 // created_at ties within a second, so the order comes from the blocks edges: a task
 // follows every task that blocks it, and tasks that are free at the same time go
@@ -199,10 +206,9 @@ function stateOf(status: string, isReady: boolean): TaskState {
 // --type task --all` and `bd ready -l <ref> --type task` printed; `plan` is the
 // parsed plan document, or null when there is none to read.
 //
-// The plan document is written after the last task is made, so a run with no plan
-// and no task started is still being created. Once the plan exists, or any task has
-// been claimed, the total is known and the run is executing, until every task is
-// closed.
+// A run with an open breakdown and no task started is still being created. Once the
+// breakdown is done, or any task has been claimed, the total is known and the run is
+// executing, until every task is closed.
 export function toSnapshot(input: {
   epic: Epic
   tasks: unknown
@@ -215,7 +221,7 @@ export function toSnapshot(input: {
   }
   const { ref } = input.epic
 
-  if (input.plan === null && tasks.every(t => t.status === 'open')) {
+  if (isBreakdownOpen(input.plan) && tasks.every(t => t.status === 'open')) {
     return { kind: 'creating', ref, created: tasks.length }
   }
 

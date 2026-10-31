@@ -22,6 +22,7 @@ With none typed, it takes the first issue ref in the current branch name.
 The band reads `.fathom/plans/<ISSUE-REF>.md`, whose lines `conventions.md` defines, and skips lines inside code fences.
 
 - The first heading gives the band its title, when its ref matches the `- Ref:` line.
+- The `- Breakdown: pending` line means the run is still being created.
 - A done task shows as in review when its sub-issue is on a `- Bundle` line whose `- Review:` line records a review.
 - The `- Finalization:` line clears those in-review marks.
 

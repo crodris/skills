@@ -1,7 +1,7 @@
 ---
 name: scaffold
 description: This skill should be used when the user asks to "scaffold these requirements", "scaffold an issue from this PRD or spec", "turn these requirements into an issue", "create an issue and sub-issues", or "break these requirements into tickets" for Asana or Linear. Creates a main issue plus linked sub-issues, then offers to hand off to the execute skill.
-version: 3.0.1
+version: 3.1.0
 ---
 
 # Scaffold
@@ -64,6 +64,9 @@ When any of these files cannot be read, stop and report which paths were tried, 
    - Call `createSubIssue` once per sub-issue draft, in order, linked to the main issue, and end each description with a `Blocked by:` line listing each blocker's Linear key or full Asana task URL, or `none`.
    - Report a compact block: the tracker, the main issue's ref, title, and URL, then one line per sub-issue with its ref and URL.
      Write each ref in the adapter's issue ref scheme, which for Asana is `asana-<last six digits of the GID>`.
+   - When `createSubIssue` fails, create no more sub-issues and skip steps 9 and 10, in both approval modes, since `execute` would adopt only the children that exist.
+     Report the block above, the tracker's error, and each uncreated draft with its description.
+     When the user asks to continue, create only those drafts under the same main issue, then resume at the report above.
    - In auto mode, put that block in the run's final reply beside execute's final summary.
 9. Write `default-destination` into the profile only when it has none or the user asks to change it; a destination hint applies only to this issue.
 10. Hand off with a reference `getIssue` can resolve in a fresh session: the Linear key, or the full Asana task URL, keeping the short Asana ref for display.

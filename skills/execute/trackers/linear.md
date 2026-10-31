@@ -9,7 +9,7 @@ Create and update are often one save-style tool that updates when given an id an
 | Contract operation | Linear MCP behavior |
 | --- | --- |
 | `getIssue(ref)` | Fetch the issue by its key, such as `ONC-5`, with a get-issue-style tool. Save its UUID, URL, team id, project id when it has one, labels, and workflow state, and reuse the saved UUID later. When the response carries comments, save their bodies in order for `listComments`. |
-| `listSubIssues(ref)` | List issues filtered by the parent's UUID or key, returning each child's id, title, and state. |
+| `listSubIssues(ref)` | List issues filtered by the parent's UUID or key, returning each child's key, title, and state. |
 | `listDestinations()` | List the viewer's teams with the current-user tool, never a workspace-wide team list, and list a team's projects when a destination narrower than the team is needed. |
 | `resolveDestination(hint?)` | Match the hint, or the profile's default destination when there is none, against a team's key or name, and validate any named project under that team. Return the team UUID and any project id together as one destination value, or null when the match is ambiguous. |
 | `createIssue(title, description, type, destination)` | Create the issue with the destination's team UUID, plus its project when one was resolved. Return the new key and URL. |

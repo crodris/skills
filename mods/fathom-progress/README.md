@@ -126,8 +126,8 @@ In the terminal the first row is a bar with one segment per task, with the perce
 | State | Looks like | When |
 |---|---|---|
 | Starting | `fathom starting…` | Fathom has started and the issue isn't in Beads or in a checklist yet, or nothing matches the ref you typed. Also in a repository with no `.beads/` folder when `bd` can't be read, which is the normal state there. |
-| Planning | A bar that fills one slot for each task made, `0%`, the ref alone, then `▸ planning` and `3 tasks so far` | The run's issue and some tasks exist, but the plan document isn't written and no task has started, so the total isn't known. |
-| Executing | The full bar, `▸ now 3/5`, and the task's title | The plan document exists or a task has been claimed, and not every task is closed. |
+| Planning | A bar that fills one slot for each task made, `0%`, the ref alone, then `▸ planning` and `3 tasks so far` | The run's issue and some tasks exist, but the plan document is missing or still says `- Breakdown: pending`, and no task has started, so the total isn't known. |
+| Executing | The full bar, `▸ now 3/5`, and the task's title | The plan document exists with no `- Breakdown: pending` line, or a task has been claimed, and not every task is closed. |
 | Finished | A green bar and `✓ 5/5 done` | Every task is closed. |
 | Unavailable | `fathom unavailable: <reason>` | `bd` failed or printed something the band can't read, in a repository that has a `.beads/` folder, and there is no checklist for the ref. Also a file at `.fathom/tasks/<ref>.md` that isn't a Fathom checklist. It never shows zeros in its place. |
 
@@ -155,7 +155,7 @@ Beads doesn't have it. Fathom creates its epic with the bare ref as the title, a
 
 Three of the four plans I read in my own repository have that heading. Fathom's conventions require it on the plan's first line since fathom 2.7.3, but a plan written before that may lack it, and the band can find no title:
 
-- **While Fathom is making the tasks.** The plan document is written after the last task, so the band shows the ref alone until then.
+- **While Fathom is making the tasks.** The band shows the ref alone until the breakdown finishes.
 - **A plan whose heading has no title.** The fourth plan I read had `# PHA-186 plan`. The band shows the ref alone for it.
 - **A heading for another issue.** If the heading's ref isn't the plan's own `Ref`, the band ignores it.
 

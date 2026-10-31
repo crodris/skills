@@ -11,7 +11,7 @@ Adapter files implement each one against one tracker's tools.
 | Operation | Purpose |
 | --- | --- |
 | `getIssue(ref)` | Fetch one issue's title, description, type or labels, URL, native id, current state, and existing children. |
-| `listSubIssues(ref)` | List an issue's existing child issues, each with id, title, and state. |
+| `listSubIssues(ref)` | List an issue's existing child issues, each with the ref `createSubIssue` returns, title, and state. |
 | `listDestinations()` | List where a new top-level issue can be created (Asana projects, Linear teams), each as a destination value paired with a display name. |
 | `resolveDestination(hint?)` | Turn a hint, or the profile's default destination when no hint is given, into one destination value; return null when the result is ambiguous. |
 | `createIssue(title, description, type, destination)` | Create a top-level issue in the destination; return its ref and URL. |
@@ -133,9 +133,9 @@ A review recorded after an abandoned one, for the same issue or bundle, replaces
 
 ## Runtime resolution
 
-Decide which tracker owns a reference as follows.
-- A reference shaped like `ABC-123`, a short uppercase prefix, a dash, and digits, is Linear.
-- An Asana URL or a bare numeric GID is Asana.
+Decide which tracker owns a reference by the first rule that matches.
+- An Asana URL, a bare numeric GID, or a ref with the prefix `asana`, as in `feat/asana-482913-add-login`, is Asana.
+- A reference shaped like `ABC-123`, a short prefix, a dash, and digits, is Linear, with the prefix uppercase in a key and lowercase in a branch name, as in `feat/onc-5-add-webhooks`.
 - When the shape is unclear and exactly one tracker MCP is connected, use that tracker.
 - When both are connected, ask the user once which tracker they mean.
 - When neither is connected, stop and name both supported trackers, Asana and Linear, telling the user to connect one.
