@@ -35,7 +35,7 @@ Shipping covers these commands:
 
 - Fetching, committing, and pushing the shipping branch.
 - Creating and removing the worktrees that `ship` case 1, `babysit` Start, and `settle-branch.sh` make.
-- The worktree removal and the local and remote branch deletion that `cleanup.sh` does.
+- The worktree removal, the base fast-forward, and the branch deletion that `cleanup.sh` does.
 - Opening, reading, commenting on, editing, and merging the run's own pull request.
 - Resolving the run's review threads, polling its pull request, and rerunning its checks.
 - Reading the repository's other pull requests, and never changing one.

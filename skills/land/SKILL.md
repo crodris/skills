@@ -1,7 +1,7 @@
 ---
 name: land
 description: Merges a pull request that babysit reported ready, after a merge gate, with the repository's merge method, then watches the release run and cleans up what the ship run created. Read by ship in merge mode; use when the user asks to land a ready pull request.
-version: 3.2.0
+version: 3.2.1
 ---
 
 # Land
@@ -79,11 +79,11 @@ Never push to `base` while a release may still be running.
 ## Cleanup
 
 Run cleanup.sh after the merge on every path, including after a failed or unsettled release, from a checkout other than the worktree ship created, with `bash <this skill's directory>/cleanup.sh <n> <branch> "$base" --repo <owner/name>`, adding `--worktree <path>` when ship created one.
-It removes the worktree ship created, and it deletes the local and remote branch after checking that each is at the merged head, keeping a local branch another worktree has checked out, as the Worktrees section of `../ship/boundary.md` says.
+It removes the worktree ship created, and it deletes the local and remote branch after checking that each is at the merged head, keeping a local branch a worktree has checked out, as the Worktrees section of `../ship/boundary.md` says.
 Exit 3 prints a reason.
 Report it, and say which of worktree removal, base fast-forward, local branch delete, and remote branch delete ran before it.
-When `post-merge` names a command, run that command only after cleanup.sh exits 0, from the checkout cleanup.sh ran in, in addition to cleanup.sh.
-When cleanup.sh exits nonzero, report `post-merge` as skipped and why.
+When `post-merge` names a command, run that command only after cleanup.sh exits 0, from the checkout its `post-merge checkout:` line names.
+When cleanup.sh exits nonzero or prints no such line, report `post-merge` as skipped and why.
 Report a nonzero exit from that command in the cleanup result line.
 
 ## Result

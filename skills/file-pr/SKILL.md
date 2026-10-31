@@ -1,7 +1,7 @@
 ---
 name: file-pr
 description: Opens or updates the pull request for a pushed branch, with the title, body, and secrets check that ship and execute share. Use when the user asks to open, file, or create a pull request for the current branch.
-version: 3.2.0
+version: 3.2.1
 ---
 
 # File a pull request

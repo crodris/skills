@@ -29,7 +29,7 @@ skills/file-pr/SKILL.md 805
 skills/frontend-design-pipeline/directions.md 686
 skills/frontend-design-pipeline/SKILL.md 655
 skills/html-comms/SKILL.md 687
-skills/land/SKILL.md 1190
+skills/land/SKILL.md 1193
 skills/prove/drive.md 345
 skills/prove/SKILL.md 853
 skills/review-loop/lanes.md 339

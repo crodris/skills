@@ -1,7 +1,7 @@
 ---
 name: review-loop
 description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass; use when the user asks for one review-and-fix pass on the current pull request.
-version: 3.2.0
+version: 3.2.1
 ---
 
 # Review loop
