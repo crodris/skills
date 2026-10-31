@@ -273,6 +273,7 @@ Re-invoking on the same issue resumes it.
 Guards see what already exists and skip it.
 
 When the issue's branch already exists and the base branch has moved on, execute updates the branch from the base before it implements anything, and says so.
+When the branch is on your remote, the run fast-forwards to it first, and it stops and names both commits when the two have diverged.
 A conflict in the issue's own `.beads/<ref>.jsonl` resolves automatically.
 Any other conflict holds the run with the merge or rebase paused where git stopped it, and the report lists each conflicting file.
 Resolve the files, run `git add` on each one, and invoke execute again.
