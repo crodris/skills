@@ -6,7 +6,7 @@ skills/execute/agents.md 309
 skills/execute/agents/claude-code.md 531
 skills/execute/agents/kiro.md 214
 skills/execute/approval.md 712
-skills/execute/conventions.md 1365
+skills/execute/conventions.md 1366
 skills/execute/fan-out.md 1130
 skills/execute/first-run.md 1087
 skills/execute/forges.md 1393
@@ -14,14 +14,14 @@ skills/execute/forges/generic-git.md 359
 skills/execute/forges/github.md 558
 skills/execute/forges/TEMPLATE.md 1016
 skills/execute/memory.md 627
-skills/execute/memory/beads.md 1223
+skills/execute/memory/beads.md 1224
 skills/execute/memory/checklist.md 621
 skills/execute/progress.md 440
 skills/execute/README.md 7999
-skills/execute/resume.md 1106
+skills/execute/resume.md 1277
 skills/execute/SKILL.md 2611
 skills/execute/stack.md 2421
-skills/execute/trackers.md 2044
+skills/execute/trackers.md 2062
 skills/execute/trackers/asana.md 847
 skills/execute/trackers/linear.md 644
 skills/execute/trackers/merge-closer.md 2728

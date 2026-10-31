@@ -34,6 +34,7 @@ Name the task in the body as a `Task: <id>` line, with the id the memory backend
 At breakdown, write a plan for the issue at `.fathom/plans/<ISSUE-REF>.md`, and commit it before the first tracker write and again with the breakdown.
 It carries structure a resumed run reads back, such as the branch, the review ids, and a stack's bundles, and never task status, which lives only in the memory backend.
 Update it when something material changes.
+Keep every title in it on one line.
 
 Include these sections:
 
@@ -43,7 +44,7 @@ Include these sections:
 - **Issue description.** What the issue asks for, in your own words.
 - **Codebase context.** The files and patterns this work touches, with paths.
 - **Implementation approach.** How the change will be made, and what is out of scope.
-- **Tasks.** The planned units of work in planned order, one line each: `- Unit <n>: <title> (deps: <unit numbers>) -> sub-issue: pending`, leaving out `(deps: ...)` for a unit with none, and keeping the title on one line.
+- **Tasks.** The planned units of work in planned order, one line each: `- Unit <n>: <title> (deps: <unit numbers>) -> sub-issue: pending`, leaving out `(deps: ...)` for a unit with none.
   Replace `pending` with the sub-issue's ref as soon as it exists, using the ref `listSubIssues` or `createSubIssue` returned, since that ref is what matches a unit to its child and its task.
 - **Bundles.** Only for an issue split into a stack.
   Write it when the split is confirmed, one line per bundle in stack order: `- Bundle <k>/<N>: <branch> - <sub-issue refs, comma separated>`.

@@ -19,6 +19,18 @@ Step 7 found that the issue branch already exists.
 - When the base branch has moved on since, bring the branch up to date before implementing, and report that you did.
 - When the update stops on a conflict, follow Finishing a base update below.
 
+## Interrupted branch
+
+Step 7 named a branch that does not exist for an issue with children, so an earlier run on another machine or with another slug may have stopped mid-breakdown.
+1. For each of `feat`, `fix`, `chore`, and `docs`, run `git ls-remote --heads origin "refs/heads/<prefix>/<ref>-*"`, with the ref cased as the tracker adapter says.
+   Hold on a failed call, since a failed lookup does not show that no branch exists.
+2. Drop any name with a character outside `A-Za-z0-9._/-`, and report it.
+3. Fetch each name left with `git fetch origin "+refs/heads/<name>:refs/remotes/origin/<name>"`.
+   Keep it only when `git show "origin/<name>:.fathom/plans/<ISSUE-REF>.md"` carries `- Breakdown: pending` and a `- Branch:` line equal to the name.
+4. With no name left, return to step 7, which creates the branch.
+   With several, ask the user which to use.
+5. With one, run `git switch -- "<name>"` when a local branch has that name, and `git switch -c "<name>" --track "origin/<name>"` otherwise, then go back to the start of step 7.
+
 ## Finishing a base update
 
 1. When `git ls-files -u` lists this issue's beads file `.beads/<ISSUE-REF>.jsonl`, resolve that file first as `memory/beads.md` says, even when other files conflict too.
@@ -61,7 +73,7 @@ Step 8 found `- Breakdown: pending`, so an earlier run stopped between committin
 - For each `pending` unit in planned order, take the first child that no `- Unit` line names and whose title is exactly the unit's, and write its ref on that line.
 - When a child still has no `- Unit` line, hold, naming it, and create nothing, since it may be a renamed child of a `pending` unit.
   Ask the user to write its ref on the right unit line, or to remove the child.
-- Go on from the `listTasks` bullet of step 8, write a new sub-issue's description from the plan document, and treat a parent edge that already exists as done.
+- Go on from the `listTasks` bullet of step 8, write the description of a new sub-issue or task from the plan document, and treat a parent edge that already exists as done.
 
 ## Interrupted finalization
 
