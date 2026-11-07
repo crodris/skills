@@ -2,7 +2,7 @@
 skills/babysit/bots.md 1056
 skills/babysit/per-commit.md 243
 skills/babysit/SKILL.md 1612
-skills/council/SKILL.md 556
+skills/council/SKILL.md 760
 skills/execute/agents.md 309
 skills/execute/agents/claude-code.md 531
 skills/execute/agents/kiro.md 214
