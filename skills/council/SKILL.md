@@ -35,10 +35,11 @@ Outside T3 Code, GPT Sol is not offered.
 
 GPT Sol in the default council is the one exception.
 When Sol fails with a credit, quota, usage-limit, or rate-limit error, or is not offered, Claude Sonnet replaces it.
+When Sol fails for any other reason, start it once more, and Sonnet replaces it if that start also fails.
 Sonnet is the latest Sonnet, such as `claude-sonnet-5-5`, and it gets Sol's brief and stays for the rest of the run.
 Write `replaced, <reason>` in Sol's cell for the round it was replaced in.
 
-Start a member that fails for any other reason once more, Sol included.
+Start any other member that fails once more.
 When it fails again, write `failed` with the reason in its cell, and finish the round with the others.
 When every member fails, stop and report to the user.
 
@@ -75,7 +76,7 @@ Rounds: 2
 ```
 
 If a member gives no score, write `no score`, and do not invent one.
-Write `not seated` for a round before a replacement joined.
+Write `not seated` for a round in which a member took no part, such as Sonnet's rounds before it replaced Sol and Sol's rounds after.
 When Sol is replaced before round 1, list only the Sonnet row, and give the reason above the table.
 On a later round, replace the `## Council review` section instead of adding a second one.
 If the PR is open, edit the description, and do not post a comment for this.
