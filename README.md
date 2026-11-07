@@ -81,8 +81,9 @@ To move from an old name, run `npx skills@latest remove my-voice -g` (or `npx sk
 
 ### council (v1.0.0)
 
-`council` sends the same review or feedback request to three delegates on high reasoning effort, Claude Opus, Claude Fable, and GPT Sol, and reports their findings and scores.
-When GPT Sol is out of credits or rate limited, Claude Sonnet takes its seat for the rest of the run.
+`council` sends the same review or feedback request to three members (Claude Opus, Claude Fable, and GPT Sol) on high reasoning effort, and reports their findings and scores.
+It runs only when you ask for a council.
+When GPT Sol is out of credits, rate limited, or not offered, Claude Sonnet replaces it for the rest of the run.
 It runs best in T3 Code, which starts delegates on both Claude and Codex.
 
 ### frontend-design-pipeline (v1.3.1)
@@ -149,7 +150,6 @@ Ryan Uesato built the `fathom-progress` mod in `mods/fathom-progress/`.
 
 Some rules are adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including the merge-danger line, the summary visuals, and the before-and-after evidence in `file-pr`'s pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
 Ship's hold mode, CI, and pull request title and body rules, now in `babysit` and `file-pr`, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
-The ship family's split into small skills, `review-loop`'s finding ledger, round budget, nit relabel rule, and diff-size check, `babysit`'s auto-merge and merge-queue release, `file-pr`'s secrets check, `land`'s proof-coverage gate item, and `ship`'s list of decisions made on the user's behalf are adapted from Theo Browne's tstack (MIT).
-The `council` skill is adapted from tstack's council skill.
+The ship family's split into small skills, `review-loop`'s finding ledger, round budget, nit relabel rule, and diff-size check, `babysit`'s auto-merge and merge-queue release, `file-pr`'s secrets check, `land`'s proof-coverage gate item, and `ship`'s list of decisions made on the user's behalf are adapted from Theo Browne's tstack (MIT), and so is the `council` skill.
 `html-comms` is adapted from Theo Browne's html-communication, with its chart heuristic from [ruesato/agent-skill-floreo](https://github.com/ruesato/agent-skill-floreo) (MIT).
 The `rewrite` skill's floor rows for arguing with no one, re-explained context, dramatic closers, and the document-describing half of meta commentary, and rewrite mode's no-new-facts rule, are adapted from Siqi Chen's (blader) humanizer (MIT).
