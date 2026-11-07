@@ -1,6 +1,6 @@
 ---
 name: council
-description: This skill should be used when the user asks for a council, such as "council", "council review", "ask the council", or "/council". Sends the request to three members (Claude Opus, Claude Fable, and GPT Sol) on high reasoning effort, and in the default council replaces GPT Sol with Claude Sonnet when Sol is out of credits, rate limited, or not offered. A message that only mentions a council, its results, or this skill, such as a request to edit it, is not a request for one.
+description: This skill should be used when the user asks for a council, such as "council", "council review", "ask the council", or "/council". Sends the request to three members (Claude Opus, Claude Fable, and GPT Sol) on high reasoning effort, and in the default council replaces GPT Sol with Claude Sonnet when Sol is out of credits, rate limited, not offered, or fails twice. A message that only mentions a council, its results, or this skill, such as a request to edit it, is not a request for one.
 version: 1.0.0
 ---
 
@@ -39,7 +39,7 @@ When Sol fails for any other reason, start it once more, and Sonnet replaces it 
 Sonnet is the latest Sonnet, such as `claude-sonnet-5-5`, and it gets Sol's brief and stays for the rest of the run.
 Write `replaced, <reason>` in Sol's cell for the round it was replaced in.
 
-Start any other member that fails once more.
+Start any other member that fails once more, including a GPT Sol the user named.
 When it fails again, write `failed` with the reason in its cell, and finish the round with the others.
 When every member fails, stop and report to the user.
 
@@ -87,8 +87,9 @@ If there is no PR, put the same results in the final reply only.
 If you agree with the recommendations, make the changes and request a fresh review.
 In a code review, a member is satisfied when it scores 9/10 or higher and reports no finding above minor.
 When the user asks for 10/10 from every member or from named members, those members need 10/10.
-In a review without a score, a member is satisfied when it reports no finding above nit.
+When a review asks for no score, or a member gives none, the member is satisfied when it reports no finding above nit.
 Continue until every member that reported in the latest round is satisfied.
 After round 3, ask the user before starting another round.
 
-Fix only findings inside the original request, and list the rest, and any minor findings left when the council is satisfied, as follow-ups.
+Fix only findings inside the original request.
+List the rest, and any minor findings left when the rounds end, as follow-ups.

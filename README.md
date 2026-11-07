@@ -83,7 +83,7 @@ To move from an old name, run `npx skills@latest remove my-voice -g` (or `npx sk
 
 `council` sends the same review or feedback request to three members (Claude Opus, Claude Fable, and GPT Sol) on high reasoning effort, and reports their findings and scores.
 It runs only when you ask for a council.
-When GPT Sol is out of credits, rate limited, or not offered, Claude Sonnet replaces it for the rest of the run in the default council.
+When GPT Sol is out of credits, rate limited, not offered, or fails twice, Claude Sonnet replaces it for the rest of the run in the default council.
 It runs best in T3 Code, which starts members on both Claude and Codex.
 
 ### frontend-design-pipeline (v1.3.1)
