@@ -84,8 +84,10 @@ If there is no PR, put the same results in the final reply only.
 ## Iterating
 
 If you agree with the recommendations, make the changes and request a fresh review.
-A member is satisfied when it reports no finding above nit.
+In a code review, a member is satisfied when it scores 9/10 or higher and reports no finding above minor.
+When the user asks for 10/10 from every member or from named members, those members need 10/10.
+In a review without a score, a member is satisfied when it reports no finding above nit.
 Continue until every member that reported in the latest round is satisfied.
 After round 3, ask the user before starting another round.
 
-Fix only findings inside the original request, and list the rest as follow-ups.
+Fix only findings inside the original request, and list the rest, and any minor findings left when the council is satisfied, as follow-ups.
