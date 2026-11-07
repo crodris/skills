@@ -1,6 +1,6 @@
 ---
 name: council
-description: This skill should be used when the user asks for a council, such as "council", "council review", "ask the council", or "/council". Sends the request to three members (Claude Opus, Claude Fable, and GPT Sol) on high reasoning effort, and replaces GPT Sol with Claude Sonnet when Sol is out of credits, rate limited, or not offered. A message that only mentions a council, its results, or this skill, such as a request to edit it, is not a request for one.
+description: This skill should be used when the user asks for a council, such as "council", "council review", "ask the council", or "/council". Sends the request to three members (Claude Opus, Claude Fable, and GPT Sol) on high reasoning effort, and in the default council replaces GPT Sol with Claude Sonnet when Sol is out of credits, rate limited, or not offered. A message that only mentions a council, its results, or this skill, such as a request to edit it, is not a request for one.
 version: 1.0.0
 ---
 
@@ -36,9 +36,11 @@ Outside T3 Code, GPT Sol is not offered.
 GPT Sol in the default council is the one exception.
 When Sol fails with a credit, quota, usage-limit, or rate-limit error, or is not offered, Claude Sonnet replaces it.
 Sonnet is the latest Sonnet, such as `claude-sonnet-5-5`, and it gets Sol's brief and stays for the rest of the run.
+Write `replaced, <reason>` in Sol's cell for the round it was replaced in.
 
-Start any other failed member once more.
+Start a member that fails for any other reason once more, Sol included.
 When it fails again, write `failed` with the reason in its cell, and finish the round with the others.
+When every member fails, stop and report to the user.
 
 ## Running a round
 
@@ -46,9 +48,10 @@ In T3 Code, call `orchestrator_capabilities` to confirm the models, then `delega
 Elsewhere, start each member with the harness's subagent tool, such as the Agent tool's `model` and `effort` in Claude Code.
 
 Give each member the request and relevant context.
-Say in each brief that the member is one of several reviewers and does not start a council.
+Say in each brief that the member is one of several members and does not start a council.
 For review or feedback, say in each brief that the work is read-only: no edits, commits, pushes, or posts.
-For a code review, ask each member for a score out of 10 and a severity for each finding: critical, major, minor, or nit.
+For review or feedback, also ask for a severity for each finding: critical, major, minor, or nit.
+For a code review, also ask each member for a score out of 10.
 Collect the responses and summarize the useful findings, disagreements, and recommended next steps.
 
 One round is one review by each member, including members marked `failed`.
@@ -72,7 +75,7 @@ Rounds: 2
 ```
 
 If a member gives no score, write `no score`, and do not invent one.
-Write `not seated` for a round in which a member took no part.
+Write `not seated` for a round before a replacement joined.
 When Sol is replaced before round 1, list only the Sonnet row, and give the reason above the table.
 On a later round, replace the `## Council review` section instead of adding a second one.
 If the PR is open, edit the description, and do not post a comment for this.
