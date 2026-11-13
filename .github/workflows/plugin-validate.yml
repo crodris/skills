@@ -44,7 +44,7 @@ jobs:
       # change in this repo. Bump deliberately. Validation and mod tests need
       # no auth.
       - name: Install Claude Code
-        run: npm i -g @anthropic-ai/claude-code@2.1.310
+        run: npm i -g @anthropic-ai/claude-code@2.1.323
 
       - name: Validate the marketplace
         run: claude plugin validate --strict .
