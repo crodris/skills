@@ -6,11 +6,14 @@
 # SKILL.md version into its README heading, and checks that every skill
 # directory is claimed by exactly one plugin entry.
 #
-# The repo hosts several plugins out of one marketplace root (source "./"),
-# so each entry scopes itself with a "skills" array instead of relying on the
-# default skills/ scan. There is deliberately no .claude-plugin/plugin.json:
-# with source "./" a single root manifest would apply to every entry and its
-# version would silently win over each entry's own.
+# Several plugins share one source folder (source "./skills"), so each entry
+# scopes itself with a "skills" array, whose paths are relative to its source.
+# The shared folder is skills/ and not the repo root, because the claude.ai
+# marketplace sync rejects a plugin folder that holds another plugin's
+# .claude-plugin/plugin.json, such as a mod's under mods/. There is
+# deliberately no skills/.claude-plugin/plugin.json: a manifest in a shared
+# source folder would apply to every entry and its version would silently win
+# over each entry's own.
 #
 # Compatible with Bash 3.2 (macOS default).
 # Requires python3 for JSON parsing and the file edits (ships with macOS).
@@ -102,7 +105,7 @@ for plugin in data.get('plugins', []):
                 open(manifest, 'w').write(text[:found.start(2)] + version + text[found.end(2):])
                 print('synced\t%s\t%s' % (os.path.relpath(manifest, repo_root), version))
     for path in plugin.get('skills', []) or []:
-        skill_md = os.path.join(repo_root, os.path.normpath(path.lstrip('./')), 'SKILL.md')
+        skill_md = os.path.join(repo_root, os.path.normpath(os.path.join(source if isinstance(source, str) else '.', path)), 'SKILL.md')
         if not os.path.isfile(skill_md):
             continue
         text = open(skill_md).read()
@@ -149,9 +152,9 @@ fi
 
 # --- Check every skill directory is claimed by exactly one plugin entry ---
 #
-# An unclaimed skill installs for nobody: entries that scope themselves with
-# "skills" replace the default skills/ scan, so a new directory reaches users
-# only once some entry lists it.
+# An unclaimed skill installs for nobody: each entry's "skills" array is the
+# only way a skill reaches users, so a new directory reaches users only once
+# some entry lists it.
 
 claim_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" "$README" <<'PY'
 import json, os, re, sys
@@ -172,8 +175,9 @@ if m:
 claims = {}
 for plugin in data.get('plugins', []):
     name = plugin.get('name', '?')
+    source = plugin.get('source')
     for path in plugin.get('skills', []) or []:
-        claims.setdefault(os.path.normpath(path.lstrip('./')), []).append(name)
+        claims.setdefault(os.path.normpath(os.path.join(source if isinstance(source, str) else '.', path)), []).append(name)
 
 skills_dir = os.path.join(repo_root, 'skills')
 on_disk = set()

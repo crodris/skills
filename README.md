@@ -27,14 +27,14 @@ On Claude Code, Fathom and ship also install as plugins, and so does the fathom-
 
 ## Plugins
 
-### fathom (v3.1.0)
+### fathom (v3.1.1)
 
 `execute` takes a tracker issue through breakdown, implementation, tests, commits, and an open review, and resumes where the last run stopped.
 `scaffold` turns requirements into a main issue with linked sub-issues, then offers to hand off to `execute`.
 They need an Asana or Linear MCP, and the GitHub CLI for reviews on GitHub.
 The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacked reviews, and troubleshooting.
 
-### ship (v3.3.1)
+### ship (v3.3.2)
 
 Six skills that carry the current branch to a green pull request, and on to a merged release when you ask to merge.
 Each one ends with a result line that the next one reads.
