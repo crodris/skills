@@ -22,6 +22,7 @@ type Surface = 'terminal' | 'desktop'
 
 const PROPS = {
   hasSurvey: false,
+  isCollapsed: false,
   isWorking: false,
   maxRows: 4,
   bodyColumns: 80,
@@ -430,12 +431,14 @@ test('terminal starting and unavailable say so in one dim line, without the brac
   await desktopDown.ui.unmount()
 })
 
-test('idle draws nothing, so the event passes on and beads-status can draw', async ($, on) => {
+test('idle draws nothing and passes the event on to what is beneath', async ($, on) => {
   const { show, wasNull } = band($, on)
 
-  // With nothing beneath this mod to answer, the kit refuses to mount: the band yielded.
-  await expect(show({ kind: 'idle' }, 'terminal')).rejects.toThrow(/no implementation for ui\.render/)
+  // The band yielded, so what the kit draws is Claude Code's own node beneath it.
+  const { ui } = await show({ kind: 'idle' }, 'terminal')
+  expect(await ui.keepsBeneath()).toBe(true)
   expect(wasNull()).toBe(true)
+  await ui.unmount()
 })
 
 test('a narrower terminal shortens the bar, and a row with no room for one shows the count instead', async ($, on) => {

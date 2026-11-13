@@ -13,6 +13,7 @@ declare function setTimeout(handler: () => void, ms?: number): unknown
 
 const PROPS = {
   hasSurvey: false,
+  isCollapsed: false,
   isWorking: false,
   maxRows: 4,
   bodyColumns: 80,
@@ -20,7 +21,7 @@ const PROPS = {
   view: {},
 }
 
-type Node = string | { children?: readonly Node[] }
+type Node = string | { part?: { plugin: string }; children?: readonly Node[] }
 const textOf = (node: Node): string => (typeof node === 'string' ? node : (node.children ?? []).map(textOf).join(''))
 
 // The engine beneath the plugin. The clock starts at `now`: a scaffold start within three
@@ -52,12 +53,15 @@ function engine(on: On, now: number) {
   return clock
 }
 
-// The band's rows: none when the plugin passes and the empty box beneath it is what draws.
-async function rows($: Engine): Promise<string[]> {
+// The band's rows, or null when the plugin passes. When more than one plugin draws a row, the
+// kit draws the band as a column of parts, one per plugin. Here the test's empty box is always
+// one, so this mod has drawn only when a part is stamped with its name.
+async function rows($: Engine): Promise<string[] | null> {
   const ui = await $.ui.mount({ plugin: 'fathom-progress', surface: 'terminal', component: 'AbovePrompt', requestId: 'r', props: PROPS })
   const tree = (await ui.drawn()) as unknown as { children?: Node[] } | null
   await ui.unmount()
-  return (tree?.children ?? []).map(textOf)
+  const own = tree?.children?.find(node => typeof node !== 'string' && node.part?.plugin === 'fathom-progress')
+  return typeof own === 'object' ? (own.children ?? []).map(textOf) : null
 }
 
 // The hooks hand an event to the band without waiting for it, so Claude is not held up: the
@@ -66,19 +70,19 @@ const settle = async () => {
   for (let i = 0; i < 5; i++) await new Promise(resolve => setTimeout(() => resolve(undefined), 0))
 }
 
-async function band($: Engine): Promise<string[]> {
+async function band($: Engine): Promise<string[] | null> {
   await settle()
   return rows($)
 }
 
 const call = ($: Engine, input: Record<string, unknown>) => $.tool.call(input as never)
-const label = async ($: Engine) => (await band($))[0]
+const label = async ($: Engine) => (await band($))?.[0]
 const complete = ($: Engine) => $.turn.complete({ turnId: 't1', answer: 'ok', durationMs: 1, isAborted: false, reason: 'answer' })
 const create = ($: Engine, extra: Record<string, unknown> = {}) => call($, { tool: `${LINEAR}save_issue`, title: 'Issue', team: 'T', ...extra })
 
 test('a scaffold started by its skill moves through the phases of the run and ends done', async ($, on) => {
   engine(on, 10_000)
-  expect(await band($)).toEqual([])
+  expect(await band($)).toBeNull()
 
   await $.skill.prompt({ skill: 'fathom:scaffold', text: 'scaffold' })
   expect(await band($)).toEqual(['Scaffold · Checking the tracker (0s)', '○ Resolve  Draft  Create  Done'])

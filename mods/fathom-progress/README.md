@@ -366,7 +366,7 @@ What I learned while building this, on Claude Code 2.1.295 and 2.1.296:
 
 ### Tests, Validation and Type-Check
 
-Run the tests with the engine's own runner.
+Run the tests with the engine's own runner. The tests and the validation below need Claude Code 2.1.323 or later, the version CI installs.
 
 ```sh
 claude plugin test mods/fathom-progress
@@ -382,7 +382,7 @@ Validate the manifest and hooks.
 claude plugin validate --strict mods/fathom-progress
 ```
 
-This passes. On Claude Code 2.1.310 it reports four notes of "gating hook without .catch", for `prompt.submit` and the three `tool.call` hooks. They are notes, not errors.
+This passes. On Claude Code 2.1.323 it reports four notes of "gating hook without .catch", for `prompt.submit` and the three `tool.call` hooks. They are notes, not errors.
 
 Type-check with TypeScript. This repository has no `package.json`, so use any TypeScript install you have.
 
