@@ -27,7 +27,7 @@ fails() {
 }
 
 marketplace() {
-  printf -- '{"plugins": [{"name": "kit", "version": "%s", "source": "./", "skills": ["./skills/build"]}, {"name": "band", "version": "%s", "source": "./mods/band"}]}\n' "$1" "${2:-0.3.0}" > "$dir/.claude-plugin/marketplace.json"
+  printf -- '{"plugins": [{"name": "kit", "version": "%s", "source": "./skills", "skills": ["./build"]}, {"name": "band", "version": "%s", "source": "./mods/band"}]}\n' "$1" "${2:-0.3.0}" > "$dir/.claude-plugin/marketplace.json"
 }
 
 manifest() {

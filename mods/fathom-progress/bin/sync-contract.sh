@@ -53,12 +53,17 @@ beads = [s for s in spans(read('skills', 'execute', 'memory', 'beads.md')) if s.
 if not beads:
     die('memory/beads.md states no bd create commands')
 
+def claims(plugin):
+    source = plugin.get('source')
+    base = source if isinstance(source, str) else '.'
+    return [os.path.normpath(os.path.join(base, path)) for path in plugin.get('skills') or []]
+
 marketplace = json.load(open(os.path.join(root, '.claude-plugin', 'marketplace.json')))
 skills = []
 for wanted in ('execute', 'scaffold'):
-    owners = [p for p in marketplace.get('plugins', []) if './skills/%s' % wanted in (p.get('skills') or [])]
+    owners = [p for p in marketplace.get('plugins', []) if os.path.join('skills', wanted) in claims(p)]
     if len(owners) != 1:
-        die('no single plugin claims ./skills/%s' % wanted)
+        die('no single plugin claims skills/%s' % wanted)
     name = re.search(r'^name:[ \t]*(\S+)', read('skills', wanted, 'SKILL.md'), re.M)
     if not name:
         die('skills/%s/SKILL.md has no name' % wanted)

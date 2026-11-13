@@ -651,7 +651,7 @@ Or point the agent at your working tree with the symlinks shown under [Install](
 Before trusting a test run, confirm which copy is live by comparing line counts:
 
 ```bash
-wc -l ~/.claude/plugins/cache/<marketplace>/fathom/*/skills/execute/SKILL.md \
+wc -l ~/.claude/plugins/cache/<marketplace>/fathom/*/execute/SKILL.md \
       skills/execute/SKILL.md
 ```
 

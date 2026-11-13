@@ -10,14 +10,14 @@
   "plugins": [
     {
       "name": "fathom",
-      "source": "./",
+      "source": "./skills",
       "strict": false,
       "skills": [
-        "./skills/execute",
-        "./skills/scaffold"
+        "./execute",
+        "./scaffold"
       ],
       "description": "Two agent skills, scaffold and execute, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter. Works with Asana or Linear, runs on Claude Code and Kiro, tracks tasks in beads or a committed markdown checklist, and resumes from repository state.",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "author": {
         "name": "crodris"
       },
@@ -41,18 +41,18 @@
     },
     {
       "name": "ship",
-      "source": "./",
+      "source": "./skills",
       "strict": false,
       "skills": [
-        "./skills/ship",
-        "./skills/file-pr",
-        "./skills/prove",
-        "./skills/babysit",
-        "./skills/review-loop",
-        "./skills/land"
+        "./ship",
+        "./file-pr",
+        "./prove",
+        "./babysit",
+        "./review-loop",
+        "./land"
       ],
       "description": "Six agent skills that carry the current branch from working tree to merged release: ship calls prove to run the project's own verify gates and commit, file-pr to open the pull request, babysit to run CI, CodeRabbit or Greptile, and review-loop's Standards and Spec subagents on each pass with one batched fix push, and in merge mode land to merge with the repository's merge method, watch the release, and clean up. Plain ship stops at a green pull request. No tracker required.",
-      "version": "3.3.1",
+      "version": "3.3.2",
       "author": {
         "name": "crodris"
       },
