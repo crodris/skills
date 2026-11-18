@@ -132,7 +132,7 @@ fi
 # --- Check every skill directory is claimed by exactly one plugin entry ---
 #
 # An unclaimed skill never reaches the plugin marketplace, so Claude Code
-# cloud sessions, which skip skills.sh installs, cannot load it.
+# cloud sessions, which skip skills.sh installs, cannot install it from there.
 
 claim_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" <<'PY'
 import json, os, sys

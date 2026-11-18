@@ -17,8 +17,8 @@ Upgrading from Fathom 2, delete the old `fathom-shared` directory from your skil
 The ship skills need each other, so take all six: `ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`.
 
 On Claude Code, every skill also installs as a plugin, and so does the fathom-progress mod.
-Claude Code cloud sessions skip the skills.sh install folder, `~/.claude/skills`, so add this marketplace there to use the skills in the cloud.
 Each single-skill plugin below installs as `<name>@crodris`.
+In the terminal, run:
 
 ```text
 /plugin marketplace add crodris/skills
@@ -27,6 +27,9 @@ Each single-skill plugin below installs as `<name>@crodris`.
 /plugin install fathom-progress@crodris
 /plugin install rewrite@crodris
 ```
+
+Claude Code cloud sessions skip the skills.sh install folder, `~/.claude/skills`, and the `/plugin` commands above are for the terminal.
+To use the skills in cloud sessions, open Plugins on claude.ai, choose Add, then Add marketplace, and enter `crodris/skills`.
 
 ## Plugins
 
@@ -101,7 +104,8 @@ When `XDG_CONFIG_HOME` is unset, empty, or not an absolute path, that file is `~
 
 `worktree-setup` makes a new git worktree runnable: it copies the main checkout's untracked env files and installs dependencies.
 It needs Git 2.31 or newer, and the package manager the worktree's lockfile names on `PATH`.
-Install it globally, then add this SessionStart hook to `~/.claude/settings.json` so worktrees created by other tools are covered too.
+Install it globally with skills.sh, then add this SessionStart hook to `~/.claude/settings.json` so worktrees created by other tools are covered too.
+A `worktree-setup@crodris` plugin install does not set up this hook, and the hook does nothing without the skills.sh install.
 The hook expects the global install; a project-scoped install puts the script at `.claude/skills/worktree-setup/setup.sh`, so change the path to match, or the hook does nothing.
 
 ```bash

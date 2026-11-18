@@ -31,7 +31,9 @@ Each skill takes its version from its plugin's entry in `.claude-plugin/marketpl
 CI fails when running it would change a file.
 `git config core.hooksPath bin/hooks` runs it before each commit.
 README headings for plugins keep the form `### <name> (v<version>)`, since the sync finds them by it.
-Every skill needs a plugin entry, since Claude Code cloud sessions skip skills.sh installs and load these skills only through the marketplace, and `bin/sync-versions.sh` fails on a skill no entry claims.
+Every skill needs a plugin entry in `.claude-plugin/marketplace.json`.
+This repository reaches Claude Code cloud sessions through the marketplace, since those sessions skip skills.sh installs.
+`bin/sync-versions.sh` fails on a skill that no entry claims.
 A new skill gets its own entry, named after it, unless it belongs in an existing bundle such as ship.
 
 Every Markdown file in `skills/` has a word budget in `bin/skill-budgets.txt`, and `bin/check-skill-size.sh` fails when a file goes over it or has none.
