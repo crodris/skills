@@ -2,8 +2,9 @@
 # test-sync-versions.sh - run bin/sync-versions.sh in a scratch repository and
 # check that plugin versions reach README headings and claimed SKILL.md
 # frontmatter, that a mod's version reaches its plugin.json, and that a skill
-# with no version line, no frontmatter, or no plugin entry fails. Then run bin/hooks/pre-commit in a
-# scratch git repository and check that it stages only the files the sync wrote.
+# with no version line, no frontmatter, or no plugin entry fails. Then run
+# bin/hooks/pre-commit in a scratch git repository and check that it stages
+# only the files the sync wrote.
 set -euo pipefail
 
 BIN="$(cd "$(dirname "$0")" && pwd)"
