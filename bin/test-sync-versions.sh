@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # test-sync-versions.sh - run bin/sync-versions.sh in a scratch repository and
 # check that plugin versions reach README headings and claimed SKILL.md
-# frontmatter, that a mod's version reaches its plugin.json, that standalone
-# SKILL.md versions reach their README headings, and that a skill with no
-# version line or no frontmatter fails. Then run bin/hooks/pre-commit in a
+# frontmatter, that a mod's version reaches its plugin.json, and that a skill
+# with no version line, no frontmatter, or no plugin entry fails. Then run bin/hooks/pre-commit in a
 # scratch git repository and check that it stages only the files the sync wrote.
 set -euo pipefail
 
@@ -27,7 +26,7 @@ fails() {
 }
 
 marketplace() {
-  printf -- '{"plugins": [{"name": "kit", "version": "%s", "source": "./skills", "skills": ["./build"]}, {"name": "band", "version": "%s", "source": "./mods/band"}]}\n' "$1" "${2:-0.3.0}" > "$dir/.claude-plugin/marketplace.json"
+  printf -- '{"plugins": [{"name": "kit", "version": "%s", "source": "./skills", "skills": ["./build"]}, {"name": "lint", "version": "1.4.2", "source": "./skills", "skills": ["./lint"]}, {"name": "band", "version": "%s", "source": "./mods/band"}]}\n' "$1" "${2:-0.3.0}" > "$dir/.claude-plugin/marketplace.json"
 }
 
 manifest() {
@@ -48,9 +47,7 @@ fixture() {
 
 ### band (v0.2.0)
 
-## Standalone Skills
-
-### lint (v0.9.0)
+### lint (v1.4.2)
 
 ## License
 MD
@@ -69,8 +66,6 @@ fixture
 check "plugin heading takes the marketplace version" README.md '### kit (v2.3.0)'
 check "claimed skill frontmatter takes the plugin version" skills/build/SKILL.md 'version: 2.3.0'
 check "a mod's plugin.json takes the marketplace version" mods/band/.claude-plugin/plugin.json '  "version": "0.3.0",'
-check "standalone heading takes the SKILL.md version" README.md '### lint (v1.4.2)'
-check "standalone frontmatter is left alone" skills/lint/SKILL.md 'version: 1.4.2'
 
 out=$("$dir/bin/sync-versions.sh")
 if [[ $out == *"All versions already up to date."* ]]; then echo "ok: a second run changes nothing"; else echo "FAIL: a second run changed something"; failures=$((failures + 1)); fi
@@ -79,9 +74,11 @@ skill build ''
 fails "a claimed skill with no version line fails" skills/build/SKILL.md
 skill build 'version: 2.3.0\n'
 
-skill lint ''
-fails "a standalone skill with no version line fails" skills/lint/SKILL.md
-skill lint 'version: 1.4.2\n'
+skill orphan 'version: 1.0.0\n'
+got=0
+out=$("$dir/bin/sync-versions.sh" 2>&1) || got=$?
+if [ "$got" = 1 ] && [[ $out == *"skills/orphan is in no plugin entry"* ]]; then echo "ok: a skill no plugin claims fails"; else echo "FAIL: a skill no plugin claims (exit $got)"; failures=$((failures + 1)); fi
+rm -r "$dir/skills/orphan"
 
 printf -- '# build\n' > "$dir/skills/build/SKILL.md"
 fails "a claimed skill with no frontmatter fails" skills/build/SKILL.md
