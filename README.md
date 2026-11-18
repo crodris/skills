@@ -30,6 +30,7 @@ In the terminal, run:
 
 Claude Code cloud sessions skip the skills.sh install folder, `~/.claude/skills`, and the `/plugin` commands above are for the terminal.
 To use the skills in cloud sessions, open Plugins on claude.ai, choose Add, then Add marketplace, and enter `crodris/skills`.
+Then select each plugin you want from that marketplace and add it.
 
 ## Plugins
 
