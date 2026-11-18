@@ -2,9 +2,9 @@
 # sync-versions.sh - marketplace.json is the source of truth for plugin
 # versions; this syncs those versions into README.md, into the SKILL.md
 # frontmatter of each skill the plugin claims, and into the plugin.json of a
-# plugin with its own source folder, syncs each standalone skill's
-# SKILL.md version into its README heading, and checks that every skill
-# directory is claimed by exactly one plugin entry.
+# plugin with its own source folder, and checks that every skill directory is
+# claimed by exactly one plugin entry, so each skill installs from the
+# marketplace, including in Claude Code cloud sessions.
 #
 # Several plugins share one source folder (source "./skills"), so each entry
 # scopes itself with a "skills" array, whose paths are relative to its source.
@@ -75,12 +75,11 @@ for p in data.get('plugins', []):
 # A plugin skill's frontmatter takes its plugin's version from marketplace.json.
 # A plugin with its own source folder, such as a mod under mods/, keeps a
 # plugin.json there, and its "version" takes the marketplace version too.
-# A standalone skill's README heading takes the version from its frontmatter.
 
-skill_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" "$README" <<'PY'
+skill_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" <<'PY'
 import json, os, re, sys
 
-marketplace, repo_root, readme = sys.argv[1], sys.argv[2], sys.argv[3]
+marketplace, repo_root = sys.argv[1], sys.argv[2]
 data = json.load(open(marketplace))
 VERSION = re.compile(r'^version:[ \t]*(\S*)[ \t]*$', re.M)
 
@@ -117,25 +116,6 @@ for plugin in data.get('plugins', []):
             start = fm.start(1) + found.start(1)
             open(skill_md, 'w').write(text[:start] + version + text[fm.start(1) + found.end(1):])
             print('synced\t%s\t%s' % (os.path.relpath(skill_md, repo_root), version))
-
-text = open(readme).read()
-section = re.search(r'^## Standalone Skills\n(.*?)(?=^## |\Z)', text, re.S | re.M)
-if section:
-    body = section.group(1)
-    for name in re.findall(r'^### ([\w-]+) \(v', body, re.M):
-        skill_md = os.path.join(repo_root, 'skills', name, 'SKILL.md')
-        if not os.path.isfile(skill_md):
-            continue
-        fm = frontmatter(open(skill_md).read())
-        found = fm and VERSION.search(fm.group(1))
-        if not found:
-            print('noversion\tskills/%s/SKILL.md' % name)
-            continue
-        body = re.sub(r'^### %s \(v[^)]*\)' % re.escape(name), '### %s (v%s)' % (name, found.group(1)), body, flags=re.M)
-    updated = text[:section.start(1)] + body + text[section.end(1):]
-    if updated != text:
-        open(readme, 'w').write(updated)
-        print('readme')
 PY
 )
 
@@ -143,7 +123,6 @@ if [ -n "$skill_report" ]; then
   while IFS='	' read -r kind path version; do
     case "$kind" in
       synced)    echo "  $path -> version $version"; changed=1 ;;
-      readme)    echo "  README.md: standalone headings synced from SKILL.md"; changed=1 ;;
       noversion) echo "  WARNING: $path has no version: line in its frontmatter"; problems=$((problems + 1)) ;;
       nomanifestversion) echo "  WARNING: $path has no \"version\" field"; problems=$((problems + 1)) ;;
     esac
@@ -152,25 +131,14 @@ fi
 
 # --- Check every skill directory is claimed by exactly one plugin entry ---
 #
-# An unclaimed skill installs for nobody: each entry's "skills" array is the
-# only way a skill reaches users, so a new directory reaches users only once
-# some entry lists it.
+# An unclaimed skill never reaches the plugin marketplace, so Claude Code
+# cloud sessions, which skip skills.sh installs, cannot load it.
 
-claim_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" "$README" <<'PY'
-import json, os, re, sys
+claim_report=$(python3 - "$MARKETPLACE" "$REPO_ROOT" <<'PY'
+import json, os, sys
 
-marketplace, repo_root, readme = sys.argv[1], sys.argv[2], sys.argv[3]
+marketplace, repo_root = sys.argv[1], sys.argv[2]
 data = json.load(open(marketplace))
-
-# A skill no plugin claims is fine when README.md declares it under
-# "## Standalone Skills" (installed via skills.sh, not /plugin install).
-# Anything else unclaimed is a directory that reaches nobody.
-standalone = set()
-text = open(readme).read()
-m = re.search(r'^## Standalone Skills\n(.*?)(?=^## |\Z)', text, re.S | re.M)
-if m:
-    for name in re.findall(r'^### ([\w-]+) \(', m.group(1), re.M):
-        standalone.add(os.path.join('skills', name))
 
 claims = {}
 for plugin in data.get('plugins', []):
@@ -186,7 +154,7 @@ if os.path.isdir(skills_dir):
         if os.path.isfile(os.path.join(skills_dir, entry, 'SKILL.md')):
             on_disk.add(os.path.join('skills', entry))
 
-for path in sorted(on_disk - set(claims) - standalone):
+for path in sorted(on_disk - set(claims)):
     print('unclaimed\t%s' % path)
 for path, owners in sorted(claims.items()):
     if path not in on_disk:
@@ -199,14 +167,14 @@ PY
 if [ -n "$claim_report" ]; then
   while IFS='	' read -r kind path owners; do
     case "$kind" in
-      unclaimed) echo "  WARNING: $path is in no plugin entry's \"skills\" list - it installs for nobody" ;;
+      unclaimed) echo "  WARNING: $path is in no plugin entry's \"skills\" list - add an entry for it to .claude-plugin/marketplace.json" ;;
       missing)   echo "  WARNING: $path is claimed by $owners but has no SKILL.md on disk" ;;
       shared)    echo "  WARNING: $path is claimed by more than one plugin ($owners)" ;;
     esac
     problems=$((problems + 1))
   done <<< "$claim_report"
 else
-  echo "  skills/: every skill is claimed by exactly one plugin or declared standalone in README.md"
+  echo "  skills/: every skill is claimed by exactly one plugin"
 fi
 
 # --- Summary ---

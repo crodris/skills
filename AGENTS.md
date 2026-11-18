@@ -26,12 +26,13 @@ Write one sentence per line, in plain declarative sentences, with one term per c
 Update `README.md` and `skills/execute/README.md` wherever they describe the changed behavior.
 
 Update the version in the same pull request.
-Plugin skills take theirs from `.claude-plugin/marketplace.json`, and standalone skills from their `SKILL.md` frontmatter.
-`bin/sync-versions.sh` copies each plugin version into its README heading and into the `SKILL.md` frontmatter of every skill the plugin claims, and copies each standalone version into its README heading.
+Each skill takes its version from its plugin's entry in `.claude-plugin/marketplace.json`.
+`bin/sync-versions.sh` copies each plugin version into its README heading and into the `SKILL.md` frontmatter of every skill the plugin claims.
 CI fails when running it would change a file.
 `git config core.hooksPath bin/hooks` runs it before each commit.
-README headings for plugins and standalone skills keep the form `### <name> (v<version>)`, since the sync finds them by it.
-A skill that no plugin claims is listed under `## Standalone Skills` in the README.
+README headings for plugins keep the form `### <name> (v<version>)`, since the sync finds them by it.
+Every skill needs a plugin entry, since Claude Code cloud sessions skip skills.sh installs and load these skills only through the marketplace, and `bin/sync-versions.sh` fails on a skill no entry claims.
+A new skill gets its own entry, named after it, unless it belongs in an existing bundle such as ship.
 
 Every Markdown file in `skills/` has a word budget in `bin/skill-budgets.txt`, and `bin/check-skill-size.sh` fails when a file goes over it or has none.
 A trim lowers the budget in the same pull request, and raising one needs a reason in the pull request.

@@ -3,7 +3,7 @@
 [![SkillSpector](https://github.com/crodris/skills/actions/workflows/skillspector.yml/badge.svg)](https://github.com/crodris/skills/actions/workflows/skillspector.yml)
 
 Agent skills I use every day, for taking work from a tracker issue to a merged pull request.
-They run on any agent that skills.sh supports, and Fathom and ship also install as Claude Code plugins.
+They run on any agent that skills.sh supports, and each one also installs as a Claude Code plugin.
 
 ## Install
 
@@ -16,13 +16,16 @@ The installer lists every skill, so take only the ones you want.
 Upgrading from Fathom 2, delete the old `fathom-shared` directory from your skills folder, since its files now live in `execute`.
 The ship skills need each other, so take all six: `ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`.
 
-On Claude Code, Fathom and ship also install as plugins, and so does the fathom-progress mod:
+On Claude Code, every skill also installs as a plugin, and so does the fathom-progress mod.
+Claude Code cloud sessions skip the skills.sh install folder, `~/.claude/skills`, so add this marketplace there to use the skills in the cloud.
+Each single-skill plugin below installs as `<name>@crodris`.
 
 ```text
 /plugin marketplace add crodris/skills
 /plugin install fathom@crodris
 /plugin install ship@crodris
 /plugin install fathom-progress@crodris
+/plugin install rewrite@crodris
 ```
 
 ## Plugins
@@ -61,10 +64,6 @@ The skills need a git remote, an authenticated GitHub CLI, and `jq`.
 Ryan Uesato built `fathom-progress`, a Claude Code mod that draws a progress band above the prompt while `execute` or `scaffold` runs.
 It reads the run's tasks from beads or the committed checklist, and never changes them.
 Its [README](./mods/fathom-progress/README.md) covers setup, what the band shows, and working on the mod.
-
-## Standalone Skills
-
-These install through skills.sh only.
 
 ### review (v1.2.1)
 
