@@ -175,11 +175,11 @@ check "a separate-git-dir worktree still installs" "$(run "$tmp/sep-wt" | tail -
 check "npm's new lockfile does not trigger another install" "$(run "$tmp/sep-wt"; npm_installs)" "exit=0
 1"
 
-# A .worktreeinclude lists more untracked files to copy, with the same safety checks.
+# A .worktreeinclude lists more gitignored files to copy, with the same safety checks.
 inc="$tmp/inc"
 mkdir -p "$inc/art" "$inc/other" "$tmp/outside2"
 git -C "$inc" init -q -b main
-printf '%s\n' art other '.env*' > "$inc/.gitignore"
+printf '%s\n' art other '.env*' '*.dat' > "$inc/.gitignore"
 git -C "$inc" add -A && git -C "$inc" commit -qm init
 echo "a" > "$inc/art/a.jpg"
 echo "b" > "$inc/art/b.jpg"
@@ -187,11 +187,13 @@ echo "o" > "$inc/other/o.jpg"
 echo "PROD=1" > "$inc/art/.env.prod"
 echo "LOCAL=1" > "$inc/.env.local"
 echo "BAK=1" > "$inc/art/.env.local.bak"
+echo "magic" > "$inc/:!top.dat"
+echo "dash" > "$inc/-dash.dat"
 mkdir -p "$inc/docs" && echo "draft" > "$inc/docs/draft.md"
 git -C "$inc" worktree add -q "$inc/art/nested" -b inc-nested
 git -C "$inc" worktree add -q "$tmp/inc-none" -b inc-none
 check "without a .worktreeinclude only env files copy" "$(run "$tmp/inc-none" >/dev/null; has "$tmp/inc-none/art/a.jpg")$(has "$tmp/inc-none/.env.local")" "skippedcopied"
-printf '%s\n' '# portraits the app needs' 'art/' 'docs/' > "$inc/.worktreeinclude"
+printf '%s\n' '# portraits the app needs' 'art/' 'docs/' '*.dat' > "$inc/.worktreeinclude"
 git -C "$inc" worktree add -q "$tmp/inc-wt" -b inc-feature
 mkdir -p "$tmp/inc-wt/art" && echo "mine" > "$tmp/inc-wt/art/b.jpg"
 out="$(run "$tmp/inc-wt")"
@@ -203,6 +205,8 @@ check "lists an included file in its report" "$(printf '%s' "$out" | grep -c 'ar
 check "never copies an env backup a pattern matches" "$(has "$tmp/inc-wt/art/.env.local.bak")" "skipped"
 check "copies only gitignored matches, as Claude Code does" "$(has "$tmp/inc-wt/docs/draft.md")" "skipped"
 check "a matched nested worktree prints nothing" "$(printf '%s' "$out" | grep -c 'could not copy')" "0"
+check "copies names that look like pathspec magic or an option" "$(cat "$tmp/inc-wt/:!top.dat" "$tmp/inc-wt/-dash.dat" 2>/dev/null | tr '\n' ' ')" "magic dash "
+check "odd names print no tool errors" "$(printf '%s' "$out" | grep -ciE 'fatal|illegal option|usage')" "0"
 git -C "$inc" worktree add -q "$tmp/inc-link" -b inc-link
 ln -s "$tmp/outside2" "$tmp/inc-link/art"
 run "$tmp/inc-link" >/dev/null

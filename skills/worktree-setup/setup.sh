@@ -2,7 +2,7 @@
 # Makes a linked git worktree runnable: copies the main checkout's untracked
 # env files (except ones named for production credentials and .env*.bak*
 # backups), local HTTPS certificates, .claude/settings.local.json, and any
-# untracked file its .worktreeinclude lists, then installs dependencies when
+# gitignored file its .worktreeinclude lists, then installs dependencies when
 # they are missing or the lockfile changed.
 # Prints nothing when there is nothing to do, so a SessionStart hook can run it
 # on every session.
@@ -36,7 +36,7 @@ copy_untracked() {
   # A .env*.bak* backup is an old snapshot, not a live env file, so it stays
   # out. Only regular files copy: git lists a nested worktree or a symlink to
   # a directory as one entry, which cp would refuse on every run.
-  case "$(basename "$rel")" in .env*.bak*) return 0 ;; esac
+  case "${rel##*/}" in .env*.bak*) return 0 ;; esac
   [ -f "$main/$rel" ] || return 0
   # Files named for production credentials stay in the main checkout: a
   # .env.prod* file or Sentry's .env.sentry-build-plugin token. A symlink is
@@ -51,7 +51,7 @@ copy_untracked() {
   case "$(basename "$f")" in .env.prod*|.env.sentry-build-plugin) return 0 ;; esac
   # Only untracked files the main checkout itself owns: never one inside a
   # nested worktree or submodule.
-  [ "$(git -C "$main/$(dirname "$rel")" rev-parse --show-toplevel 2>/dev/null)" = "$top" ] || return 0
+  [ "$(git -C "$main/$(dirname -- "$rel")" rev-parse --show-toplevel 2>/dev/null)" = "$top" ] || return 0
   tracked=$(git -C "$main" --literal-pathspecs ls-files -- "$rel") || return 0
   [ -z "$tracked" ] || return 0
   # Never write through a symlink that leads out of the worktree or nowhere.
@@ -77,10 +77,13 @@ if top=$(git -C "$main" rev-parse --show-toplevel 2>/dev/null); then
   # in gitignore pattern syntax. As with Claude Code's own worktrees, a match
   # copies only when the repository also gitignores it, so an uncommitted
   # source file never lands on another branch. The list is read even when it
-  # is itself untracked, so a project can keep it local.
+  # is itself untracked, so a project can keep it local. check-ignore reads
+  # its input as pathspecs, so each path gets a ./ prefix that keeps a name
+  # starting with : from reading as pathspec magic.
   if [ -f "$main/.worktreeinclude" ]; then
-    while IFS= read -r -d '' rel; do copy_untracked "$rel"; done < <(
+    while IFS= read -r -d '' rel; do copy_untracked "${rel#./}"; done < <(
       git -C "$main" ls-files -z --others --ignored --exclude-from="$main/.worktreeinclude" |
+        while IFS= read -r -d '' path; do printf './%s\0' "$path"; done |
         git -C "$main" check-ignore -z --stdin)
   fi
 fi
