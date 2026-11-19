@@ -174,4 +174,31 @@ check "a separate-git-dir worktree still installs" "$(run "$tmp/sep-wt" | tail -
 1"
 check "npm's new lockfile does not trigger another install" "$(run "$tmp/sep-wt"; npm_installs)" "exit=0
 1"
+
+# A .worktreeinclude lists more untracked files to copy, with the same safety checks.
+inc="$tmp/inc"
+mkdir -p "$inc/art" "$inc/other" "$tmp/outside2"
+git -C "$inc" init -q -b main
+printf '%s\n' art other '.env*' > "$inc/.gitignore"
+git -C "$inc" add -A && git -C "$inc" commit -qm init
+echo "a" > "$inc/art/a.jpg"
+echo "b" > "$inc/art/b.jpg"
+echo "o" > "$inc/other/o.jpg"
+echo "PROD=1" > "$inc/art/.env.prod"
+echo "LOCAL=1" > "$inc/.env.local"
+git -C "$inc" worktree add -q "$tmp/inc-none" -b inc-none
+check "without a .worktreeinclude only env files copy" "$(run "$tmp/inc-none" >/dev/null; has "$tmp/inc-none/art/a.jpg")$(has "$tmp/inc-none/.env.local")" "skippedcopied"
+printf '%s\n' '# portraits the app needs' 'art/' > "$inc/.worktreeinclude"
+git -C "$inc" worktree add -q "$tmp/inc-wt" -b inc-feature
+mkdir -p "$tmp/inc-wt/art" && echo "mine" > "$tmp/inc-wt/art/b.jpg"
+out="$(run "$tmp/inc-wt")"
+check "copies a file a .worktreeinclude pattern matches" "$(cat "$tmp/inc-wt/art/a.jpg" 2>/dev/null)" "a"
+check "keeps an included file the worktree already has" "$(cat "$tmp/inc-wt/art/b.jpg")" "mine"
+check "skips an untracked file no pattern matches" "$(has "$tmp/inc-wt/other/o.jpg")" "skipped"
+check "never copies a production env file a pattern matches" "$(has "$tmp/inc-wt/art/.env.prod")" "skipped"
+check "lists an included file in its report" "$(printf '%s' "$out" | grep -c 'art/a.jpg')" "1"
+git -C "$inc" worktree add -q "$tmp/inc-link" -b inc-link
+ln -s "$tmp/outside2" "$tmp/inc-link/art"
+run "$tmp/inc-link" >/dev/null
+check "never writes an included file through a symlink out of the worktree" "$(has "$tmp/outside2/a.jpg")" "skipped"
 exit "$fail"

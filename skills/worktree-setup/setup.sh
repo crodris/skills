@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Makes a linked git worktree runnable: copies the main checkout's untracked
 # env files (except ones named for production credentials and .env*.bak*
-# backups), local HTTPS certificates, and .claude/settings.local.json, then
-# installs dependencies when they are missing or the lockfile changed.
+# backups), local HTTPS certificates, .claude/settings.local.json, and any
+# untracked file its .worktreeinclude lists, then installs dependencies when
+# they are missing or the lockfile changed.
 # Prints nothing when there is nothing to do, so a SessionStart hook can run it
 # on every session.
 #
@@ -28,40 +29,52 @@ wtp=$(cd "$wt" && pwd -P)
 copied=""
 # A bare repository has no checkout, and git lists a --separate-git-dir
 # repository's git dir in place of its checkout, so neither is copied from.
+# copy_untracked copies one untracked file of the main checkout, by its path
+# relative to the checkout, into the worktree when every safety check passes.
+copy_untracked() {
+  local rel=$1 dest f hops l tracked d
+  dest="$wt/$rel"
+  if [ -e "$dest" ] || [ -L "$dest" ]; then return 0; fi
+  # Files named for production credentials stay in the main checkout: a
+  # .env.prod* file or Sentry's .env.sentry-build-plugin token. A symlink is
+  # judged by the file it finally points at, within 40 hops so a link loop
+  # cannot hang it, so a link to one of those stays out too.
+  f="$main/$rel" hops=0
+  while [ -L "$f" ] && [ "$hops" -lt 40 ]; do
+    l=$(readlink "$f")
+    case $l in /*) f=$l ;; *) f="$(dirname "$f")/$l" ;; esac
+    hops=$((hops + 1))
+  done
+  case "$(basename "$f")" in .env.prod*|.env.sentry-build-plugin) return 0 ;; esac
+  # Only untracked files the main checkout itself owns: never one inside a
+  # nested worktree or submodule.
+  [ "$(git -C "$main/$(dirname "$rel")" rev-parse --show-toplevel 2>/dev/null)" = "$top" ] || return 0
+  tracked=$(git -C "$main" --literal-pathspecs ls-files -- "$rel") || return 0
+  [ -z "$tracked" ] || return 0
+  # Never write through a symlink that leads out of the worktree or nowhere.
+  d=$(dirname "$dest")
+  while [ ! -e "$d" ] && [ ! -L "$d" ]; do d=$(dirname "$d"); done
+  case "$(cd "$d" 2>/dev/null && pwd -P)/" in "$wtp"/*) ;; *) return 0 ;; esac
+  if mkdir -p "$(dirname "$dest")" && cp -p "$main/$rel" "$dest"; then copied="$copied $rel"
+  else rm -f "$dest"; echo "worktree-setup: could not copy $rel from $main"; fi
+}
+
 if top=$(git -C "$main" rev-parse --show-toplevel 2>/dev/null); then
   # The find prunes dependency and build folders, whose env files would pass
-  # both checks below, and common nested-worktree folders, which only saves a
-  # git call per file there; the toplevel check catches any other nesting.
-  # A .env*.bak* backup is an old snapshot, not a live env file, so it stays out.
-  while IFS= read -r rel; do
-    dest="$wt/$rel"
-    if [ -e "$dest" ] || [ -L "$dest" ]; then continue; fi
-    # Files named for production credentials stay in the main checkout: a
-    # .env.prod* file or Sentry's .env.sentry-build-plugin token. A symlink is
-    # judged by the file it finally points at, within 40 hops so a link loop
-    # cannot hang it, so a link to one of those stays out too.
-    f="$main/$rel" hops=0
-    while [ -L "$f" ] && [ "$hops" -lt 40 ]; do
-      l=$(readlink "$f")
-      case $l in /*) f=$l ;; *) f="$(dirname "$f")/$l" ;; esac
-      hops=$((hops + 1))
-    done
-    case "$(basename "$f")" in .env.prod*|.env.sentry-build-plugin) continue ;; esac
-    # Only untracked files the main checkout itself owns: never one inside a
-    # nested worktree or submodule.
-    [ "$(git -C "$main/$(dirname "$rel")" rev-parse --show-toplevel 2>/dev/null)" = "$top" ] || continue
-    tracked=$(git -C "$main" --literal-pathspecs ls-files -- "$rel") || continue
-    [ -z "$tracked" ] || continue
-    # Never write through a symlink that leads out of the worktree or nowhere.
-    d=$(dirname "$dest")
-    while [ ! -e "$d" ] && [ ! -L "$d" ]; do d=$(dirname "$d"); done
-    case "$(cd "$d" 2>/dev/null && pwd -P)/" in "$wtp"/*) ;; *) continue ;; esac
-    if mkdir -p "$(dirname "$dest")" && cp -p "$main/$rel" "$dest"; then copied="$copied $rel"
-    else rm -f "$dest"; echo "worktree-setup: could not copy $rel from $main"; fi
-  done < <(cd "$main" && find . \
+  # the checks in copy_untracked, and common nested-worktree folders, which
+  # only saves a git call per file there; the toplevel check catches any other
+  # nesting. A .env*.bak* backup is an old snapshot, not a live env file, so
+  # it stays out.
+  while IFS= read -r rel; do copy_untracked "$rel"; done < <(cd "$main" && find . \
     \( -name .git -o -name node_modules -o -name worktrees -o -name .worktrees -o -name .next -o -name .turbo \) -prune -o \
     \( -type f -o -type l \) \( -name '.env*' ! -name '.env*.bak*' -o -path '*/certificates/*.pem' -o -path './.claude/settings.local.json' \) \
     -print | sed 's|^\./||')
+  # A .worktreeinclude at the checkout's root lists more untracked files to
+  # copy, in gitignore pattern syntax. It is read even when it is itself
+  # untracked, so a project can keep the list local.
+  if [ -f "$main/.worktreeinclude" ]; then
+    while IFS= read -r -d '' rel; do copy_untracked "$rel"; done < <(git -C "$main" ls-files -z --others --ignored --exclude-from="$main/.worktreeinclude")
+  fi
 fi
 
 # A hook has no TTY, so an install must never wait on a prompt.

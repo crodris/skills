@@ -158,8 +158,8 @@
       "skills": [
         "./worktree-setup"
       ],
-      "description": "Makes a new git worktree runnable by copying the main checkout's untracked env files and installing dependencies.",
-      "version": "1.0.2",
+      "description": "Makes a new git worktree runnable by copying the main checkout's untracked env files and the files its .worktreeinclude lists, and installing dependencies.",
+      "version": "1.1.0",
       "author": {
         "name": "crodris"
       },
