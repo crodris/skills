@@ -27,14 +27,17 @@ git -C "$wt" symbolic-ref -q HEAD >/dev/null || exit 0
 main=$(git -C "$wt" worktree list --porcelain | sed -n '1s/^worktree //p')
 wtp=$(cd "$wt" && pwd -P)
 copied=""
-# A bare repository has no checkout, and git lists a --separate-git-dir
-# repository's git dir in place of its checkout, so neither is copied from.
 # copy_untracked copies one untracked file of the main checkout, by its path
 # relative to the checkout, into the worktree when every safety check passes.
 copy_untracked() {
   local rel=$1 dest f hops l tracked d
   dest="$wt/$rel"
   if [ -e "$dest" ] || [ -L "$dest" ]; then return 0; fi
+  # A .env*.bak* backup is an old snapshot, not a live env file, so it stays
+  # out. Only regular files copy: git lists a nested worktree or a symlink to
+  # a directory as one entry, which cp would refuse on every run.
+  case "$(basename "$rel")" in .env*.bak*) return 0 ;; esac
+  [ -f "$main/$rel" ] || return 0
   # Files named for production credentials stay in the main checkout: a
   # .env.prod* file or Sentry's .env.sentry-build-plugin token. A symlink is
   # judged by the file it finally points at, within 40 hops so a link loop
@@ -59,21 +62,26 @@ copy_untracked() {
   else rm -f "$dest"; echo "worktree-setup: could not copy $rel from $main"; fi
 }
 
+# A bare repository has no checkout, and git lists a --separate-git-dir
+# repository's git dir in place of its checkout, so neither is copied from.
 if top=$(git -C "$main" rev-parse --show-toplevel 2>/dev/null); then
   # The find prunes dependency and build folders, whose env files would pass
   # the checks in copy_untracked, and common nested-worktree folders, which
   # only saves a git call per file there; the toplevel check catches any other
-  # nesting. A .env*.bak* backup is an old snapshot, not a live env file, so
-  # it stays out.
+  # nesting.
   while IFS= read -r rel; do copy_untracked "$rel"; done < <(cd "$main" && find . \
     \( -name .git -o -name node_modules -o -name worktrees -o -name .worktrees -o -name .next -o -name .turbo \) -prune -o \
-    \( -type f -o -type l \) \( -name '.env*' ! -name '.env*.bak*' -o -path '*/certificates/*.pem' -o -path './.claude/settings.local.json' \) \
+    \( -type f -o -type l \) \( -name '.env*' -o -path '*/certificates/*.pem' -o -path './.claude/settings.local.json' \) \
     -print | sed 's|^\./||')
-  # A .worktreeinclude at the checkout's root lists more untracked files to
-  # copy, in gitignore pattern syntax. It is read even when it is itself
-  # untracked, so a project can keep the list local.
+  # A .worktreeinclude at the main checkout's root lists more files to copy,
+  # in gitignore pattern syntax. As with Claude Code's own worktrees, a match
+  # copies only when the repository also gitignores it, so an uncommitted
+  # source file never lands on another branch. The list is read even when it
+  # is itself untracked, so a project can keep it local.
   if [ -f "$main/.worktreeinclude" ]; then
-    while IFS= read -r -d '' rel; do copy_untracked "$rel"; done < <(git -C "$main" ls-files -z --others --ignored --exclude-from="$main/.worktreeinclude")
+    while IFS= read -r -d '' rel; do copy_untracked "$rel"; done < <(
+      git -C "$main" ls-files -z --others --ignored --exclude-from="$main/.worktreeinclude" |
+        git -C "$main" check-ignore -z --stdin)
   fi
 fi
 
