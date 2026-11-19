@@ -186,9 +186,12 @@ echo "b" > "$inc/art/b.jpg"
 echo "o" > "$inc/other/o.jpg"
 echo "PROD=1" > "$inc/art/.env.prod"
 echo "LOCAL=1" > "$inc/.env.local"
+echo "BAK=1" > "$inc/art/.env.local.bak"
+mkdir -p "$inc/docs" && echo "draft" > "$inc/docs/draft.md"
+git -C "$inc" worktree add -q "$inc/art/nested" -b inc-nested
 git -C "$inc" worktree add -q "$tmp/inc-none" -b inc-none
 check "without a .worktreeinclude only env files copy" "$(run "$tmp/inc-none" >/dev/null; has "$tmp/inc-none/art/a.jpg")$(has "$tmp/inc-none/.env.local")" "skippedcopied"
-printf '%s\n' '# portraits the app needs' 'art/' > "$inc/.worktreeinclude"
+printf '%s\n' '# portraits the app needs' 'art/' 'docs/' > "$inc/.worktreeinclude"
 git -C "$inc" worktree add -q "$tmp/inc-wt" -b inc-feature
 mkdir -p "$tmp/inc-wt/art" && echo "mine" > "$tmp/inc-wt/art/b.jpg"
 out="$(run "$tmp/inc-wt")"
@@ -197,6 +200,9 @@ check "keeps an included file the worktree already has" "$(cat "$tmp/inc-wt/art/
 check "skips an untracked file no pattern matches" "$(has "$tmp/inc-wt/other/o.jpg")" "skipped"
 check "never copies a production env file a pattern matches" "$(has "$tmp/inc-wt/art/.env.prod")" "skipped"
 check "lists an included file in its report" "$(printf '%s' "$out" | grep -c 'art/a.jpg')" "1"
+check "never copies an env backup a pattern matches" "$(has "$tmp/inc-wt/art/.env.local.bak")" "skipped"
+check "copies only gitignored matches, as Claude Code does" "$(has "$tmp/inc-wt/docs/draft.md")" "skipped"
+check "a matched nested worktree prints nothing" "$(printf '%s' "$out" | grep -c 'could not copy')" "0"
 git -C "$inc" worktree add -q "$tmp/inc-link" -b inc-link
 ln -s "$tmp/outside2" "$tmp/inc-link/art"
 run "$tmp/inc-link" >/dev/null

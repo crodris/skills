@@ -104,7 +104,7 @@ When `XDG_CONFIG_HOME` is unset, empty, or not an absolute path, that file is `~
 ### worktree-setup (v1.1.0)
 
 `worktree-setup` makes a new git worktree runnable: it copies the main checkout's untracked env files and installs dependencies.
-A project lists any other untracked files a worktree needs, such as gitignored images, in a `.worktreeinclude` file at its root, in gitignore pattern syntax, and the file may itself stay untracked.
+A project lists other gitignored files a worktree needs, such as images, in a `.worktreeinclude` file at the main checkout's root, in gitignore pattern syntax, and that file may itself stay untracked.
 It needs Git 2.31 or newer, and the package manager the worktree's lockfile names on `PATH`.
 Install it globally with skills.sh, then add this SessionStart hook to `~/.claude/settings.json` so worktrees created by other tools are covered too.
 A `worktree-setup@crodris` plugin install does not set up this hook, and the hook does nothing without the skills.sh install.
