@@ -45,4 +45,4 @@ skills/ship/boundary.md 1098
 skills/ship/config.md 547
 skills/ship/SKILL.md 1246
 skills/verification-audit/SKILL.md 929
-skills/worktree-setup/SKILL.md 249
+skills/worktree-setup/SKILL.md 272
