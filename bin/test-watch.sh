@@ -101,8 +101,8 @@ response() {
   local state=$1 head=$2 reviews=$3 ci_done='[{"status":"COMPLETED","conclusion":"SUCCESS","app":{"slug":"github-actions"},"workflowRun":{"workflow":{"name":"CI"}},"checkRuns":{"totalCount":1}}]'
   shift 3
   printf '%s\n' "$@" | jq -s --arg state "$state" --arg head "$head" --argjson reviews "$reviews" \
-    --argjson suites "${SUITES:-$ci_done}" --arg base "${BASE:-$BASE_A}" --argjson files "${FILES:-[]}" '{data: {repository: {
-    pullRequest: {state: $state, headRefOid: $head, baseRefName: "main", baseRef: {target: {oid: $base}},
+    --argjson suites "${SUITES:-$ci_done}" --arg name "${BASE_NAME:-main}" --arg base "${BASE:-$BASE_A}" --argjson files "${FILES:-[]}" '{data: {repository: {
+    pullRequest: {state: $state, headRefOid: $head, baseRefName: $name, baseRef: {target: {oid: $base}},
       files: {pageInfo: {hasNextPage: false}, nodes: [$files[] | {path: .}]},
       reviews: {nodes: $reviews}, comments: {nodes: []}},
     object: {committedDate: "2020-01-01T00:00:00Z",
@@ -566,6 +566,12 @@ run 7 $SHA --repo o/r --interval 0 --deadline 1
 expect_exit "a quoted on key with a filtered pull_request counts as CI" 4
 
 case_dir
+workflow ci.yml $'\'on\': pull_request'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a single-quoted on key counts as CI" 4
+
+case_dir
 workflow release.yml $'on:\n  push:\n    tags: ["v*"]\njobs:\n  t:\n    if: github.event_name == \'pull_request\' || github.event.pull_request.draft\n    steps:\n      - run: echo pull_request'
 SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
 run 7 $SHA --repo o/r --interval 0 --deadline 5
@@ -608,6 +614,22 @@ echo "HTTP 500: Server Error" > "$dir/workflow-read.err"
 SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
 run 7 $SHA --repo o/r --interval 0 --deadline 1
 expect_exit "a workflow file that cannot be read waits" 4
+expect_in "the read failure is printed" err "could not read .github/workflows/ci.yml on main"
+
+# The trigger is found in an on: block longer than a pipe buffer.
+case_dir
+mkdir -p "$dir/workflows"
+{ printf 'on:\n  pull_request:\n    paths:\n'; for _ in $(seq 1 1500); do printf '      - "src/some/long/path/segment/**"\n'; done; } > "$dir/workflows/ci.yml"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a pull_request trigger followed by a very long block counts as CI" 4
+
+# A base with # or / in its name reads its own required checks.
+case_dir
+BASE_NAME='release#1/x' SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_in "the rulesets are read for the encoded base" gh.log "repos/o/r/rules/branches/release%231%2Fx"
+expect_in "branch protection is read for the encoded base" gh.log "repos/o/r/branches/release%231%2Fx/protection/required_status_checks"
 
 # GitHub runs no pull_request workflow on a conflicting pull request, so exit 8
 # comes at once, inside the grace window, with a required check missing, and
