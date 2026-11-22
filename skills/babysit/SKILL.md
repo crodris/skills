@@ -1,7 +1,7 @@
 ---
 name: babysit
 description: Watches one pull request until it is ready to merge, running CI, the review bots, and review-loop on each pass, pushing each pass's fixes, and keeping the branch current with its base. Use when the user asks to babysit, watch, or monitor a pull request, or to get it green without merging.
-version: 3.3.2
+version: 3.3.3
 ---
 
 # Babysit
@@ -52,7 +52,7 @@ A branch babysit found already pushed is not, whoever wrote its commits.
 | 3 | Restart the pass on the new head. |
 | 4 | Run watch.sh again on the same SHA, up to 3 times in this pass, then `BLOCKED` naming what is still pending. |
 | 6 | Go on to triage, list failed checks with `gh pr checks <n>` before the CI rules, then apply `bots.md`'s Unavailable bot rule. |
-| 8 | Go on to triage, with a base update due. |
+| 8 | Go on to triage, with a base update due, also when no check registered on a `CONFLICTING` pull request. |
 | other | `BLOCKED`, quoting the verdict line. |
 
 5. Follow review-loop's Triage and Fix sections with every finding.
