@@ -1,7 +1,7 @@
 ---
 name: council
-description: This skill should be used when the user asks for a council, such as "council", "council review", "ask the council", or "/council". Sends the request to three members (Claude Opus, Claude Fable, and GPT Sol) on high reasoning effort, and in the default council replaces GPT Sol with Claude Sonnet when Sol is out of credits, rate limited, not offered, or fails twice. A message that only mentions a council, its results, or this skill, such as a request to edit it, is not a request for one.
-version: 1.0.0
+description: This skill should be used when the user asks for a council, such as "council", "council review", "ask the council", or "/council". Sends the request to four members (Claude Opus, Claude Fable, GPT Sol, and Gemini Neon) on high reasoning effort, resolving each member's latest release at runtime, and in the default council replaces GPT Sol with Claude Sonnet when Sol is out of credits, rate limited, not offered, or fails twice. A message that only mentions a council, its results, or this skill, such as a request to edit it, is not a request for one.
+version: 1.1.0
 ---
 
 # Council
@@ -15,37 +15,44 @@ If the user wants to discard the implementation and explore new ideas, skip fixe
 
 ## Members
 
-The default council is three members.
+The default council is four members.
 When the user names members, use exactly those instead.
 Every member runs on high reasoning effort unless the user sets another.
 
 | Member | T3 Code provider | Model |
 | --- | --- | --- |
 | Claude Opus | `claudeAgent` | latest Opus, such as `claude-opus-5-5` |
-| Claude Fable | `claudeAgent` | latest Fable, such as `claude-fable-5-1` |
-| GPT Sol | `codex` | latest Sol, such as `gpt-6.1-sol` |
+| Claude Fable | `claudeAgent` | latest Fable, such as `claude-fable-5-2` |
+| GPT Sol | `codex` | latest Sol, such as `gpt-6.2-sol` |
+| Gemini Neon | `antigravity` | latest Gemini Neon, or latest Gemini when no Neon model is offered, such as `gemini-4-neon` |
 
-Set the effort with the option each provider lists, such as `effort` for Claude and `reasoningEffort` for Codex.
+Exclude models whose ID or label marks them as an orchestrator before checking what is offered or choosing a model.
+Skip reduced-tier variants (such as `mini`, `lite`, `flash`, or `fast`) whenever a standard model in that family is offered.
+At runtime, pick the highest-version model matching each member's row on its provider, ignoring any trailing date suffix when comparing versions numerically (so `6.10` beats `6.9` and `4-1-20250805` beats `4-20250514`) and preferring an undated release over a dated snapshot of the same version.
+In T3 Code, call `orchestrator_capabilities` with `search` set to each member's search term (`opus`, `fable`, `sol`, `gemini`, and `sonnet` when replacing Sol) so the full catalog is checked before choosing.
+For Gemini Neon, pick among Neon models first, and fall back to other Gemini models only when no Neon model is offered.
+Set the effort with the option each provider lists, such as `effort` for Claude, `reasoningEffort` for Codex, and `thought_level` for Antigravity.
+When a provider does not offer the requested effort, use the closest lower value it lists (or its lowest value if none is lower) and note the change above the table.
 
 ## Failed members
 
 A member fails when the harness does not offer its model, when it cannot start, or when it returns an error or no usable review.
-In T3 Code, a model is not offered when `orchestrator_capabilities` lists a constraint on its provider, or omits the model after a call with `search` set to its family name.
-Outside T3 Code, GPT Sol is not offered.
+In T3 Code, a model is not offered when `orchestrator_capabilities` lists a constraint on its provider, or omits a matching model after a call with `search` set to its search term.
+Outside T3 Code, a model is not offered when the current harness does not expose its provider, such as GPT Sol and Gemini Neon in Claude Code.
 
 GPT Sol in the default council is the one exception.
 When Sol fails with a credit, quota, usage-limit, or rate-limit error, or is not offered, Claude Sonnet replaces it.
 When Sol fails for any other reason, start it once more, and Sonnet replaces it if that start also fails.
-Sonnet is the latest Sonnet, such as `claude-sonnet-5-5`, and it gets Sol's brief and stays for the rest of the run.
+Sonnet is the latest Sonnet on `claudeAgent`, such as `claude-sonnet-5-5`, and it gets Sol's brief and stays for the rest of the run.
 Write `replaced, <reason>` in Sol's cell for the round it was replaced in.
 
-Start any other member that fails once more, including a GPT Sol the user named.
-When it fails again, write `failed` with the reason in its cell, and finish the round with the others.
-When every member fails, stop and report to the user.
+For any other member, including a GPT Sol the user named, write `failed` with the reason in its cell without retrying when its model is not offered.
+When it fails for any other reason, start it once more, and if it fails again write `failed` with the reason in its cell.
+Finish the round with the remaining members, or stop and report to the user when every member fails.
 
 ## Running a round
 
-In T3 Code, call `orchestrator_capabilities` to confirm the models, then `delegate_task` to start every member in parallel.
+In T3 Code, resolve the models and effort options from `orchestrator_capabilities`, then call `delegate_task` to start every member in parallel.
 Elsewhere, start each member with the harness's subagent tool, such as the Agent tool's `model` and `effort` in Claude Code.
 
 Give each member the request and relevant context.
@@ -73,6 +80,7 @@ Rounds: 2
 | Claude Fable | 8/10 | 10/10 |
 | GPT Sol | 7/10 | replaced, out of credits |
 | Claude Sonnet, for GPT Sol | not seated | 9/10 |
+| Gemini Neon | 8/10 | 9/10 |
 ```
 
 If a member gives no score, write `no score`, and do not invent one.
