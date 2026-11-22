@@ -1,7 +1,7 @@
 ---
 name: review-loop
 description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass, and by ship and babysit before a push in a repository with no table bot (CodeRabbit or Greptile); use when the user asks for one review-and-fix pass on the current pull request.
-version: 3.4.0
+version: 3.4.1
 ---
 
 # Review loop
@@ -13,7 +13,7 @@ Inputs: the pull request, the pinned head SHA, `base`, the pass kind, the merge 
 
 ## Review
 
-The code reviewer is two subagents on the pinned SHA, dispatched in parallel and in the background:
+The code reviewer is two subagents on the pinned SHA, dispatched in parallel and in the foreground:
 
 - Standards checks the diff against the conventions the repository documents (`AGENTS.md`, `CLAUDE.md`, `CODING_STANDARDS.md`, contributing docs, and the intent of its lint and format config), read from `origin/<base>` after fetching it as `../ship/boundary.md` says.
   It applies each rule to every changed line as written, and runs any search a rule names as a read-only git command at the SHA, such as `git grep` for rules a change would contradict.
@@ -35,6 +35,8 @@ When the skill is missing or refuses, skip it and say so in the ledger.
 When `drive` is set, `../prove/drive.md` says how it changes a fix pass.
 
 Dispatch each as a `general-purpose` subagent, never another agent type such as `coderabbit:code-reviewer`, and never a review CLI or a review skill.
+Start every subagent of one dispatch in one message with the subagent tool's background option off, so each report returns to the agent that dispatched it.
+A background subagent's completion notice goes to the top-level session, so a run inside a subagent waits for reports that never reach it.
 Describe each as `review-loop: <Subagent> <the SHA's first 7 characters>`, such as `review-loop: Spec c88f198`, so a push gate can tell which head it read.
 Brief each with the full SHA, what changed and why, that its findings feed one batched fix, and that every finding needs exactly one severity from critical, major, minor, nit, and informational, with the Severity section's minor and nit line quoted word for word.
 Also tell each to work read-only: read the change with `git show <sha>:<path>` and the rules from `origin/<base>`, search with `git grep <pattern> <sha>`, compare with `git diff`, `git show --remerge-diff`, or `git range-diff`, never run the pull request's code, such as its tests, builds, or package scripts, and never run a command that writes a file, pushes, posts, merges, or changes the pull request.
@@ -52,7 +54,7 @@ A `fixes` pass reads the fix commits, a `base merge` pass reads `git show --reme
 A push that carried fixes and a base update gives both kinds, and the pass reads both.
 On a later pass, Spec also searches every file the pull request changes against `base` for the call, field, or phrase each fix changed, and reports each other place with the same defect.
 A base update with no conflicts, and a `fold` pass after babysit's autosquash push, which changed no file, need no subagent read, except the one Triage step 5 can add.
-A subagent that returns nothing usable, or runs past a timeout generous for the diff, runs again, and failing twice is `BLOCKED`.
+A subagent that returns nothing usable, or ends on an error or the subagent tool's timeout, runs again, and failing twice is `BLOCKED`.
 
 ## Triage
 
