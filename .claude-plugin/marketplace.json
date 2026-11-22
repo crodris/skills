@@ -110,8 +110,8 @@
       "skills": [
         "./council"
       ],
-      "description": "Sends one review or feedback request to three models on high reasoning effort, and reports their findings and scores.",
-      "version": "1.0.0",
+      "description": "Sends one review or feedback request to four models on high reasoning effort, resolving each member's latest release at runtime, and reports their findings and scores.",
+      "version": "1.1.0",
       "author": {
         "name": "crodris"
       },

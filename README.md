@@ -82,12 +82,12 @@ It reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~
 It runs [unslop](https://github.com/cursor/plugins/tree/main/pstack/skills/unslop) first when it can be invoked, and keeps a short fallback floor otherwise.
 To move from an old name, run `npx skills@latest remove my-voice -g` (or `npx skills@latest remove voice -g` for an install older than v2.0.0), then `npx skills@latest add crodris/skills -s rewrite -g`.
 
-### council (v1.0.0)
+### council (v1.1.0)
 
-`council` sends the same review or feedback request to three members (Claude Opus, Claude Fable, and GPT Sol) on high reasoning effort, and reports their findings and scores.
+`council` sends the same review or feedback request to four members (Claude Opus, Claude Fable, GPT Sol, and Gemini Neon) on high reasoning effort, resolving each member's latest release at runtime, and reports their findings and scores.
 It runs only when you ask for a council.
 When GPT Sol is out of credits, rate limited, not offered, or fails twice, Claude Sonnet replaces it for the rest of the run in the default council.
-It runs best in T3 Code, which starts members on both Claude and Codex.
+It runs best in T3 Code, which starts members across Claude, Codex, and Antigravity.
 
 ### frontend-design-pipeline (v1.3.1)
 
