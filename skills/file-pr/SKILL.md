@@ -1,7 +1,7 @@
 ---
 name: file-pr
 description: Opens or updates the pull request for a pushed branch, with the title, body, and secrets check that ship and execute share. Use when the user asks to open, file, or create a pull request for the current branch.
-version: 3.3.3
+version: 3.4.0
 ---
 
 # File a pull request
@@ -17,7 +17,7 @@ When the caller supplies that title and body, as `../execute/forges/github.md` d
 
 The run section is the part of the body a ship run owns, between `<!-- run:start -->` and `<!-- run:end -->`.
 It holds the summary and the evidence.
-It holds the lane, the bots present, and the pass and push counts.
+It holds the lane, the bots present, the pass and push counts, and the rounds of each review before a push.
 It holds the `PASS` line and the record of which push a minor bought.
 It holds each skipped review.
 It holds the ledger, with one line per finding in the form `F<n> <severity> <source> <location>: <claim>. <disposition>`.

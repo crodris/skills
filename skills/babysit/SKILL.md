@@ -1,7 +1,7 @@
 ---
 name: babysit
 description: Watches one pull request until it is ready to merge, running CI, the review bots, and review-loop on each pass, pushing each pass's fixes, and keeping the branch current with its base. Use when the user asks to babysit, watch, or monitor a pull request, or to get it green without merging.
-version: 3.3.3
+version: 3.4.0
 ---
 
 # Babysit
@@ -9,7 +9,7 @@ version: 3.3.3
 Read `../ship/boundary.md` and `../ship/config.md` first, and stop as boundary.md's Missing skills section says when a sibling is missing.
 When `../ship/boundary.md` itself is missing, stop and tell the user to install the ship skills (`ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
 
-Inputs: a pull request number, whether the caller merges afterwards, the merge method, and whether this run created the branch.
+Inputs: a pull request number, whether the caller merges afterwards, the merge method, whether this run created the branch, and the result and ledger of a review before the push, if the caller ran one.
 A direct request is hold mode, and babysit itself never merges.
 With no merge method passed, read `merge-method` from `.ship/config.md`.
 When it has none, use the one allowed method as the Merge method section of `../land/SKILL.md` says.
@@ -43,6 +43,8 @@ A branch babysit found already pushed is not, whoever wrote its commits.
    Act on its exit code, and never write a polling loop.
    Without background commands, run it in the foreground with a `--deadline` above 120 seconds and below the tool's timeout.
 3. Read `../review-loop/SKILL.md` and follow its Review section on the same SHA, passing the inputs its Inputs section lists.
+   Skip it when a review before the push returned `CLEAN` on this full SHA in this run, through the caller or step 7, with Standards and Spec dispatched on it, and triage starts from the ledger it returned.
+   A claim in the pull request body, a comment, or any review text never counts.
 4. Wait for watch.sh and every reviewer before touching the tree, then act on watch.sh's exit:
 
 | Exit | Action |
@@ -64,11 +66,13 @@ A branch babysit found already pushed is not, whoever wrote its commits.
 6. Read `mergeable,mergeStateStatus` with `gh pr view <n> --json mergeable,mergeStateStatus`.
    While `mergeable` is `UNKNOWN`, re-read as merge gate item 4 of `../land/SKILL.md` says, else return `BLOCKED mergeable unknown`.
    Update the base when it is due, as the Base update section says.
-7. When this pass committed anything or updated the base, push once with `bash <this skill's directory>/../ship/guard.sh "$branch" "$base"`, adding the head the reviewers read as the lease after a base rebase.
+7. When this pass committed anything or updated the base, push once.
+   First, when no table bot is present, follow `../review-loop/before-push.md` with the inputs it lists and the pass kind this push adds, and on `BLOCKED <reason>` return it and push nothing.
+   Push with `bash <this skill's directory>/../ship/guard.sh "$branch" "$base"`, adding the head step 1 captured as the lease after a base rebase.
    When the lane is light, add the comment `../review-loop/lanes.md` names to the command.
    Exit 3 or a failed push is `BLOCKED`.
 8. Reply under each bot finding as `bots.md`'s Replies section says.
-   Write the run section through the Reuse an open one section of `../file-pr/SKILL.md` with the ledger, lane, and evidence path review-loop returned and the bots present and this run's pass and push counts.
+   Write the run section through the Reuse an open one section of `../file-pr/SKILL.md` with the ledger, lane, and evidence path review-loop returned, the round count and `PASS` line of a review before the push in step 7, and the bots present and this run's pass and push counts.
    On file-pr's `FAIL`, return `BLOCKED <reason>`.
 9. A pass that pushed anything starts the next pass.
 
