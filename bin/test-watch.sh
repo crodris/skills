@@ -9,6 +9,10 @@
 # `gh api` of the base's rulesets prints rules.json, else an empty list; of its
 # branch protection prints protection.json, else fails with HTTP 404; and of a
 # compare prints compare.json, else no files.
+# `gh pr view` prints the first line of mergeable.txt, else nothing. `gh api` of
+# the base's workflow folder prints the files in the workflows/ fixture folder as
+# a contents listing, or fails with HTTP 404 when there is no such folder, and of
+# one workflow file prints that file.
 # Each case checks the exit code and, where it matters, stdout or the gh call log.
 # WATCH_GRACE is 0 unless a case sets it, so a case settles on its first poll.
 set -euo pipefail
@@ -38,8 +42,20 @@ if [ "$1 $2" = "api --paginate" ]; then
   if [ -e "$FIXTURES/$f" ]; then cat "$FIXTURES/$f"; else echo '[]'; fi
   exit 0
 fi
+if [ "$1 $2" = "pr view" ]; then
+  if [ -e "$FIXTURES/mergeable.txt" ]; then cat "$FIXTURES/mergeable.txt"; fi
+  exit 0
+fi
 if [ "$1" = api ]; then
-  case $2 in
+  endpoint=$2
+  [ "$2" != -H ] || endpoint=$4
+  case $endpoint in
+    repos/*/contents/.github/workflows\?*)
+      [ -d "$FIXTURES/workflows" ] || { echo "HTTP 404: Not Found" >&2; exit 1; }
+      # shellcheck disable=SC2046 # the fixture file names have no spaces.
+      jq -n --args '[$ARGS.positional[] | {type: "file", name: ., path: (".github/workflows/" + .)}]' \
+        $(ls "$FIXTURES/workflows"); exit 0 ;;
+    repos/*/contents/.github/workflows/*) f=${endpoint%%\?*}; cat "$FIXTURES/workflows/${f##*/}"; exit 0 ;;
     repos/*/rules/branches/*) if [ -e "$FIXTURES/rules.json" ]; then cat "$FIXTURES/rules.json"; else echo '[]'; fi; exit 0 ;;
     repos/*/protection/required_status_checks)
       if [ -e "$FIXTURES/protection.json" ]; then cat "$FIXTURES/protection.json"; exit 0; fi
@@ -462,6 +478,60 @@ SUITES='[]' response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
 WATCH_GRACE=60 run 7 $SHA --repo o/r --interval 0 --deadline 1
 expect_exit "a passed check with no workflow registered does not settle early" 4
 expect_in "the grace window is reported" out "60-second wait for late checks"
+
+# A SHA with no check run or status at all passes only when the base has no
+# workflow that runs on pull requests.
+workflow() { mkdir -p "$dir/workflows"; printf '%s\n' "$2" > "$dir/workflows/$1"; }
+
+case_dir
+workflow ci.yml $'on:\n  pull_request:\n  push:\n    branches: [main]'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "no checks with a pull_request workflow on the base waits until the deadline" 4
+expect_in "the missing checks are reported as not registered yet" out "no checks registered yet: main has a pull request workflow"
+expect_in "the deadline verdict says no checks registered" out "still pending: no checks registered"
+expect_count "the not registered line is printed once" out "no checks registered yet" 1
+
+case_dir
+workflow ci.yml $'on:\n  pull_request:'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+SUITES="$CI_DONE" response OPEN $SHA '[]' "$BUILD" > "$dir/2.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "checks that register after a wait with none settle" 0
+expect_in "the later poll passed" out "verdict: passed: 1 checks passed"
+
+case_dir
+workflow ci.yml $'on:\n  pull_request:'
+echo CONFLICTING > "$dir/mergeable.txt"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "no checks on a conflicting pull request exits 8" 8
+expect_in "the verdict names the conflict" out "verdict: base-moved: no checks registered: the pull request is CONFLICTING with main"
+
+case_dir
+workflow ci.yml $'on:\n  pull_request:'
+echo MERGEABLE > "$dir/mergeable.txt"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "no checks on a mergeable pull request still waits" 4
+
+case_dir
+workflow ci.yml $'on:\n  pull_request_target:'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a pull_request_target workflow counts as CI" 4
+
+case_dir
+workflow release.yml $'# runs on pull_request later\non:\n  push:\n    tags: ["v*"]'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "no checks with only a push workflow on the base passes as before" 0
+expect_in "the empty pass is reported" out "verdict: passed: 0 checks passed"
+
+case_dir
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "no checks with no workflows on the base passes as before" 0
 
 GUARD_DONE=$(suite github-actions COMPLETED Guard)
 case_dir

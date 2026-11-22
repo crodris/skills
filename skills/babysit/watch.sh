@@ -12,7 +12,12 @@
 # With no --bot it waits on the checks alone.
 # A GitHub Actions workflow on the SHA that has not finished counts as a pending
 # check, and one that failed before creating any check run counts as a failed
-# check. When the base branch's rulesets or branch protection name required
+# check. A SHA with no check run or commit status at all never passes while the
+# base branch has a pull request workflow: it prints "no checks
+# registered yet" and keeps waiting until the deadline, or exits 8 at once when
+# the pull request is CONFLICTING, since GitHub runs no pull_request workflow on
+# a conflicting pull request. A base with no such workflow settles as before.
+# When the base branch's rulesets or branch protection name required
 # checks, it settles once each of them has reported and finished. Otherwise it
 # never settles in its first SETTLE_GRACE seconds, so a check or workflow that
 # registers late is still waited on.
@@ -36,7 +41,8 @@
 # | 2    | usage error, gh or jq missing, or a re-request the bot's own finding |
 # |      | labels do not allow                                                  |
 # | 3    | head moved: it is no longer <head-sha>                               |
-# | 4    | deadline passed before settling; prints what is still pending        |
+# | 4    | deadline passed before settling; prints what is still pending, which |
+# |      | includes "no checks registered" for a SHA that has none              |
 # | 5    | forge error: 3 consecutive failed polls, a failed re-request         |
 # |      | comment, or a failed read of a bot's findings; prints the error text |
 # | 6    | a bot cannot review; prints "<bot> <reason>: <notice>", where the    |
@@ -48,6 +54,7 @@
 # | 7    | pull request is no longer open (MERGED or CLOSED); prints its state  |
 # | 8    | settled with every check passed, but the base branch moved since the |
 # |      | start and the new base commits touch files this pull request changes |
+# |      | or no check registered on a CONFLICTING pull request                 |
 #
 # stdout gets a status line on each poll whose status changed, then one verdict
 # line. gh's stderr is passed through, never hidden.
@@ -345,7 +352,7 @@ required_checks() {
 
 # Sets $verdict on success; sets $error and returns 1 on a failed poll.
 poll() {
-  local out rc=0 grace_over=false reduced base_name
+  local out rc=0 grace_over=false reduced
   [ $((SECONDS - start)) -lt "$SETTLE_GRACE" ] || grace_over=true
   out=$(gh api graphql -f query="$QUERY" -f owner="${repo%%/*}" -f repo="${repo#*/}" -F n="$pr" -f sha="$sha" 2>"$errfile") || rc=$?
   if [ "$rc" != 0 ]; then
@@ -357,9 +364,9 @@ poll() {
   [ -n "$out" ] || { error="gh returned no output"; return 1; }
   error=$(jq -r "$ERRORS" <<<"$out" 2>&1) || { error="unreadable response: $error"; return 1; }
   [ -z "$error" ] || return 1
+  base_ref=$(jq -r '.data.repository.pullRequest.baseRefName // empty' <<<"$out")
   if [ -z "$required" ]; then
-    base_name=$(jq -r '.data.repository.pullRequest.baseRefName // empty' <<<"$out")
-    if [ -n "$base_name" ]; then required=$(required_checks "$base_name"); else required='[]'; fi
+    if [ -n "$base_ref" ]; then required=$(required_checks "$base_ref"); else required='[]'; fi
   fi
   reduced=$(jq -c --arg sha "$sha" --argjson bots "$bots" --argjson registry "$BOTS" \
     --argjson rerequested "$rerequested" --argjson posting "$(jq -cn --argjson a "$forced" --argjson b "$retry" '$a + $b')" \
@@ -391,6 +398,30 @@ rerequest() {
     cat "$errfile" >&2
     [ "$rc" = 0 ] || finish forge "re-request for $bot failed: $(tr '\n' ' ' <"$errfile")"
   done
+}
+
+# Succeeds when a workflow file on the base branch runs on pull_request or
+# pull_request_target, which is when a SHA with no checks is a wait and not a
+# pass. A listing that fails for any reason but a 404, or a file that cannot be
+# read, counts as yes, since waiting is the safe answer. Comments are ignored.
+# Read once, on the first poll that needs it.
+pr_ci_configured() {
+  local out path file stripped
+  if [ -z "$pr_ci" ]; then
+    pr_ci=no
+    if out=$(gh api "repos/$repo/contents/.github/workflows?ref=$base_ref" 2>"$errfile"); then
+      while IFS= read -r path; do
+        file=$(gh api -H 'Accept: application/vnd.github.raw' "repos/$repo/contents/$path?ref=$base_ref" 2>"$errfile") ||
+          { pr_ci=yes; break; }
+        stripped=$(sed 's/#.*$//' <<<"$file")
+        if grep -qE '(^|[^[:alnum:]_])pull_request(_target)?([^[:alnum:]_]|$)' <<<"$stripped"; then pr_ci=yes; break; fi
+      done < <(jq -r '(if type == "array" then .[] else empty end)
+        | select(.type == "file" and (.name | test("\\.ya?ml$"))) | .path' <<<"$out")
+    elif ! grep -q 'HTTP 404' "$errfile"; then
+      pr_ci=yes
+    fi
+  fi
+  [ "$pr_ci" = yes ]
 }
 
 record_watch() {
@@ -453,6 +484,7 @@ silent_verdict() {
 }
 
 start=$SECONDS failures=0 shown='' verdict='' error='' rerequested='{}' required='' first_base='' recorded=''
+base_ref='' pr_ci='' no_checks=''
 while :; do
   if poll; then
     failures=0
@@ -472,8 +504,16 @@ while :; do
         finish failed "$(v '.checks.failed_names | join(", ")')"
         ;;
       passed)
-        if base_moved; then finish base-moved "$(v '"\(.checks.passed) checks passed"')"; fi
-        finish passed "$(v '"\(.checks.passed) checks passed"')"
+        if [ "$(v '.checks.passed + .checks.failed + .checks.pending')" = 0 ] && pr_ci_configured; then
+          if [ "$(gh pr view "$pr" --repo "$repo" --json mergeable --jq .mergeable 2>/dev/null || true)" = CONFLICTING ]; then
+            finish base-moved "no checks registered: the pull request is CONFLICTING with $base_ref, so GitHub runs no pull_request workflow on it"
+          fi
+          [ -n "$no_checks" ] || echo "no checks registered yet: $base_ref has a pull request workflow, so waiting for one on $sha"
+          no_checks=1
+        else
+          if base_moved; then finish base-moved "$(v '"\(.checks.passed) checks passed"')"; fi
+          finish passed "$(v '"\(.checks.passed) checks passed"')"
+        fi
         ;;
       waiting) rerequest "$(v --argjson forced "$forced" '[.bots | to_entries[]
         | select(.value == "rerequest" or (.value != "settled" and (.key | IN($forced[])))) | .key]')" ;;
