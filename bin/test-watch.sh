@@ -616,10 +616,11 @@ run 7 $SHA --repo o/r --interval 0 --deadline 1
 expect_exit "a workflow file that cannot be read waits" 4
 expect_in "the read failure is printed" err "could not read .github/workflows/ci.yml on main"
 
-# The trigger is found in an on: block longer than a pipe buffer.
+# The trigger is found in an on: block longer than a pipe buffer (64 KiB on Linux,
+# so about 4000 lines of 40 bytes is over it on both systems).
 case_dir
 mkdir -p "$dir/workflows"
-{ printf 'on:\n  pull_request:\n    paths:\n'; for _ in $(seq 1 1500); do printf '      - "src/some/long/path/segment/**"\n'; done; } > "$dir/workflows/ci.yml"
+{ printf 'on:\n  pull_request:\n    paths:\n'; for _ in $(seq 1 4000); do printf '      - "src/some/long/path/segment/**"\n'; done; } > "$dir/workflows/ci.yml"
 SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
 run 7 $SHA --repo o/r --interval 0 --deadline 1
 expect_exit "a pull_request trigger followed by a very long block counts as CI" 4

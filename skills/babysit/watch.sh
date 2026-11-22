@@ -427,7 +427,7 @@ workflow_has_pr_trigger() {
 # pull_request_target trigger, which is when a SHA with no checks is a wait and
 # not a pass. A listing that fails for any reason but a 404, a listing jq cannot
 # read, or a file that cannot be read counts as yes, since waiting is the safe
-# answer, and the first two print why on stderr. The ref goes in as a parameter,
+# answer, and each of the three prints why on stderr. The ref goes in as a parameter,
 # so a branch name with & or # reads the right ref.
 # Read once, on the first poll that needs it.
 pr_ci_configured() {
