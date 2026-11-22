@@ -11,8 +11,10 @@
 # compare prints compare.json, else no files.
 # `gh pr view` prints the first line of mergeable.txt, else nothing. `gh api` of
 # the base's workflow folder prints the files in the workflows/ fixture folder as
-# a contents listing, or fails with HTTP 404 when there is no such folder, and of
-# one workflow file prints that file.
+# a contents listing, or fails with HTTP 404 when there is no such folder, or
+# with the text of workflows.err, or prints the text of workflows.bad as the
+# listing, and of one workflow file prints that file, or fails with the text of
+# workflow-read.err.
 # Each case checks the exit code and, where it matters, stdout or the gh call log.
 # WATCH_GRACE is 0 unless a case sets it, so a case settles on its first poll.
 set -euo pipefail
@@ -47,15 +49,19 @@ if [ "$1 $2" = "pr view" ]; then
   exit 0
 fi
 if [ "$1" = api ]; then
-  endpoint=$2
-  [ "$2" != -H ] || endpoint=$4
+  endpoint=
+  for arg in "$@"; do case $arg in repos/*) endpoint=$arg; break ;; esac; done
   case $endpoint in
-    repos/*/contents/.github/workflows\?*)
+    repos/*/contents/.github/workflows)
+      if [ -e "$FIXTURES/workflows.err" ]; then cat "$FIXTURES/workflows.err" >&2; exit 1; fi
+      if [ -e "$FIXTURES/workflows.bad" ]; then cat "$FIXTURES/workflows.bad"; exit 0; fi
       [ -d "$FIXTURES/workflows" ] || { echo "HTTP 404: Not Found" >&2; exit 1; }
       # shellcheck disable=SC2046 # the fixture file names have no spaces.
       jq -n --args '[$ARGS.positional[] | {type: "file", name: ., path: (".github/workflows/" + .)}]' \
         $(ls "$FIXTURES/workflows"); exit 0 ;;
-    repos/*/contents/.github/workflows/*) f=${endpoint%%\?*}; cat "$FIXTURES/workflows/${f##*/}"; exit 0 ;;
+    repos/*/contents/.github/workflows/*)
+      if [ -e "$FIXTURES/workflow-read.err" ]; then cat "$FIXTURES/workflow-read.err" >&2; exit 1; fi
+      cat "$FIXTURES/workflows/${endpoint##*/}"; exit 0 ;;
     repos/*/rules/branches/*) if [ -e "$FIXTURES/rules.json" ]; then cat "$FIXTURES/rules.json"; else echo '[]'; fi; exit 0 ;;
     repos/*/protection/required_status_checks)
       if [ -e "$FIXTURES/protection.json" ]; then cat "$FIXTURES/protection.json"; exit 0; fi
@@ -532,6 +538,115 @@ case_dir
 SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
 run 7 $SHA --repo o/r --interval 0 --deadline 5
 expect_exit "no checks with no workflows on the base passes as before" 0
+
+# Only a pull_request or pull_request_target trigger counts, in every form the
+# `on:` key takes, and the same words anywhere else do not.
+case_dir
+workflow ci.yml 'on: [push, pull_request]'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a pull_request trigger in a flow list counts as CI" 4
+
+case_dir
+workflow ci.yml 'on: pull_request'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a scalar pull_request trigger counts as CI" 4
+
+case_dir
+workflow ci.yml $'name: CI\non:\n- push\n- pull_request\njobs:\n  t:\n    runs-on: ubuntu-latest'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a pull_request trigger in a block list counts as CI" 4
+
+case_dir
+workflow ci.yml $'"on":\n  pull_request:\n    paths: ["src/**"]'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a quoted on key with a filtered pull_request counts as CI" 4
+
+case_dir
+workflow release.yml $'on:\n  push:\n    tags: ["v*"]\njobs:\n  t:\n    if: github.event_name == \'pull_request\' || github.event.pull_request.draft\n    steps:\n      - run: echo pull_request'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "pull_request in a step or an expression is not a trigger" 0
+
+case_dir
+workflow review.yml 'on: pull_request_review'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a pull_request_review trigger is not a pull_request trigger" 0
+
+# The base ref goes to gh as a parameter, so a branch name with & or # is read.
+case_dir
+workflow ci.yml 'on: pull_request'
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_in "the workflow listing passes the ref as a parameter" gh.log "api --method GET repos/o/r/contents/.github/workflows -f ref=main"
+expect_in "the workflow read passes the ref as a parameter" gh.log "repos/o/r/contents/.github/workflows/ci.yml -f ref=main"
+expect_count "no request carries the ref in the URL" gh.log "?ref=" 0
+
+# A listing or read that fails for any reason but a 404 counts as CI configured.
+case_dir
+echo "HTTP 403: Resource not accessible" > "$dir/workflows.err"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a workflow listing that fails with a 403 waits" 4
+expect_in "the listing failure is printed" err "could not list the workflows of main"
+expect_in "the listing failure's text is printed" err "HTTP 403: Resource not accessible"
+
+case_dir
+echo "not json" > "$dir/workflows.bad"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a workflow listing that is not JSON waits" 4
+expect_in "the unreadable listing is printed" err "could not read the workflow listing of main"
+
+case_dir
+workflow ci.yml 'on: push'
+echo "HTTP 500: Server Error" > "$dir/workflow-read.err"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 1
+expect_exit "a workflow file that cannot be read waits" 4
+
+# GitHub runs no pull_request workflow on a conflicting pull request, so exit 8
+# comes at once, inside the grace window, with a required check missing, and
+# with a bot still pending.
+case_dir
+workflow ci.yml 'on: pull_request'
+echo CONFLICTING > "$dir/mergeable.txt"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+WATCH_GRACE=60 run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "no checks on a conflicting pull request exits 8 inside the grace window" 8
+
+case_dir
+echo '[{"type": "required_status_checks", "parameters": {"required_status_checks": [{"context": "build"}]}}]' > "$dir/rules.json"
+echo CONFLICTING > "$dir/mergeable.txt"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "no checks on a conflicting pull request with a required check exits 8" 8
+expect_in "the verdict names the conflict" out "verdict: base-moved: no checks registered: the pull request is CONFLICTING with main"
+
+case_dir
+workflow ci.yml 'on: pull_request'
+echo CONFLICTING > "$dir/mergeable.txt"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --bot coderabbit --interval 0 --deadline 5
+expect_exit "no checks on a conflicting pull request with a pending bot exits 8" 8
+
+case_dir
+workflow release.yml 'on: push'
+echo CONFLICTING > "$dir/mergeable.txt"
+SUITES='[]' response OPEN $SHA '[]' > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "no checks on a conflicting pull request with no pull request CI passes as before" 0
+
+case_dir
+workflow ci.yml 'on: pull_request'
+echo CONFLICTING > "$dir/mergeable.txt"
+response OPEN $SHA '[]' "$BUILD" > "$dir/1.json"
+run 7 $SHA --repo o/r --interval 0 --deadline 5
+expect_exit "a conflicting pull request whose checks ran settles as before" 0
 
 GUARD_DONE=$(suite github-actions COMPLETED Guard)
 case_dir

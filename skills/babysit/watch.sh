@@ -13,10 +13,12 @@
 # A GitHub Actions workflow on the SHA that has not finished counts as a pending
 # check, and one that failed before creating any check run counts as a failed
 # check. A SHA with no check run or commit status at all never passes while the
-# base branch has a pull request workflow: it prints "no checks
+# base branch has a pull request workflow (a pull_request or pull_request_target
+# trigger in a workflow's `on:` block) or a required check: it prints "no checks
 # registered yet" and keeps waiting until the deadline, or exits 8 at once when
 # the pull request is CONFLICTING, since GitHub runs no pull_request workflow on
-# a conflicting pull request. A base with no such workflow settles as before.
+# a conflicting pull request, even inside the wait for late checks. A base with
+# no such workflow settles as before.
 # When the base branch's rulesets or branch protection name required
 # checks, it settles once each of them has reported and finished. Otherwise it
 # never settles in its first SETTLE_GRACE seconds, so a check or workflow that
@@ -400,28 +402,58 @@ rerequest() {
   done
 }
 
-# Succeeds when a workflow file on the base branch runs on pull_request or
-# pull_request_target, which is when a SHA with no checks is a wait and not a
-# pass. A listing that fails for any reason but a 404, or a file that cannot be
-# read, counts as yes, since waiting is the safe answer. Comments are ignored.
+# Succeeds when a workflow file on stdin lists pull_request or pull_request_target
+# as a trigger. It reads only the top-level `on:` block, in its scalar, list, and
+# mapping forms, so the same words in a step, a name, or an expression such as
+# github.event.pull_request do not count. Comments are ignored.
+workflow_has_pr_trigger() {
+  awk '
+    /^[[:space:]]*#/ { next }
+    { sub(/[[:space:]]+#.*$/, "") }
+    /^("on"|on|true):/ { in_on = 1; rest = $0; sub(/^[^:]*:/, "", rest); print rest; next }
+    in_on && /^[^[:space:]-]/ { in_on = 0 }
+    in_on { print }
+  ' | grep -qE '(^|[^[:alnum:]_])pull_request(_target)?([^[:alnum:]_]|$)'
+}
+
+# Succeeds when a workflow file on the base branch has a pull_request or
+# pull_request_target trigger, which is when a SHA with no checks is a wait and
+# not a pass. A listing that fails for any reason but a 404, a listing jq cannot
+# read, or a file that cannot be read counts as yes, since waiting is the safe
+# answer, and the first two print why on stderr. The ref goes in as a parameter,
+# so a branch name with & or # reads the right ref.
 # Read once, on the first poll that needs it.
 pr_ci_configured() {
-  local out path file stripped
+  local out paths path file
   if [ -z "$pr_ci" ]; then
     pr_ci=no
-    if out=$(gh api "repos/$repo/contents/.github/workflows?ref=$base_ref" 2>"$errfile"); then
-      while IFS= read -r path; do
-        file=$(gh api -H 'Accept: application/vnd.github.raw' "repos/$repo/contents/$path?ref=$base_ref" 2>"$errfile") ||
-          { pr_ci=yes; break; }
-        stripped=$(sed 's/#.*$//' <<<"$file")
-        if grep -qE '(^|[^[:alnum:]_])pull_request(_target)?([^[:alnum:]_]|$)' <<<"$stripped"; then pr_ci=yes; break; fi
-      done < <(jq -r '(if type == "array" then .[] else empty end)
-        | select(.type == "file" and (.name | test("\\.ya?ml$"))) | .path' <<<"$out")
+    if out=$(gh api --method GET "repos/$repo/contents/.github/workflows" -f ref="$base_ref" 2>"$errfile"); then
+      if paths=$(jq -r '(if type == "array" then .[] else empty end)
+        | select(.type == "file" and (.name | test("\\.ya?ml$"))) | .path' <<<"$out" 2>"$errfile"); then
+        while IFS= read -r path; do
+          [ -n "$path" ] || continue
+          file=$(gh api --method GET -H 'Accept: application/vnd.github.raw' "repos/$repo/contents/$path" -f ref="$base_ref" 2>"$errfile") ||
+            { pr_ci=yes; break; }
+          if workflow_has_pr_trigger <<<"$file"; then pr_ci=yes; break; fi
+        done <<<"$paths"
+      else
+        echo "could not read the workflow listing of $base_ref, so assuming it runs pull request CI: $(cat "$errfile")" >&2
+        pr_ci=yes
+      fi
     elif ! grep -q 'HTTP 404' "$errfile"; then
+      echo "could not list the workflows of $base_ref, so assuming it runs pull request CI: $(cat "$errfile")" >&2
       pr_ci=yes
     fi
   fi
   [ "$pr_ci" = yes ]
+}
+
+# Succeeds when the SHA has no check run or commit status at all and the base is
+# known to run pull request CI: a required check is named, or a workflow on the
+# base has a pull_request trigger.
+no_checks_where_ci_is_expected() {
+  [ "$(v '.checks.passed + .checks.failed + .checks.pending')" = 0 ] &&
+    { [ "$required" != '[]' ] || pr_ci_configured; }
 }
 
 record_watch() {
@@ -484,7 +516,7 @@ silent_verdict() {
 }
 
 start=$SECONDS failures=0 shown='' verdict='' error='' rerequested='{}' required='' first_base='' recorded=''
-base_ref='' pr_ci='' no_checks=''
+base_ref='' pr_ci='' no_checks='' outcome=''
 while :; do
   if poll; then
     failures=0
@@ -495,7 +527,15 @@ while :; do
     fi
     line=$(v "$STATUS_LINE")
     [ "$line" = "$shown" ] || { echo "$line"; shown=$line; }
-    case $(v .outcome) in
+    outcome=$(v .outcome)
+    # GitHub runs no pull_request workflow on a conflicting pull request, so
+    # waiting for a check that cannot come is pointless, in the grace window, with
+    # a required check missing, or with a bot still pending.
+    if { [ "$outcome" = passed ] || [ "$outcome" = waiting ]; } && no_checks_where_ci_is_expected &&
+      [ "$(gh pr view "$pr" --repo "$repo" --json mergeable --jq .mergeable 2>/dev/null || true)" = CONFLICTING ]; then
+      finish base-moved "no checks registered: the pull request is CONFLICTING with $base_ref, so GitHub runs no pull_request workflow on it"
+    fi
+    case $outcome in
       moved) finish moved "head is $(v .head), not $sha" ;;
       closed) finish closed "pull request is $(v .state), not OPEN" ;;
       unavailable) finish unavailable "$(unavailable_bots)" ;;
@@ -504,10 +544,7 @@ while :; do
         finish failed "$(v '.checks.failed_names | join(", ")')"
         ;;
       passed)
-        if [ "$(v '.checks.passed + .checks.failed + .checks.pending')" = 0 ] && pr_ci_configured; then
-          if [ "$(gh pr view "$pr" --repo "$repo" --json mergeable --jq .mergeable 2>/dev/null || true)" = CONFLICTING ]; then
-            finish base-moved "no checks registered: the pull request is CONFLICTING with $base_ref, so GitHub runs no pull_request workflow on it"
-          fi
+        if no_checks_where_ci_is_expected; then
           [ -n "$no_checks" ] || echo "no checks registered yet: $base_ref has a pull request workflow, so waiting for one on $sha"
           no_checks=1
         else
