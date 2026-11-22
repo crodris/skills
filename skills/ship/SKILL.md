@@ -1,7 +1,7 @@
 ---
 name: ship
 description: Use when the user says "ship", "ship it", "/ship", "ship and merge", "take this all the way", or "get this merged and released", or asks to carry the current branch or its open pull request from working tree to a ready or merged pull request. Plain "ship" stops at a green pull request, and it merges only when the request says to merge or `.ship/config.md` sets `merge` to `yes`. Not for a single commit or a release cut from an already-merged main.
-version: 3.3.3
+version: 3.4.0
 ---
 
 # Ship
@@ -60,17 +60,18 @@ After cases 3 to 6:
 2. For cases 3 and 4, commit a `.ship/config.md` this run wrote, on its own.
 3. For cases 3 and 4, when the branch has never been pushed and is behind `origin/$base`, run `git rebase --autostash "origin/$base"` and resolve any conflict the way the change intends.
 4. For case 5, go to Call the skills step 4, with the `PASS` line added to the run section through the Reuse an open one section of `../file-pr/SKILL.md`, and stop on its `FAIL`.
-5. For case 6, push with `bash <this skill's directory>/guard.sh "$branch" "$base"`, and go to Call the skills step 3 with the `PASS` line in the run section.
+5. For case 6, go to Call the skills step 2 with the `PASS` line in the run section.
 
 ## Call the skills in order
 
 1. Read `../prove/SKILL.md` and follow it with `base`, what changed and why, and a commit message.
    On `FAIL`, stop and push nothing.
-2. Push with `bash <this skill's directory>/guard.sh "$branch" "$base"`, where any nonzero exit is a stop.
-3. Read `../file-pr/SKILL.md` and follow it with the branch, `base`, and a run section holding the summary, the `PASS` line, and any drive evidence.
+2. When the Which bots are present section of `../babysit/bots.md` finds no table bot present, follow `../review-loop/before-push.md` with pass kind `first`, the open pull request Settle the branch found, the merge method step 4 passes babysit, or with none the one babysit's Inputs resolve, and whether this run created the branch, and stop on `BLOCKED`.
+   Push with `bash <this skill's directory>/guard.sh "$branch" "$base"`, where any nonzero exit is a stop.
+3. Read `../file-pr/SKILL.md` and follow it with the branch, `base`, and a run section holding the summary, the `PASS` line, any drive evidence, and the ledger, lane, and round count of a review before the push, whose `PASS` line replaces step 1's, and whose drive evidence does when a round ran a drive.
    On `FAIL`, stop.
    On `HANDOFF`, report and end.
-4. Read `../babysit/SKILL.md` and follow it with the pull request, the mode, the resolved merge method, and whether this run created the branch.
+4. Read `../babysit/SKILL.md` and follow it with the pull request, the mode, the resolved merge method, whether this run created the branch, and the result and ledger of a review before the push.
    In hold mode, and on `AWAITING-APPROVAL` or `BLOCKED`, stop and report.
 5. In merge mode on `READY`, read `../land/SKILL.md` and follow it with the pull request, the `READY` SHA, the branch, `base`, and the worktree this run created or babysit's result line reported, if any.
    On `BLOCKED`, stop and report.

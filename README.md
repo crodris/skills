@@ -41,7 +41,7 @@ Then select each plugin you want from that marketplace and add it.
 They need an Asana or Linear MCP, and the GitHub CLI for reviews on GitHub.
 The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacked reviews, and troubleshooting.
 
-### ship (v3.3.3)
+### ship (v3.4.0)
 
 Six skills that carry the current branch to a green pull request, and on to a merged release when you ask to merge.
 Each one ends with a result line that the next one reads.
@@ -60,6 +60,7 @@ Each one ends with a result line that the next one reads.
 Plain "ship" stops at a green pull request.
 It merges only when you ask it to, or when `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
 It merges with the `merge-method` in `.ship/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one method or its settings are unreadable.
+In a repository with no CodeRabbit or Greptile, `review-loop` reviews and fixes local commits until they are clean before each push, so CI runs once per push and no fix push cancels it.
 When a review bot is rate limited, out of credits, or silent, `babysit` goes on without it on a low-risk pull request, and on a high-risk one runs a stand-in review and waits only for a short rate limit.
 The skills need a git remote, an authenticated GitHub CLI, and `jq`.
 

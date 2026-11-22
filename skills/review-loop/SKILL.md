@@ -1,7 +1,7 @@
 ---
 name: review-loop
-description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass; use when the user asks for one review-and-fix pass on the current pull request.
-version: 3.3.3
+description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass, and by ship and babysit before a push in a repository with no table bot (CodeRabbit or Greptile); use when the user asks for one review-and-fix pass on the current pull request.
+version: 3.4.0
 ---
 
 # Review loop
@@ -45,7 +45,8 @@ Also tell each to work read-only: read the change with `git show <sha>:<path>` a
 | Spec | `opus` | `opus` |
 | Security | `opus` | `opus` |
 
-The pass kind names what the last push added, and babysit passes it from its record of that push.
+The pass kind names what the last push added, or what the next push adds when `before-push.md` runs, and babysit passes it from its record of that push.
+`before-push.md` in this skill's directory changes the Blocking and Budget rules for its rounds.
 A `first` pass, the run's first or one on a head this run did not push, reads the whole diff against `base`.
 A `fixes` pass reads the fix commits, a `base merge` pass reads `git show --remerge-diff <merge-sha>`, and a `base rebase` pass reads the `git range-diff` babysit recorded.
 A push that carried fixes and a base update gives both kinds, and the pass reads both.
