@@ -54,9 +54,9 @@
 # |      | status, check, review, or comment on the SHA after --silent-after    |
 # |      | seconds or at the deadline, with nothing else pending)               |
 # | 7    | pull request is no longer open (MERGED or CLOSED); prints its state  |
-# | 8    | settled with every check passed, but the base branch moved since the |
-# |      | start and the new base commits touch files this pull request changes |
-# |      | or no check registered on a CONFLICTING pull request                 |
+# | 8    | the base branch moved since the start and the new base commits touch |
+# |      | files this pull request changes, after every check passed, or a      |
+# |      | CONFLICTING pull request has no check registered, at any point       |
 #
 # stdout gets a status line on each poll whose status changed, then one verdict
 # line. gh's stderr is passed through, never hidden.
@@ -343,11 +343,13 @@ member() { jq -e --arg b "$1" 'any(.[]; . == $b)' <<<"$2" >/dev/null; }
 # rulesets and its branch protection. A read that fails, such as protection
 # that needs admin access, adds nothing, so the grace period applies instead.
 required_checks() {
-  local rules protection
-  rules=$(gh api "repos/$repo/rules/branches/$1" 2>/dev/null |
+  local rules protection branch
+  # Encoded, so a base such as release&ci or feat#x reads its own endpoint.
+  branch=$(jq -rn --arg b "$1" '$b | @uri')
+  rules=$(gh api "repos/$repo/rules/branches/$branch" 2>/dev/null |
     jq -c '[.[]? | select(.type == "required_status_checks") | .parameters.required_status_checks[]?.context]' 2>/dev/null) ||
     rules='[]'
-  protection=$(gh api "repos/$repo/branches/$1/protection/required_status_checks" 2>/dev/null |
+  protection=$(gh api "repos/$repo/branches/$branch/protection/required_status_checks" 2>/dev/null |
     jq -c '[(.contexts // [])[], (.checks // [])[].context]' 2>/dev/null) || protection='[]'
   jq -cn --argjson a "${rules:-[]}" --argjson b "${protection:-[]}" '$a + $b | unique'
 }
@@ -407,13 +409,18 @@ rerequest() {
 # mapping forms, so the same words in a step, a name, or an expression such as
 # github.event.pull_request do not count. Comments are ignored.
 workflow_has_pr_trigger() {
-  awk '
+  # The block is captured before grep reads it: grep -q exits on its first match,
+  # and an awk still writing to it would die of SIGPIPE, which pipefail reports as
+  # no trigger once the block is more than a pipe buffer long.
+  local trigger_block
+  trigger_block=$(awk '
     /^[[:space:]]*#/ { next }
     { sub(/[[:space:]]+#.*$/, "") }
-    /^("on"|on|true):/ { in_on = 1; rest = $0; sub(/^[^:]*:/, "", rest); print rest; next }
+    /^("on"|\047on\047|on|true):/ { in_on = 1; rest = $0; sub(/^[^:]*:/, "", rest); print rest; next }
     in_on && /^[^[:space:]-]/ { in_on = 0 }
     in_on { print }
-  ' | grep -qE '(^|[^[:alnum:]_])pull_request(_target)?([^[:alnum:]_]|$)'
+  ')
+  grep -qE '(^|[^[:alnum:]_])pull_request(_target)?([^[:alnum:]_]|$)' <<<"$trigger_block"
 }
 
 # Succeeds when a workflow file on the base branch has a pull_request or
@@ -432,8 +439,11 @@ pr_ci_configured() {
         | select(.type == "file" and (.name | test("\\.ya?ml$"))) | .path' <<<"$out" 2>"$errfile"); then
         while IFS= read -r path; do
           [ -n "$path" ] || continue
-          file=$(gh api --method GET -H 'Accept: application/vnd.github.raw' "repos/$repo/contents/$path" -f ref="$base_ref" 2>"$errfile") ||
-            { pr_ci=yes; break; }
+          file=$(gh api --method GET -H 'Accept: application/vnd.github.raw' "repos/$repo/contents/$path" -f ref="$base_ref" 2>"$errfile") || {
+            echo "could not read $path on $base_ref, so assuming it runs pull request CI: $(cat "$errfile")" >&2
+            pr_ci=yes
+            break
+          }
           if workflow_has_pr_trigger <<<"$file"; then pr_ci=yes; break; fi
         done <<<"$paths"
       else
