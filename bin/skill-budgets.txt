@@ -26,7 +26,7 @@ skills/execute/trackers.md 2062
 skills/execute/trackers/asana.md 847
 skills/execute/trackers/linear.md 644
 skills/execute/trackers/merge-closer.md 2728
-skills/file-pr/SKILL.md 814
+skills/file-pr/SKILL.md 813
 skills/frontend-design-pipeline/directions.md 686
 skills/frontend-design-pipeline/SKILL.md 655
 skills/html-comms/SKILL.md 687
@@ -43,8 +43,8 @@ skills/rewrite/SKILL.md 1786
 skills/rewrite/template.md 627
 skills/scaffold/SKILL.md 1100
 skills/full-send/boundary.md 1102
-skills/full-send/config.md 533
+skills/full-send/config.md 586
 skills/full-send/SKILL.md 1279
-skills/full-stop/SKILL.md 94
+skills/full-stop/SKILL.md 112
 skills/verification-audit/SKILL.md 929
 skills/worktree-setup/SKILL.md 272

@@ -7,4 +7,5 @@ version: 4.0.0
 # Full Stop
 
 Read `../full-send/SKILL.md` and follow it in hold mode: do the same work, and stop at a green pull request for the user to merge.
+The run stays in hold mode when full-send's Precedence section hands it to a repository's own full-send skill.
 When `../full-send/SKILL.md` is missing, stop and tell the user to install the full-send skills (`full-send`, `full-stop`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
