@@ -1,7 +1,7 @@
 ---
 name: babysit
 description: Watches one pull request until it is ready to merge, running CI, the review bots, and review-loop on each pass, pushing each pass's fixes, and keeping the branch current with its base. Use when the user asks to babysit, watch, or monitor a pull request, or to get it green without merging.
-version: 4.0.0
+version: 4.1.0
 ---
 
 # Babysit
@@ -114,7 +114,7 @@ Return on a pass that pushed nothing and that review-loop returned `CLEAN` for.
       When the lane is light, add the comment `../review-loop/lanes.md` names to the command.
    5. Start another pass on the pushed head, since the bots that review every push have not read it, and return from that pass's Result instead.
 2. With `merge-method: rebase` and more than one commit in `origin/$base..HEAD`, follow `per-commit.md` in this skill's directory.
-3. Check the pull request once more for a table bot no pass waited on, and run a pass for it as `bots.md` says when one shows up.
+3. Check the pull request once more for a table bot that `bots.md` counts as present and no pass waited on, and run a pass for it as `bots.md` says when one shows up.
 4. Run watch.sh with no `--bot` on the current head, the way step 2 of each pass does.
    Exit 0 goes on.
    Exit 1 goes back to triage.

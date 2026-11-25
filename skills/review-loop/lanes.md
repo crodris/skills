@@ -9,7 +9,7 @@ Fetch the base as the Fetching the base section of `../full-send/boundary.md` sa
 Then resolve the lane from every file the change ships: whatever differs from `origin/<base>`, committed or not, plus the untracked files that belong to it.
 
 - Security: any changed file matches `security-paths`, or the diff changes a step that review-loop's Review section names for the Security subagent.
-  A third `general-purpose` subagent reviews the diff for security alone, beside Standards and Spec, in every pass they run.
+  A third subagent, or one per model when `models.md` sets several for `security`, reviews the diff for security alone, beside Standards and Spec, in every pass they run.
 - Light: every changed file matches `light-paths`, and at least one review bot is present.
   The review bots are the only full-diff reviewers.
   Add `# review-gate: light lane` to each push and merge command, since a push gate that requires Standards and Spec reads that comment as this lane's exception.

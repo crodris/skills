@@ -5,7 +5,7 @@ Read by every skill in the full-send family before it reads a slot or records an
 ## Slots
 
 A line is `<slot>: <value>`, and a trailing `# comment` is not part of the value.
-A line naming a slot this table does not list, such as `review`, `pr-hook`, or `merge` from an older version, is ignored.
+A line naming a slot this table does not list, such as `review`, `pr-hook`, `merge`, or `cross-review` from an older version, is ignored.
 
 | Slot | Read from | Absent means |
 | --- | --- | --- |
@@ -18,7 +18,8 @@ A line naming a slot this table does not list, such as `review`, `pr-hook`, or `
 | `light-paths`, `security-paths` | `origin/<base>` | no lane |
 | `drive` | `origin/<base>` | no drive |
 | `merge-method` | `origin/<base>` | resolved from the repository's allowed methods |
-| `cross-review` | `origin/<base>` | no second-opinion reviewer; `cursor` adds one through the `cursor` skill |
+| `reviewers` | `origin/<base>` | default reviewer models, as `../review-loop/models.md` says |
+| `bots` | `origin/<base>` | bots detected, as `../babysit/bots.md` says |
 
 Before reading a working-tree slot or recording an answer, resolve the path against the repository root.
 When `.full-send` or `config.md` is a symlink or resolves outside the repository, refuse the write and read no working-tree slot, so each one is absent.
@@ -28,14 +29,14 @@ Read an `origin/<base>` slot by fetching the base as the Fetching the base secti
 When `.full-send/config.md` does not exist at that ref, read `.ship/config.md` from an older version there in its place, and when neither exists, every `origin/<base>` slot is absent.
 An answer this run recorded counts as read from there too.
 A `worktrees` value is a path from the repository root in which `<branch>` stands for the branch name, and a value without `<branch>` gets `/<branch>` appended.
-`light-paths`, `security-paths`, `drive`, and `cross-review` are hand-written: no skill asks about them or writes them.
+`light-paths`, `security-paths`, `drive`, `reviewers`, and `bots` are hand-written: no skill asks about them or writes them.
 
 ## Recording an answer
 
 Write the file only when this run asked the user and got an answer, and only after `full-send` confirmed there is something to ship.
 Write only the slots the user answered, and mark each with `# asked`.
 When `.full-send/config.md` is missing, create the `.full-send` directory and the file, starting with the `# full-send pipeline profile` heading the example below shows, and otherwise edit the existing file in place, line by line.
-`none` is a legal value only for `release` and `post-merge`.
+In a recorded answer, `none` is a legal value only for `release` and `post-merge`.
 A `verify: none` is a corrupt line: treat the slot as unresolved, re-detect, and ask.
 
 ```markdown

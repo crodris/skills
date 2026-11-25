@@ -53,7 +53,7 @@
         "./land"
       ],
       "description": "Seven agent skills that carry the current branch from working tree to merged release: full-send calls prove to run the project's own verify gates and commit, file-pr to open the pull request, babysit to run CI, CodeRabbit or Greptile, and review-loop's Standards and Spec subagents on each pass with one batched fix push (in a repository with no CodeRabbit or Greptile, the review runs on local commits before each push, so CI runs once), and land to merge with the repository's merge method, watch the release, and clean up. full-stop runs the same steps and stops at a green pull request. No tracker required.",
-      "version": "4.0.0",
+      "version": "4.1.0",
       "author": {
         "name": "crodris"
       },
