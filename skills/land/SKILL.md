@@ -1,23 +1,23 @@
 ---
 name: land
-description: Merges a pull request that babysit reported ready, after a merge gate, with the repository's merge method, then watches the release run and cleans up what the ship run created. Read by ship in merge mode; use when the user asks to land a ready pull request.
-version: 3.4.1
+description: Merges a pull request that babysit reported ready, after a merge gate, with the repository's merge method, then watches the release run and cleans up what the full-send run created. Read by full-send in merge mode; use when the user asks to land a ready pull request.
+version: 4.0.0
 ---
 
 # Land
 
-Read `../ship/boundary.md` and `../ship/config.md` first, and stop as boundary.md's Missing skills section says when a sibling is missing.
-When `../ship/boundary.md` itself is missing, stop and tell the user to install the ship skills (`ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
+Read `../full-send/boundary.md` and `../full-send/config.md` first, and stop as boundary.md's Missing skills section says when a sibling is missing.
+When `../full-send/boundary.md` itself is missing, stop and tell the user to install the full-send skills (`full-send`, `full-stop`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
 
-Inputs: the pull request, the SHA babysit returned with `READY`, the branch, `base`, and the worktree ship created, if any.
+Inputs: the pull request, the SHA babysit returned with `READY`, the branch, `base`, and the worktree full-send created, if any.
 
 ## Merge method
 
 `merge-method` is `squash`, `rebase`, or `merge`.
-Read the allowed methods with `gh api repos/<owner/name> --jq '[.allow_squash_merge, .allow_rebase_merge, .allow_merge_commit]'`, where `<owner/name>` is the slug `../ship/boundary.md` defines, and a failed call or a `null` means unreadable.
+Read the allowed methods with `gh api repos/<owner/name> --jq '[.allow_squash_merge, .allow_rebase_merge, .allow_merge_commit]'`, where `<owner/name>` is the slug `../full-send/boundary.md` defines, and a failed call or a `null` means unreadable.
 A configured value outside the three, or one the settings show as `false`, is unresolved.
 With no resolved value, use the one method when exactly one is `true`.
-Otherwise ship asks in its one round of questions, with one option per allowed method, or all three when unreadable, and these examples:
+Otherwise full-send asks in its one round of questions, with one option per allowed method, or all three when unreadable, and these examples:
 
 - `squash`: the branch's commits become one commit titled like the pull request, so five work-in-progress commits become `feat(api): add rate limits (#42)`.
 - `rebase`: each branch commit lands as its own commit, so an import authored by someone else stays separate from the commit that wires it in.
@@ -39,7 +39,7 @@ Merge only when every item holds, and return `BLOCKED <item>` on the first that 
    `mergeable` is `MERGEABLE` and `mergeStateStatus` is neither `BLOCKED` nor `DIRTY`, since green checks and a blocked merge button are separate facts.
 5. The ledger in the run section has no open confirmed critical or major, and no open blocking finding.
    A run section with neither ledger lines nor `Ledger: none` fails this item.
-6. On a direct land request with no `PASS` line in the run section, return `BLOCKED proof` and say to run `ship` on the pull request first, since `ship` records the `PASS` line.
+6. On a direct land request with no `PASS` line in the run section, return `BLOCKED proof` and say to run `full-send` on the pull request first, since `full-send` records the `PASS` line.
 7. The proof covers the diff.
    Every file that `gh api --paginate "repos/<owner/name>/pulls/<n>/files" --jq '.[].filename'` lists was exercised by verify or the drive, or changes no behavior.
    Name a behavior-changing file that nothing exercised, and return `BLOCKED proof coverage`.
@@ -65,7 +65,7 @@ A host may close the session once the pull request merges and the turn goes idle
 
 ## Release
 
-Fetch the base first, as the Fetching the base section of `../ship/boundary.md` says.
+Fetch the base first, as the Fetching the base section of `../full-send/boundary.md` says.
 Skip this section when `release` is `none`, or when `git ls-tree <merge-sha> .github/workflows/` lists no workflow in the merged tree, and say which.
 Run `bash <this skill's directory>/release-watch.sh <merge-sha> --repo <owner/name> --base "$base"` with a `--deadline` below the tool's timeout.
 Exit 0 is a passed release.
@@ -78,8 +78,8 @@ Never push to `base` while a release may still be running.
 
 ## Cleanup
 
-Run cleanup.sh after the merge on every path, including after a failed or unsettled release, from a checkout other than the worktree ship created, with `bash <this skill's directory>/cleanup.sh <n> <branch> "$base" --repo <owner/name>`, adding `--worktree <path>` when ship created one.
-It removes the worktree ship created, and it deletes the local and remote branch after checking that each is at the merged head, keeping a local branch a worktree has checked out, as the Worktrees section of `../ship/boundary.md` says.
+Run cleanup.sh after the merge on every path, including after a failed or unsettled release, from a checkout other than the worktree full-send created, with `bash <this skill's directory>/cleanup.sh <n> <branch> "$base" --repo <owner/name>`, adding `--worktree <path>` when full-send created one.
+It removes the worktree full-send created, and it deletes the local and remote branch after checking that each is at the merged head, keeping a local branch a worktree has checked out, as the Worktrees section of `../full-send/boundary.md` says.
 Exit 3 prints a reason.
 Report it, and say which of worktree removal, base fast-forward, local branch delete, and remote branch delete ran before it.
 When `post-merge` names a command, run that command only after cleanup.sh exits 0, from the checkout its `post-merge checkout:` line names.

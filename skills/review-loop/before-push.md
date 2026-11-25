@@ -1,6 +1,6 @@
 # Review before the push
 
-Read by `ship` and babysit before a push in a repository with no table bot, so each push starts CI once and no later push cancels it.
+Read by `full-send` and babysit before a push in a repository with no table bot, so each push starts CI once and no later push cancels it.
 A round is one Review, Triage, and Fix on local commits, a pass that pushes nothing.
 
 Inputs: the committed head, `base`, the pull request if one is open, what changed and why, the pass kind, the merge method, whether the branch is exclusively this run's, and the ledger so far.

@@ -68,7 +68,7 @@ Update the run section through the Reuse an open one section of `../file-pr/SKIL
 
 ## GraphQL calls
 
-`<owner/name>` is the slug `../ship/boundary.md` defines.
+`<owner/name>` is the slug `../full-send/boundary.md` defines.
 Split it on the slash into `<owner>` and `<name>`.
 
 Read the pull request node id and `mergeQueueEntry` with `gh api graphql -f owner='<owner>' -f name='<name>' -F number=<n> -f query='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){id mergeQueueEntry{id}}}}'`.

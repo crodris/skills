@@ -69,40 +69,40 @@ each base..HEAD
 expect "a missing verify command exits 2" 2
 
 case_dir
-commit "config sets true" 'mkdir -p .ship && printf "verify: true   # asked\n" > .ship/config.md'
-commit "adds a gate" 'echo "exit 0" > gate.sh && printf "verify: bash gate.sh   # asked\n" > .ship/config.md'
+commit "config sets true" 'mkdir -p .full-send && printf "verify: true   # asked\n" > .full-send/config.md'
+commit "adds a gate" 'echo "exit 0" > gate.sh && printf "verify: bash gate.sh   # asked\n" > .full-send/config.md'
 each base..HEAD 'bash gate.sh'
 expect "each commit runs its own config's verify, so a later gate skips earlier commits" 0
 
 case_dir
-commit "config gate fails" 'mkdir -p .ship && printf "verify: false   # asked\n" > .ship/config.md'
+commit "config gate fails" 'mkdir -p .full-send && printf "verify: false   # asked\n" > .full-send/config.md'
 each base..HEAD true
 expect "a commit's own config verify wins over the passed command" 1
 
 case_dir
-commit "config verify is only a comment" 'mkdir -p .ship && printf "verify:   # asked\n" > .ship/config.md'
+commit "config verify is only a comment" 'mkdir -p .full-send && printf "verify:   # asked\n" > .full-send/config.md'
 each base..HEAD false
 expect "a comment-only config verify runs the passed command" 1
 
 case_dir
-commit "config verify is none" 'mkdir -p .ship && printf "verify: none   # asked\n" > .ship/config.md'
+commit "config verify is none" 'mkdir -p .full-send && printf "verify: none   # asked\n" > .full-send/config.md'
 each base..HEAD true
 expect "a corrupt verify: none runs the passed command" 0
 
 case_dir
-commit "config file is a symlink" 'mkdir -p .ship && printf "verify: false\n" > .ship/real.md && ln -s real.md .ship/config.md'
+commit "config file is a symlink" 'mkdir -p .full-send && printf "verify: false\n" > .full-send/real.md && ln -s real.md .full-send/config.md'
 each base..HEAD true
 expect "a symlinked config file runs the passed command" 0
 
 case_dir
-commit "ship directory is a symlink" 'mkdir -p shipdir && printf "verify: false\n" > shipdir/config.md && ln -s shipdir .ship'
+commit "config directory is a symlink" 'mkdir -p cfgdir && printf "verify: false\n" > cfgdir/config.md && ln -s cfgdir .full-send'
 each base..HEAD true
-expect "a symlinked ship directory runs the passed command" 0
+expect "a symlinked config directory runs the passed command" 0
 
 case_dir
 commit "no config" 'echo a > a'
-commit "config sets a gate" 'mkdir -p .ship && printf "verify: bash gate.sh   # asked\n" > .ship/config.md'
-commit "symlinked config" 'printf "verify: false\n" > .ship/real.md && rm .ship/config.md && ln -s real.md .ship/config.md'
+commit "config sets a gate" 'mkdir -p .full-send && printf "verify: bash gate.sh   # asked\n" > .full-send/config.md'
+commit "symlinked config" 'printf "verify: false\n" > .full-send/real.md && rm .full-send/config.md && ln -s real.md .full-send/config.md'
 shorts=$(git -C "$dir/repo" log --reverse --format='%h' base..HEAD)
 first=$(printf '%s\n' "$shorts" | sed -n '1p')
 second=$(printf '%s\n' "$shorts" | sed -n '2p')
@@ -118,15 +118,15 @@ check "no worktree is left behind" '[ "$(git -C "$dir/repo" worktree list | wc -
 check "the temp directory is empty afterwards" '[ -z "$(ls -A "$dir/tmp")" ]'
 
 case_dir
-commit "config would touch a file" 'mkdir -p .ship && printf "verify: touch %s\n" "$dir/ran" > .ship/config.md'
+commit "config would touch a file" 'mkdir -p .full-send && printf "verify: touch %s\n" "$dir/ran" > .full-send/config.md'
 each --print base..HEAD true
 expect "--print runs nothing" 0
 expect_line "print shows the touch command it did not run" "^[0-9a-f]+"$'\t'"touch ${dir}/ran$"
 check "print does not create the touched file" '[ ! -e "$dir/ran" ]'
 
 case_dir
-commit "config blob will be removed" 'mkdir -p .ship && printf "verify: false\n" > .ship/config.md'
-blob=$(git -C "$dir/repo" rev-parse 'HEAD:.ship/config.md')
+commit "config blob will be removed" 'mkdir -p .full-send && printf "verify: false\n" > .full-send/config.md'
+blob=$(git -C "$dir/repo" rev-parse 'HEAD:.full-send/config.md')
 rm -f "$dir/repo/.git/objects/${blob:0:2}/${blob:2}"
 each --print base..HEAD true
 check "a missing config blob makes --print exit nonzero" '[ "$got" -ne 0 ]'

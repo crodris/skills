@@ -6,7 +6,7 @@ Resolve the verify command as the Resolve verify section of `../prove/SKILL.md` 
 Run `bash <this skill's directory>/../prove/verify-each.sh --print "$(git rev-parse --show-toplevel)" "origin/$base..HEAD" "$verify"`, which runs nothing and prints one line per commit: its short SHA, a tab, and the exact command a run gives it.
 The script decides that command, and a commit with a missing or symlinked config, or no usable verify line, prints `$verify`.
 Return `BLOCKED` quoting the output when `--print` exits nonzero.
-Return `BLOCKED` naming the commit and the command when the command after the tab is a review tool or a skill that wraps one, as the Resolve verify section of `../prove/SKILL.md` describes, or falls outside the Command shape section of `../ship/boundary.md`.
+Return `BLOCKED` naming the commit and the command when the command after the tab is a review tool or a skill that wraps one, as the Resolve verify section of `../prove/SKILL.md` describes, or falls outside the Command shape section of `../full-send/boundary.md`.
 Then run the same command without `--print`.
 Exit 0 goes on to Result step 3.
 On exit 1, when every commit fails, the worktree may lack something verify needs, so say in the run section that the per-commit check could not judge these commits and go on to Result step 3.

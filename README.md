@@ -12,9 +12,10 @@ npx skills@latest add crodris/skills
 ```
 
 The installer lists every skill, so take only the ones you want.
-`scaffold` reads its contract files from `execute`, and `execute` opens its pull requests through `file-pr` from the ship plugin, so take all three.
+`scaffold` reads its contract files from `execute`, and `execute` opens its pull requests through `file-pr` from the full-send plugin, so take all three.
 Upgrading from Fathom 2, delete the old `fathom-shared` directory from your skills folder, since its files now live in `execute`.
-The ship skills need each other, so take all six: `ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`.
+Upgrading from the `ship` plugin, remove `ship` (`/plugin uninstall ship` or `npx skills@latest remove ship`), install `full-send`, and rename each repository's `.ship/` folder to `.full-send/`.
+The full-send skills need each other, so take all seven: `full-send`, `full-stop`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`.
 
 On Claude Code, every skill also installs as a plugin, and so does the fathom-progress mod.
 Each single-skill plugin below installs as `<name>@crodris`.
@@ -23,7 +24,7 @@ In the terminal, run:
 ```text
 /plugin marketplace add crodris/skills
 /plugin install fathom@crodris
-/plugin install ship@crodris
+/plugin install full-send@crodris
 /plugin install fathom-progress@crodris
 /plugin install rewrite@crodris
 ```
@@ -34,21 +35,22 @@ Then select each plugin you want from that marketplace and add it.
 
 ## Plugins
 
-### fathom (v3.1.1)
+### fathom (v3.1.2)
 
 `execute` takes a tracker issue through breakdown, implementation, tests, commits, and an open review, and resumes where the last run stopped.
 `scaffold` turns requirements into a main issue with linked sub-issues, then offers to hand off to `execute`.
 They need an Asana or Linear MCP, and the GitHub CLI for reviews on GitHub.
 The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacked reviews, and troubleshooting.
 
-### ship (v3.4.1)
+### full-send (v4.0.0)
 
-Six skills that carry the current branch to a green pull request, and on to a merged release when you ask to merge.
+Seven skills that carry the current branch to a merged release, or with `full-stop` to a green pull request.
 Each one ends with a result line that the next one reads.
 
 | Skill | Does | Runs on its own when you ask to |
 | --- | --- | --- |
-| `ship` | Settles the mode and the branch, calls the others in order, and reports | ship |
+| `full-send` | Settles the mode and the branch, calls the others in order, and reports | full send |
+| `full-stop` | Runs `full-send` in hold mode, stopping at a green pull request for you to merge | full stop |
 | `prove` | Runs the project's own verify gates until clean, then commits when the caller asks it to | prove or verify a change |
 | `file-pr` | Opens or updates the pull request, with its title, body, and secrets check | file a pull request |
 | `babysit` | Runs each pass: CI and the review bots, `review-loop`, one push, base updates | babysit, watch, or monitor a pull request |
@@ -57,26 +59,25 @@ Each one ends with a result line that the next one reads.
 
 `review-loop` follows `cross-review: cursor` as its Review section says, and gets that second opinion through the `cursor` skill.
 
-Plain "ship" stops at a green pull request.
-It merges only when you ask it to, or when `.ship/config.md` sets `merge: yes` and the request does not ask only for a green pull request.
-It merges with the `merge-method` in `.ship/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one method or its settings are unreadable.
+`full-send` merges once the pull request is green, and `full-stop`, or a request not to merge, stops at the green pull request.
+It merges with the `merge-method` in `.full-send/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one method or its settings are unreadable.
 In a repository with no CodeRabbit or Greptile, `review-loop` reviews and fixes local commits until they are clean before each push, so CI runs once per push and no fix push cancels it.
 When a review bot is rate limited, out of credits, or silent, `babysit` goes on without it on a low-risk pull request, and on a high-risk one runs a stand-in review and waits only for a short rate limit.
 The skills need a git remote, an authenticated GitHub CLI, and `jq`.
 
-### fathom-progress (v0.2.2)
+### fathom-progress (v0.2.3)
 
 Ryan Uesato built `fathom-progress`, a Claude Code mod that draws a progress band above the prompt while `execute` or `scaffold` runs.
 It reads the run's tasks from beads or the committed checklist, and never changes them.
 Its [README](./mods/fathom-progress/README.md) covers setup, what the band shows, and working on the mod.
 
-### review (v1.2.1)
+### review (v1.2.2)
 
 `review` checks a pull request against the issue it claims to close, on running builds of the branch and its base, and posts one review with inline findings.
 It reads its build, serving, and measuring steps from `ui.md` only when the pull request changes what the app renders.
 It needs the GitHub CLI, plus a browser driver such as Playwright for visual changes, and answers whether a pull request is safe to merge with `land`'s merge gate.
 
-### rewrite (v3.1.2)
+### rewrite (v3.1.3)
 
 `rewrite` drafts and rewrites prose you post under your name, in your voice, and removes the patterns that mark text as machine-written.
 It reads the voice file that `$XDG_CONFIG_HOME/voice/config.md` points at, or `~/.config/voice/config.md` when that variable is unset, empty, or not an absolute path, and builds one with you on first run from `setup.md`.
@@ -133,7 +134,7 @@ npx skills@latest add crodris/skills -s worktree-setup -g
 }
 ```
 
-### verification-audit (v1.1.2)
+### verification-audit (v1.1.3)
 
 `verification-audit` checks how well a repository proves agent work is correct, layer by layer, then closes each gap.
 It uses the verification skills from [pstack](https://github.com/crodris/pstack-claude) to fix gaps, and only reports them without it.
@@ -155,7 +156,7 @@ MIT
 Ryan Uesato built the `fathom-progress` mod in `mods/fathom-progress/`.
 
 Some rules are adapted from Matt Pocock's mattpocock/skills and obra/superpowers (MIT), including the merge-danger line, the summary visuals, and the before-and-after evidence in `file-pr`'s pull request body (from the `pr` skill, which credits Dex Horthy's `show-me`), execute's frontier fan-out (from `implement-spec`), and the "Call the Skill tool" wording for loading another skill.
-Ship's hold mode, CI, and pull request title and body rules, now in `babysit` and `file-pr`, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
-The ship family's split into small skills, `review-loop`'s finding ledger, round budget, nit relabel rule, and diff-size check, `babysit`'s auto-merge and merge-queue release, `file-pr`'s secrets check, `land`'s proof-coverage gate item, and `ship`'s list of decisions made on the user's behalf are adapted from Theo Browne's tstack (MIT), and so is the `council` skill.
+The hold mode, CI, and pull request title and body rules, now in `babysit` and `file-pr`, come from Theo Browne's (t3dotgg) babysit-pr and file-pr skills.
+The full-send family's split into small skills, `review-loop`'s finding ledger, round budget, nit relabel rule, and diff-size check, `babysit`'s auto-merge and merge-queue release, `file-pr`'s secrets check, `land`'s proof-coverage gate item, and `full-send`'s list of decisions made on the user's behalf are adapted from Theo Browne's tstack (MIT), and so are the `full-send` and `full-stop` names and the `council` skill.
 `html-comms` is adapted from Theo Browne's html-communication, with its chart heuristic from [ruesato/agent-skill-floreo](https://github.com/ruesato/agent-skill-floreo) (MIT).
 The `rewrite` skill's floor rows for arguing with no one, re-explained context, dramatic closers, and the document-describing half of meta commentary, and rewrite mode's no-new-facts rule, are adapted from Siqi Chen's (blader) humanizer (MIT).

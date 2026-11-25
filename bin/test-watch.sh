@@ -909,23 +909,23 @@ response OPEN "$SHA" '[]' "$(status CI PENDING running)" > "$dir/1.json"
 response OPEN "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/2.json"
 XDG_STATE_HOME="$dir/state" run 7 $SHA --repo o/r --interval 0
 expect_exit "a watched head passes" 0
-expect_count "a watched head is recorded once" state/ship/watch.log "$SHA " 1
+expect_count "a watched head is recorded once" state/full-send/watch.log "$SHA " 1
 
 case_dir
 response OPEN "$OLD" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"
-mkdir -p "$dir/state/ship"
-touch "$dir/state/ship/watch.log"
+mkdir -p "$dir/state/full-send"
+touch "$dir/state/full-send/watch.log"
 XDG_STATE_HOME="$dir/state" run 7 $SHA --repo o/r --interval 0
 expect_exit "a head that moved exits 3" 3
-expect_count "a head that moved is not recorded" state/ship/watch.log "$SHA " 0
+expect_count "a head that moved is not recorded" state/full-send/watch.log "$SHA " 0
 
 case_dir
 response CLOSED "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"
-mkdir -p "$dir/state/ship"
-touch "$dir/state/ship/watch.log"
+mkdir -p "$dir/state/full-send"
+touch "$dir/state/full-send/watch.log"
 XDG_STATE_HOME="$dir/state" run 7 $SHA --repo o/r --interval 0
 expect_exit "a closed pull request exits 7" 7
-expect_count "a closed pull request is not recorded" state/ship/watch.log "$SHA " 0
+expect_count "a closed pull request is not recorded" state/full-send/watch.log "$SHA " 0
 
 case_dir
 response OPEN "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"
@@ -936,7 +936,7 @@ expect_in "a log that cannot be written is named" err "could not record this wat
 case_dir
 response OPEN "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"
 HOME="$dir/home" XDG_STATE_HOME=relative run 7 $SHA --repo o/r --interval 0
-expect_count "a relative XDG_STATE_HOME falls back to the home directory" home/.local/state/ship/watch.log "$SHA " 1
+expect_count "a relative XDG_STATE_HOME falls back to the home directory" home/.local/state/full-send/watch.log "$SHA " 1
 
 case_dir
 response OPEN "$SHA" '[]' "$(status CI SUCCESS done)" > "$dir/1.json"

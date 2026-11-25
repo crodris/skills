@@ -1,7 +1,7 @@
 ---
 name: review
 description: This skill should be used when the user asks to "review this PR", "review PR 107", "review these PRs the same way", "do a visual pass on this branch", "verify this against the issue", pastes a pull request URL to review, or asks for a UI change to be checked before merge. Also use when the user asks whether a reviewed PR is safe to merge, or asks to escalate or downgrade a finding's severity. Verifies a pull request against the tracker issue it claims to close, on a running build, with measured evidence, then posts one review with line-specific findings inline and general findings in the summary body.
-version: 1.2.1
+version: 1.2.2
 ---
 
 # Review
@@ -179,7 +179,7 @@ Summary body shape:
 6. `### Notes`, numbered marker-led bullets that the inline comments cross-reference
 
 `<owner>/<repo>` is the output of `gh repo view --json nameWithOwner --jq .nameWithOwner`.
-Review keeps its own copy of that command because it runs without the ship skills.
+Review keeps its own copy of that command because it runs without the full-send skills.
 Post a JSON payload with `gh api --method POST "repos/<owner>/<repo>/pulls/<n>/reviews" --input payload.json`.
 To revise, `PUT .../pulls/<n>/reviews/<review_id>` for the summary and `PATCH .../pulls/comments/<comment_id>` for an inline comment.
 
@@ -187,7 +187,7 @@ To revise, `PUT .../pulls/<n>/reviews/<review_id>` for the summary and `PATCH ..
 
 Review never merges.
 To answer whether the PR is safe to merge, check every item of the Merge gate section of `../land/SKILL.md` except the two proof items, the missing `PASS` line and proof coverage, with every open blocking finding on the pull request, from this review and any other, in place of its ledger.
-When `../land/` is missing, say that the merge check needs the ship skills listed in the Missing skills section of `../ship/boundary.md`, or by name when that file is missing too.
+When `../land/` is missing, say that the merge check needs the full-send skills listed in the Missing skills section of `../full-send/boundary.md`, or by name when that file is missing too.
 
 When GitHub calls a merge dirty but git merges it cleanly, suspect a custom merge driver such as `merge=union` in `.gitattributes`, which GitHub's probe ignores.
 Confirm it with `git merge --no-commit` in a temporary worktree under both drivers, since `git merge-file` ignores `.gitattributes`, and check whether the repo's history works around it by merging base into the branch first.

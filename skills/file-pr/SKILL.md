@@ -1,21 +1,21 @@
 ---
 name: file-pr
-description: Opens or updates the pull request for a pushed branch, with the title, body, and secrets check that ship and execute share. Use when the user asks to open, file, or create a pull request for the current branch.
-version: 3.4.1
+description: Opens or updates the pull request for a pushed branch, with the title, body, and secrets check that full-send and execute share. Use when the user asks to open, file, or create a pull request for the current branch.
+version: 4.0.0
 ---
 
 # File a pull request
 
-Read `../ship/boundary.md` first when it exists.
-When it does not, as in an execute install without the ship skills, follow the caller's own boundary, such as the Absolute boundary in `../execute/SKILL.md`.
+Read `../full-send/boundary.md` first when it exists.
+When it does not, as in an execute install without the full-send skills, follow the caller's own boundary, such as the Absolute boundary in `../execute/SKILL.md`.
 
-Inputs: a pushed branch, its base, and the body parts the caller supplies, such as ship's run section or execute's `Closes <ref>` and task list.
+Inputs: a pushed branch, its base, and the body parts the caller supplies, such as full-send's run section or execute's `Closes <ref>` and task list.
 An optional title and a complete body may come with them.
 When the caller supplies that title and body, as `../execute/forges/github.md` does, skip the Title section and Body steps 1 to 4, and do not add that body again in Body step 5.
 
 ## Run section
 
-The run section is the part of the body a ship run owns, between `<!-- run:start -->` and `<!-- run:end -->`.
+The run section is the part of the body a the full-send run owns, between `<!-- run:start -->` and `<!-- run:end -->`.
 It holds the summary and the evidence.
 It holds the lane, the bots present, the pass and push counts, and the rounds of each review before a push.
 It holds the `PASS` line and the record of which push a minor bought.

@@ -17,7 +17,7 @@
         "./scaffold"
       ],
       "description": "Two agent skills, scaffold and execute, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter. Works with Asana or Linear, runs on Claude Code and Kiro, tracks tasks in beads or a committed markdown checklist, and resumes from repository state.",
-      "version": "3.1.1",
+      "version": "3.1.2",
       "author": {
         "name": "crodris"
       },
@@ -40,19 +40,20 @@
       ]
     },
     {
-      "name": "ship",
+      "name": "full-send",
       "source": "./skills",
       "strict": false,
       "skills": [
-        "./ship",
+        "./full-send",
+        "./full-stop",
         "./file-pr",
         "./prove",
         "./babysit",
         "./review-loop",
         "./land"
       ],
-      "description": "Six agent skills that carry the current branch from working tree to merged release: ship calls prove to run the project's own verify gates and commit, file-pr to open the pull request, babysit to run CI, CodeRabbit or Greptile, and review-loop's Standards and Spec subagents on each pass with one batched fix push (in a repository with no CodeRabbit or Greptile, the review runs on local commits before each push, so CI runs once), and in merge mode land to merge with the repository's merge method, watch the release, and clean up. Plain ship stops at a green pull request. No tracker required.",
-      "version": "3.4.1",
+      "description": "Seven agent skills that carry the current branch from working tree to merged release: full-send calls prove to run the project's own verify gates and commit, file-pr to open the pull request, babysit to run CI, CodeRabbit or Greptile, and review-loop's Standards and Spec subagents on each pass with one batched fix push (in a repository with no CodeRabbit or Greptile, the review runs on local commits before each push, so CI runs once), and land to merge with the repository's merge method, watch the release, and clean up. full-stop runs the same steps and stops at a green pull request. No tracker required.",
+      "version": "4.0.0",
       "author": {
         "name": "crodris"
       },
@@ -60,7 +61,7 @@
       "repository": "https://github.com/crodris/skills",
       "license": "MIT",
       "keywords": [
-        "ship",
+        "full-send",
         "release",
         "code-review",
         "continuous-integration",
@@ -79,7 +80,7 @@
         "./review"
       ],
       "description": "Checks a pull request against the issue it claims to close, on running builds of the branch and its base, and posts one review with inline findings.",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "author": {
         "name": "crodris"
       },
@@ -95,7 +96,7 @@
         "./rewrite"
       ],
       "description": "Drafts and rewrites prose you post under your name, in your voice, and removes the patterns that mark text as machine-written.",
-      "version": "3.1.2",
+      "version": "3.1.3",
       "author": {
         "name": "crodris"
       },
@@ -175,7 +176,7 @@
         "./verification-audit"
       ],
       "description": "Checks how well a repository proves agent work is correct, layer by layer, then closes each gap.",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "author": {
         "name": "crodris"
       },
@@ -187,7 +188,7 @@
       "name": "fathom-progress",
       "source": "./mods/fathom-progress",
       "description": "A Claude Code mod that shows a Fathom run's progress above the prompt, in the terminal and the Claude Code Desktop app, and mirrors it on the cmux sidebar row. Built by Ryan Uesato.",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "author": {
         "name": "Ryan Uesato"
       },

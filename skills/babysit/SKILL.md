@@ -1,21 +1,21 @@
 ---
 name: babysit
 description: Watches one pull request until it is ready to merge, running CI, the review bots, and review-loop on each pass, pushing each pass's fixes, and keeping the branch current with its base. Use when the user asks to babysit, watch, or monitor a pull request, or to get it green without merging.
-version: 3.4.1
+version: 4.0.0
 ---
 
 # Babysit
 
-Read `../ship/boundary.md` and `../ship/config.md` first, and stop as boundary.md's Missing skills section says when a sibling is missing.
-When `../ship/boundary.md` itself is missing, stop and tell the user to install the ship skills (`ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
+Read `../full-send/boundary.md` and `../full-send/config.md` first, and stop as boundary.md's Missing skills section says when a sibling is missing.
+When `../full-send/boundary.md` itself is missing, stop and tell the user to install the full-send skills (`full-send`, `full-stop`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
 
 Inputs: a pull request number, whether the caller merges afterwards, the merge method, whether this run created the branch, and the result and ledger of a review before the push, if the caller ran one.
 A direct request is hold mode, and babysit itself never merges.
-With no merge method passed, read `merge-method` from `.ship/config.md`.
+With no merge method passed, read `merge-method` from `.full-send/config.md`.
 When it has none, use the one allowed method as the Merge method section of `../land/SKILL.md` says.
 With no method resolved, a base update merges the base in as the `squash` and `merge` path does, and the result line says so.
 
-A branch is exclusively this run's only when this run created it, such as through `ship`'s `settle-branch.sh`.
+A branch is exclusively this run's only when this run created it, such as through `full-send`'s `settle-branch.sh`.
 A branch babysit found already pushed is not, whoever wrote its commits.
 
 ## Start
@@ -23,7 +23,7 @@ A branch babysit found already pushed is not, whoever wrote its commits.
 1. Read the pull request with `gh pr view <n> --json state,headRefName,baseRefName,isCrossRepository,autoMergeRequest`.
    Return `BLOCKED <reason>` when it is not open or its head lives on a fork.
    Validate `headRefName` and `baseRefName` each with `git check-ref-format --branch` before any command uses them, and return `BLOCKED <reason>` when either fails.
-   Work in place when the current checkout is on the head branch and is clean, as the Worktrees section of `../ship/boundary.md` defines.
+   Work in place when the current checkout is on the head branch and is clean, as the Worktrees section of `../full-send/boundary.md` defines.
    Return `BLOCKED <reason>` naming the changed files when it is on the head branch and dirty, since git cannot check out one branch twice and a fix could stage those edits.
    Otherwise get the head branch as that section says.
    When Start made a new worktree, install its dependencies before any prove or watch step, as that section says.
@@ -39,7 +39,7 @@ A branch babysit found already pushed is not, whoever wrote its commits.
 1. Capture the head SHA with `gh pr view <n> --json headRefOid`.
    Run `git fetch origin "+refs/heads/$branch:refs/remotes/origin/$branch"` and `git merge --ff-only "origin/$branch"`.
    Return `BLOCKED <reason>` when that fails, or when `git rev-parse HEAD` differs from the captured SHA.
-2. Start `bash <this skill's directory>/watch.sh <n> <sha> --repo <owner/name>` in the background, where `<owner/name>` is the slug `../ship/boundary.md` defines, with the `--bot` and `--rerequest` arguments `bots.md` says this pass uses.
+2. Start `bash <this skill's directory>/watch.sh <n> <sha> --repo <owner/name>` in the background, where `<owner/name>` is the slug `../full-send/boundary.md` defines, with the `--bot` and `--rerequest` arguments `bots.md` says this pass uses.
    Act on its exit code, and never write a polling loop.
    Without background commands, run it in the foreground with a `--deadline` above 120 seconds and below the tool's timeout.
 3. Read `../review-loop/SKILL.md` and follow its Review section on the same SHA, passing the inputs its Inputs section lists.
@@ -68,7 +68,7 @@ A branch babysit found already pushed is not, whoever wrote its commits.
    Update the base when it is due, as the Base update section says.
 7. When this pass committed anything or updated the base, push once.
    First, when no table bot is present, follow `../review-loop/before-push.md` with the inputs it lists and the pass kind this push adds, and on `BLOCKED <reason>` return it and push nothing.
-   Push with `bash <this skill's directory>/../ship/guard.sh "$branch" "$base"`, adding the head step 1 captured as the lease after a base rebase.
+   Push with `bash <this skill's directory>/../full-send/guard.sh "$branch" "$base"`, adding the head step 1 captured as the lease after a base rebase.
    When the lane is light, add the comment `../review-loop/lanes.md` names to the command.
    Exit 3 or a failed push is `BLOCKED`.
 8. Reply under each bot finding as `bots.md`'s Replies section says.
@@ -87,16 +87,16 @@ Any other failure, such as a check already red on `base` or a flaky test, is `BL
 
 A base update is due on watch.sh's exit 8, on an exit 1 that printed `base moved:`, on `mergeable` `CONFLICTING`, or on `mergeStateStatus` `BEHIND` when the base requires an up-to-date branch.
 Make it after the pass's fixes are committed.
-A base update is `BLOCKED` when the checkout is dirty, as the Worktrees section of `../ship/boundary.md` defines it, and the report names the paths.
+A base update is `BLOCKED` when the checkout is dirty, as the Worktrees section of `../full-send/boundary.md` defines it, and the report names the paths.
 A run takes at most one, and a second one due is `BLOCKED`.
 
 With `merge-method: rebase`:
 
 1. Return `BLOCKED` when the branch is not exclusively this run's, since the rebase needs a force-push.
-2. Fetch the base as the Fetching the base section of `../ship/boundary.md` says, then run `git rebase --no-autosquash "origin/$base"`, resolving conflicts the way the change intends, so this pass's `fixup!` commits stay for the next pass to read.
+2. Fetch the base as the Fetching the base section of `../full-send/boundary.md` says, then run `git rebase --no-autosquash "origin/$base"`, resolving conflicts the way the change intends, so this pass's `fixup!` commits stay for the next pass to read.
 3. Record the old base, the old head, and the rebased head, so the next pass can read `git range-diff <old-base>..<old-head> origin/$base..<rebased-head>`.
 
-With `squash` or `merge`, fetch the base as the Fetching the base section of `../ship/boundary.md` says, then merge `origin/$base` into the branch, resolving conflicts the way the change intends.
+With `squash` or `merge`, fetch the base as the Fetching the base section of `../full-send/boundary.md` says, then merge `origin/$base` into the branch, resolving conflicts the way the change intends.
 
 Then run `../prove/SKILL.md` on the result, after a rebase with each verify fix committed as a fixup of the branch commit it corrects, or after a merge with the merge commit's message.
 A verify fix with no clear target commit returns `BLOCKED`.

@@ -1,7 +1,7 @@
 ---
 name: verification-audit
 description: Audit how well a repository proves that agent work is correct, layer by layer, then close each gap with the matching pstack skill. Use when the user says "audit verification", "verification audit", "how verified is this repo", "set up verification here", or asks whether a repo has a verify skill, a formal check, a scheduled drive, or risk-scaled review.
-version: 1.1.2
+version: 1.1.3
 ---
 
 # Verification audit
@@ -27,7 +27,7 @@ Give each one a state, with the file, command, or run that shows it:
 - **missing**: nothing exists.
 - **blocked**: it depends on an earlier check that is missing.
 
-With the ship skill, read each `.ship/config.md` slot the way `../ship/config.md` says.
+With the full-send skill, read each `.full-send/config.md` slot the way `../full-send/config.md` says.
 
 1. **Static gates.** CI runs the typecheck, lint, and tests on every pull request they apply to, and branch protection or a ruleset requires them to pass.
    Read every CI config the repo has, not only the package scripts.
@@ -56,7 +56,7 @@ With the ship skill, read each `.ship/config.md` slot the way `../ship/config.md
    Install or enable the schedule where the user named, then trigger one run.
    Leave the check partial until a scheduled run exists.
 6. **Review setup.** The delivery flow runs the static gates and the configured drive and gives risky paths a deeper review.
-   With the ship skill, `.ship/config.md` sets `verify` to the static gates, `drive` to a value `../prove/drive.md` accepts, which also says which diffs skip the drive, and `security-paths` to the riskiest code, and the audit checks the Verify skill whether or not `drive` names one.
+   With the full-send skill, `.full-send/config.md` sets `verify` to the static gates, `drive` to a value `../prove/drive.md` accepts, which also says which diffs skip the drive, and `security-paths` to the riskiest code, and the audit checks the Verify skill whether or not `drive` names one.
    Another flow, such as Fathom, meets the same bar in its own config.
    The repo also has the review bots the user's instructions name, and a paused bot counts as missing.
    Fix a gap in the flow's config, and ask before adding a bot to a repo the user does not own.

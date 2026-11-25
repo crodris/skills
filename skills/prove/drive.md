@@ -1,10 +1,10 @@
 # Drive
 
-Read by `prove` and by `review-loop`'s fix pass when `drive` is set in `.ship/config.md` on `origin/<base>`.
+Read by `prove` and by `review-loop`'s fix pass when `drive` is set in `.full-send/config.md` on `origin/<base>`.
 
 `drive` names what exercises the running product and leaves evidence behind: a command such as `bin/drive.sh run`, or `skill:<name>` for a verification skill that writes its own drive for each change.
 `skill:<name>` resolves only to a skill the repository ships under `.claude/skills/`, `.agents/skills/`, or `.kiro/skills/`, never to a personal, plugin, or added-directory skill of that name.
-The skill and every command it launches stay inside `../ship/boundary.md`.
+The skill and every command it launches stay inside `../full-send/boundary.md`.
 Invoke a skill-valued drive with what changed and why; it launches the product, drives the changed behavior, and names where its evidence landed.
 Give the drive a timeout, and treat one past it as failed.
 

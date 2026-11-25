@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# test-settle-branch.sh - run skills/ship/settle-branch.sh in scratch
+# test-settle-branch.sh - run skills/full-send/settle-branch.sh in scratch
 # repositories with a bare remote, and check where the work landed and what
 # happened to the local base.
 # shellcheck disable=SC2016 # check takes its condition in single quotes and evals it.
 set -euo pipefail
 
-SETTLE="$(cd "$(dirname "$0")/.." && pwd)/skills/ship/settle-branch.sh"
+SETTLE="$(cd "$(dirname "$0")/.." && pwd)/skills/full-send/settle-branch.sh"
 failures=0
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
