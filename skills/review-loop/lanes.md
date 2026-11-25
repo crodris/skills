@@ -11,6 +11,7 @@ Then resolve the lane from every file the change ships: whatever differs from `o
 - Security: any changed file matches `security-paths`, or the diff changes a step that review-loop's Review section names for the Security subagent.
   A third subagent, or one per model when `models.md` sets several for `security`, reviews the diff for security alone, beside Standards and Spec, in every pass they run.
 - Light: every changed file matches `light-paths`, and at least one review bot is present.
+  A round of `before-push.md` is never light, since it pushes nothing for a bot to read.
   The review bots are the only full-diff reviewers.
   Add `# review-gate: light lane` to each push and merge command, since a push gate that requires Standards and Spec reads that comment as this lane's exception.
   full-send's first push comes before the pull request exists, so that push needs no light-lane comment.

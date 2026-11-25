@@ -1,7 +1,7 @@
 ---
 name: full-stop
 description: Use when the user says "full stop" or "/full-stop", even as a closing "Full stop." that reads like emphasis. Runs `full-send` in hold mode and stops at a green pull request for the user to merge.
-version: 4.1.0
+version: 4.2.0
 ---
 
 # Full Stop

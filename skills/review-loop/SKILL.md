@@ -1,7 +1,7 @@
 ---
 name: review-loop
-description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass, and by full-send and babysit before a push in a repository with no table bot (CodeRabbit or Greptile); use when the user asks for one review-and-fix pass on the current pull request.
-version: 4.1.0
+description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass, by full-send and babysit before a push in a repository with no table bot (CodeRabbit or Greptile), and by full-send before it opens the pull request when the Final review in `models.md` applies; use when the user asks for one review-and-fix pass on the current pull request.
+version: 4.2.0
 ---
 
 # Review loop

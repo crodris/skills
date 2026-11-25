@@ -1,6 +1,6 @@
 # Reviewer models
 
-Read by review-loop when `reviewers` is set in `.full-send/config.md` on `origin/<base>`.
+Read by review-loop when `reviewers` is set in `.full-send/config.md` on `origin/<base>`, and by step 2 of `../full-send/SKILL.md` to tell whether the Final review applies.
 
 ## The slot
 
@@ -10,7 +10,6 @@ Names are lowercase, and spaces around entries, `=`, and `+` are trimmed.
 The slot is corrupt when it is empty, when an entry has another form, when it repeats a role or a model within a role, when it names an unknown role or model, or when `final` has more than one model.
 Ignore a corrupt slot, use the table in `SKILL.md` with no final review, and record an informational ledger line that says why.
 A `standards`, `spec`, or `security` entry sets both columns of its row in the table in `SKILL.md`, and a role the slot does not name keeps that row.
-The Final review section below runs only when the slot names `final`.
 
 ## Several models on one role
 
@@ -52,8 +51,8 @@ Record each one as an informational ledger line, such as `F7 informational revie
 
 ## Final review
 
+It applies only when the slot names `final`, and not when `light-paths` is set and every changed file matches it, as `lanes.md` resolves paths, with the config file never matching.
 It runs only from step 5 of `before-push.md`.
-Skip it when `light-paths` is set and every changed file matches it, as `lanes.md` resolves paths, with the config file never matching.
 Each call is described `review-loop: Final <the SHA's first 7 characters>` and is not a round for the Stops section of `before-push.md`, so its blocking findings count toward the round whose `CLEAN` started it.
 Do not run the Stops check on that round again, and its count, Final findings included, is the round before's count for the next round.
 A run makes at most two calls that return a usable report.
