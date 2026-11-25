@@ -1,7 +1,7 @@
 ---
 name: full-send
 description: Use when the user says "full send" or "/full-send", or asks to carry the current branch or its open pull request from working tree to a merged release, such as "take this all the way" or "get this merged and released". It merges once the pull request is green, and `full-stop` runs it in hold mode for a green pull request without the merge. Not for a single commit or a release cut from an already-merged main.
-version: 4.1.0
+version: 4.2.0
 ---
 
 # Full Send
@@ -62,7 +62,8 @@ After cases 3 to 6:
 
 1. Read `../prove/SKILL.md` and follow it with `base`, what changed and why, and a commit message.
    On `FAIL`, stop and push nothing.
-2. When the Which bots are present section of `../babysit/bots.md` finds no table bot present, follow `../review-loop/before-push.md` with pass kind `first`, the open pull request Settle the branch found, the merge method step 4 passes babysit, or with none the one babysit's Inputs resolve, and whether this run created the branch, and stop on `BLOCKED`.
+2. Read the open pull request again with Settle the branch's `gh pr list` call, ignoring fork results.
+   When the Which bots are present section of `../babysit/bots.md` finds no table bot present, or when that read finds no pull request and the Final review section of `../review-loop/models.md` applies to the change, follow `../review-loop/before-push.md` with pass kind `first`, the open pull request that read found, the merge method step 4 passes babysit, or with none the one babysit's Inputs resolve, and whether this run created the branch, and stop on `BLOCKED`.
    Push with `bash <this skill's directory>/guard.sh "$branch" "$base"`, where any nonzero exit is a stop.
 3. Read `../file-pr/SKILL.md` and follow it with the branch, `base`, and a run section holding the summary, the `PASS` line, any drive evidence, and the ledger, lane, and round count of a review before the push, whose `PASS` line replaces step 1's, and whose drive evidence does when a round ran a drive.
    On `FAIL`, stop.

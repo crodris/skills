@@ -1,6 +1,6 @@
 # Review before the push
 
-Read by `full-send` and babysit before a push in a repository with no table bot, so each push starts CI once and no later push cancels it.
+Read by `full-send` and babysit before a push, when step 2 of `../full-send/SKILL.md` or step 7 of `../babysit/SKILL.md` says to, so each push starts CI once and no later push cancels it.
 A round is one Review, Triage, and Fix on local commits, a pass that pushes nothing.
 
 Inputs: the committed head, `base`, the pull request if one is open, what changed and why, the pass kind, the merge method, whether the branch is exclusively this run's, and the ledger so far.
@@ -13,7 +13,7 @@ Inputs: the committed head, `base`, the pull request if one is open, what change
 3. Follow the Triage section, where a step that reads the pull request reads nothing while none is open, and step 2 compares the pinned SHA with `git rev-parse HEAD`.
 4. Follow the Fix section, which commits through `../prove/SKILL.md`.
 5. On `FIXED <sha>`, start the next round on the new head with pass kind `fixes`.
-   On `CLEAN`, when `models.md` resolves a `final` model, follow its Final review section, which can start the next round or return `BLOCKED <reason>` instead.
+   On `CLEAN`, when the Final review section of `models.md` applies, follow it, which can start the next round or return `BLOCKED <reason>` instead.
    Then return `CLEAN <sha>`, where `<sha>` is the full SHA the last round read, with the ledger, the lane, the round count, the last `PASS` line from prove, and the drive's evidence path when a drive ran in any round.
    On `RESTART` or `BLOCKED <reason>`, return `BLOCKED <reason>` and push nothing.
 
