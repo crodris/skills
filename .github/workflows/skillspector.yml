@@ -14,6 +14,7 @@ on:
       - "bin/test-resolve-verify.sh"
       - "bin/test-land.sh"
       - "bin/test-verify-each.sh"
+      - "bin/test-codex-usage.sh"
       - "bin/test-settle-branch.sh"
       - "bin/check-pipeline-skills.sh"
       - "bin/test-check-pipeline-skills.sh"
@@ -30,6 +31,7 @@ on:
       - "bin/test-resolve-verify.sh"
       - "bin/test-land.sh"
       - "bin/test-verify-each.sh"
+      - "bin/test-codex-usage.sh"
       - "bin/test-settle-branch.sh"
       - "bin/check-pipeline-skills.sh"
       - "bin/test-check-pipeline-skills.sh"
@@ -69,6 +71,9 @@ jobs:
 
       - name: Check prove's verify-each.sh against scratch repositories
         run: bin/test-verify-each.sh
+
+      - name: Check review-loop's codex-usage.sh against fake Codex logs
+        run: bin/test-codex-usage.sh
 
       - name: Check check-pipeline-skills.sh against scratch repositories
         run: bin/test-check-pipeline-skills.sh

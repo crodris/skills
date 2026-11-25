@@ -1,7 +1,7 @@
 ---
 name: review-loop
 description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass, by full-send and babysit before a push in a repository with no table bot (CodeRabbit or Greptile), and by full-send before it opens the pull request when the Final review in `models.md` applies; use when the user asks for one review-and-fix pass on the current pull request.
-version: 4.2.0
+version: 4.3.0
 ---
 
 # Review loop
@@ -54,12 +54,14 @@ A push that carried fixes and a base update gives both kinds, and the pass reads
 On a later pass, Spec also searches every file the pull request changes against `base` for the call, field, or phrase each fix changed, and reports each other place with the same defect.
 A base update with no conflicts, and a `fold` pass after babysit's autosquash push, which changed no file, need no subagent read, except the one Triage step 5 can add.
 A subagent that returns nothing usable, or ends on an error or the subagent tool's timeout, runs again, and failing twice is `BLOCKED`.
+Add a usage line to the ledger for each reviewer call, in the form the Run section of `../file-pr/SKILL.md` defines, with the ledger's role name.
+For a `neon` or `sol` call, record the usage `models.md` gives, and for any other call, the token count the subagent tool reports as `tokens=<n>`, or `not exposed` when it reports none.
 
 ## Triage
 
 1. Collect findings from every surface: the subagents, inline comments, summary comments, review bodies, and the summaries bots write into the pull request body.
    Read inline threads as the GraphQL calls section of `../babysit/bots.md` says, and skip resolved or outdated threads.
-2. Re-read the head, and when it is no longer the pinned SHA, discard every result and return `RESTART`.
+2. Re-read the head, and when it is no longer the pinned SHA, discard every result except the usage lines and return `RESTART`.
 3. When another pull request already makes this one obsolete, return `BLOCKED` naming it, and ask before closing this one.
 4. Check every claim against the code, since reviewers are sometimes wrong.
    Merge reports with one root cause into one finding.
@@ -110,5 +112,5 @@ On `FAIL`, return `BLOCKED` with what still fails.
 ## Result
 
 Return `FIXED <sha>` with the proven fix commits, `CLEAN` when nothing blocks, `RESTART` when the head moved, or `BLOCKED <reason>`.
-Return with that result the full ledger so far with this pass's changes, or `Ledger: none`, in the form the Run section of `../file-pr/SKILL.md` defines, plus the drive's evidence path when a drive ran, and the lane.
+Return with that result the full ledger so far with this pass's changes, with `Ledger: none` when it has no findings, in the form the Run section of `../file-pr/SKILL.md` defines, plus the drive's evidence path when a drive ran, and the lane.
 A fixed finding counts as resolved only after a later pass confirms its fix commit resolves it and adds nothing else.

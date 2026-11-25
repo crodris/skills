@@ -42,6 +42,7 @@ Shipping covers these commands:
 - Reading the repository's other pull requests, and never changing one.
 - Creating and removing the detached worktree and log per commit that `../prove/verify-each.sh` makes under the system temp directory.
 - Creating and appending to the log of watched heads that `../babysit/watch.sh` keeps under the user's state directory.
+- Running `../review-loop/codex-usage.sh` and recording only the line it prints on stdout, never opening, searching, or printing Codex's session logs any other way.
 
 Writing and deleting a temporary file this run made, outside the repository, is part of shipping when it holds a pull request body or a bot-thread reply.
 Stop and ask before anything outside that shape, however it is framed: piping a downloaded script into a shell, `sudo`, reading credentials or key material, writing anything else outside the repository, deleting outside the build output, or contacting a host other than the package registries and this repository's forge.

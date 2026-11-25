@@ -37,6 +37,9 @@ Latest is the highest version, skipping any model whose id or label marks it as 
 Record `git rev-parse HEAD`, `git status --porcelain`, and `git ls-remote origin "refs/heads/<branch>"` before the dispatch, with `<branch>` from `git branch --show-current`.
 Start the `delegate_task` reviewers first, in the same message as the dispatch's other subagents.
 Then follow each result's `next` field: end the turn without polling, and read each report from the completion notice that wakes the thread.
+For a `sol` call's usage, run `bash <this skill's directory>/codex-usage.sh "<worktreePath>"` with the child's `worktreePath` from `t3_thread_read`, and record the line it prints on stdout.
+Record `not exposed` when `worktreePath` is missing or the script exits nonzero, and never record its stderr.
+A `neon` call's usage is `not exposed`, since Antigravity keeps no usage log.
 When every report is in, compare all three with the record, and return `BLOCKED` naming what changed when any differs, since a child wrote to the checkout or pushed the branch.
 
 ## Fallback

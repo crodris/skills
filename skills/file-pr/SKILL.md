@@ -1,7 +1,7 @@
 ---
 name: file-pr
 description: Opens or updates the pull request for a pushed branch, with the title, body, and secrets check that full-send and execute share. Use when the user asks to open, file, or create a pull request for the current branch.
-version: 4.2.0
+version: 4.3.0
 ---
 
 # File a pull request
@@ -21,7 +21,8 @@ It holds the lane, the bots present, the pass and push counts, and the rounds of
 It holds the `PASS` line and the record of which push a minor bought.
 It holds each skipped review.
 It holds the ledger, with one line per finding in the form `F<n> <severity> <source> <location>: <claim>. <disposition>`.
-A run with no findings records the single line `Ledger: none`.
+A run with no findings records the line `Ledger: none` in place of finding lines, and keeps its usage lines.
+The ledger also holds one usage line per reviewer call, in the form `U<n> <role> (<model>) <sha7>: <usage>`, numbered on from the highest `U` number already in it.
 Review bots' own summaries sit outside the markers.
 
 ## Secrets check
