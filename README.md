@@ -42,7 +42,7 @@ Then select each plugin you want from that marketplace and add it.
 They need an Asana or Linear MCP, and the GitHub CLI for reviews on GitHub.
 The [Fathom guide](./skills/execute/README.md) covers setup, task memory, stacked reviews, and troubleshooting.
 
-### full-send (v4.0.0)
+### full-send (v4.1.0)
 
 Seven skills that carry the current branch to a merged release, or with `full-stop` to a green pull request.
 Each one ends with a result line that the next one reads.
@@ -57,7 +57,9 @@ Each one ends with a result line that the next one reads.
 | `review-loop` | Reviews with Standards and Spec subagents, triages every finding into a ledger, and fixes the blocking ones in one batch | run one review-and-fix pass |
 | `land` | Checks the merge gate, merges with the repository's merge method, watches the release, and cleans up | land a ready pull request |
 
-`review-loop` follows `cross-review: cursor` as its Review section says, and gets that second opinion through the `cursor` skill.
+The `reviewers` line in `.full-send/config.md`, such as `reviewers: spec=neon+opus, final=sol`, sets each reviewer's models, with Gemini Neon and GPT Sol run through T3 Code.
+`final` adds one review of the whole diff before the first push in a repository with no review bot, plus one call that confirms its fixes when it finds a blocking issue.
+`bots: none` makes `babysit` treat CodeRabbit and Greptile as absent, so `review-loop` reviews before each push in their place.
 
 `full-send` merges once the pull request is green, and `full-stop`, or a request not to merge, stops at the green pull request.
 `full-send` merges with the `merge-method` in `.full-send/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one method or its settings are unreadable.

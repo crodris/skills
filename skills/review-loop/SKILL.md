@@ -1,7 +1,7 @@
 ---
 name: review-loop
 description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass, and by full-send and babysit before a push in a repository with no table bot (CodeRabbit or Greptile); use when the user asks for one review-and-fix pass on the current pull request.
-version: 4.0.0
+version: 4.1.0
 ---
 
 # Review loop
@@ -29,9 +29,6 @@ The code reviewer is two subagents on the pinned SHA, dispatched in parallel and
 
 Add the Security subagent when a changed file matches `security-paths`, or when the diff changes a step that pushes or merges or that one of Spec's security checks covers, and name in the lane which of the two added it.
 When `light-paths` or `security-paths` is set, or this adds the Security subagent, read `lanes.md` in this skill's directory, which may skip both reviewers or say how the Security subagent runs.
-When `cross-review: cursor` is set, get a second opinion through the `cursor` skill on the same SHA and diff, with the Standards brief, the severity list, and the read-only line below.
-Its findings join the ledger with source `cursor`.
-When the skill is missing or refuses, skip it and say so in the ledger.
 When `drive` is set, `../prove/drive.md` says how it changes a fix pass.
 
 Dispatch each as a `general-purpose` subagent, never another agent type such as `coderabbit:code-reviewer`, and never a review CLI or a review skill.
@@ -46,6 +43,8 @@ Also tell each to work read-only: read the change with `git show <sha>:<path>` a
 | Standards | `sonnet` | `sonnet` |
 | Spec | `opus` | `opus` |
 | Security | `opus` | `opus` |
+
+When `reviewers` is set in `.full-send/config.md` on `origin/<base>`, read `models.md` in this skill's directory, which sets each role's models, replaces the dispatch, waiting, and failure rules for `neon` and `sol`, and adds the final review.
 
 The pass kind names what the last push added, or what the next push adds when `before-push.md` runs, and babysit passes it from its record of that push.
 `before-push.md` in this skill's directory changes the Blocking and Budget rules for its rounds.

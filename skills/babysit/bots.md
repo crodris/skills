@@ -14,11 +14,13 @@ watch.sh's `BOTS` registry carries the Login, Settled, and Re-request columns, s
 
 ## Which bots are present
 
-Read config files from the tree this run pushes, committed or not.
+When `.full-send/config.md` on `origin/<base>` sets `bots: none`, no table bot is present, whatever the rest of this section finds, and their comments are still findings for triage.
+Any other `bots` value is ignored, and the run adds an informational line that says so to its first ledger.
+Otherwise, read config files from the tree this run pushes, committed or not.
 A table bot is present when its config file exists on `origin/<base>` or in that tree, or when its login reviewed one of the last five merged pull requests.
 A config in that tree that turns automatic review off (`reviews.auto_review.enabled: false`, or `autoReview: []` or the legacy `skipReview: "AUTOMATIC"`) makes the bot absent.
 `gh pr view --json` prints logins without `[bot]`, so match on the name before it.
-A table bot that shows up on the pull request later, with any status, check, reaction, review, or comment, is present from then on.
+A table bot that shows up on the pull request later, with any status, check, reaction, review, or comment, is present from then on, except for a skip notice from a bot whose config turns automatic review off.
 A first-push-only bot found after its review landed on an earlier head is passed with `--rerequest` on the current head, unless it labels its own findings.
 
 ## Which pass waits on which bot
