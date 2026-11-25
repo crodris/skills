@@ -1,11 +1,11 @@
 # Lanes
 
-Read by review-loop when `light-paths` or `security-paths` is set in `.ship/config.md` on `origin/<base>`, or when review-loop's Review section adds the Security subagent.
+Read by review-loop when `light-paths` or `security-paths` is set in `.full-send/config.md` on `origin/<base>`, or when review-loop's Review section adds the Security subagent.
 
 Each slot holds comma-separated globs over repository-relative paths, with `**` crossing directories.
-A change that touches `.ship/config.md` is never light, so a change cannot widen its own lane.
+A change that touches `.full-send/config.md` is never light, so a change cannot widen its own lane.
 
-Fetch the base as the Fetching the base section of `../ship/boundary.md` says.
+Fetch the base as the Fetching the base section of `../full-send/boundary.md` says.
 Then resolve the lane from every file the change ships: whatever differs from `origin/<base>`, committed or not, plus the untracked files that belong to it.
 
 - Security: any changed file matches `security-paths`, or the diff changes a step that review-loop's Review section names for the Security subagent.
@@ -13,7 +13,7 @@ Then resolve the lane from every file the change ships: whatever differs from `o
 - Light: every changed file matches `light-paths`, and at least one review bot is present.
   The review bots are the only full-diff reviewers.
   Add `# review-gate: light lane` to each push and merge command, since a push gate that requires Standards and Spec reads that comment as this lane's exception.
-  Ship's first push comes before the pull request exists, so that push needs no light-lane comment.
+  full-send's first push comes before the pull request exists, so that push needs no light-lane comment.
 - Standard: neither.
 
 Security outranks light.

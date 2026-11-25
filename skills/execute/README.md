@@ -63,12 +63,12 @@ Run these inside a Claude Code session:
 ```text
 /plugin marketplace add crodris/skills
 /plugin install fathom@crodris
-/plugin install ship@crodris
+/plugin install full-send@crodris
 /reload-plugins
 ```
 
-The `ship` plugin carries `file-pr`, which `execute` opens its reviews through.
-Confirm the skills loaded by asking for the skill list; you should see `fathom:execute`, `fathom:scaffold`, and `ship:file-pr`.
+The `full-send` plugin carries `file-pr`, which `execute` opens its reviews through.
+Confirm the skills loaded by asking for the skill list; you should see `fathom:execute`, `fathom:scaffold`, and `full-send:file-pr`.
 
 </details>
 
@@ -640,9 +640,9 @@ Either reinstall after each change:
 
 ```
 /plugin uninstall fathom
-/plugin uninstall ship
+/plugin uninstall full-send
 /plugin install fathom@crodris
-/plugin install ship@crodris
+/plugin install full-send@crodris
 /reload-plugins
 ```
 

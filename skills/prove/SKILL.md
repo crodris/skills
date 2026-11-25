@@ -1,22 +1,22 @@
 ---
 name: prove
 description: Runs the repository's own verify gates on the working tree until they pass, commits when the caller asks it to, and prints a one-line proof. Use when the user asks to verify or prove a change before pushing it.
-version: 3.4.1
+version: 4.0.0
 ---
 
 # Prove
 
-Read `../ship/boundary.md` and `../ship/config.md` first, and stop as boundary.md's Missing skills section says when a sibling is missing.
-When `../ship/boundary.md` itself is missing, stop and tell the user to install the ship skills (`ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
+Read `../full-send/boundary.md` and `../full-send/config.md` first, and stop as boundary.md's Missing skills section says when a sibling is missing.
+When `../full-send/boundary.md` itself is missing, stop and tell the user to install the full-send skills (`full-send`, `full-stop`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
 
 Inputs: `base`, what changed and why, how to commit (a message, the branch commit each fix corrects, or nothing to commit), and whether to skip the drive.
 
 ## Resolve verify
 
 Take the first tier that answers, and never let a later tier override it.
-A `verify` answer the user gave earlier in this run, such as in `ship`'s round of questions, answers before every tier.
+A `verify` answer the user gave earlier in this run, such as in `full-send`'s round of questions, answers before every tier.
 
-1. `verify` in `.ship/config.md` at the repository root.
+1. `verify` in `.full-send/config.md` at the repository root.
 2. The project's docs: `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `README.md`.
    Collect every command they name to run before committing or in CI, in the order they present them.
 3. The candidates `bash <this skill's directory>/resolve-verify.sh` prints, taking the first tier it prints: `aggregate`, then `ci`, then `compose`.
@@ -35,8 +35,8 @@ Ask the user, once, with every candidate verbatim as an option, when any of thes
 - The config's `verify` is a review tool, or fails with exit 127, `command not found`, `Missing script`, or `No rule to make target`.
   Re-detect from tier 2 first.
 
-When `ship` called this, the question rides `ship`'s one round of questions.
-Record the answer as `../ship/config.md` says.
+When `full-send` called this, the question rides `full-send`'s one round of questions.
+Record the answer as `../full-send/config.md` says.
 
 ## Verify loop
 

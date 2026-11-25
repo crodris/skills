@@ -1,7 +1,7 @@
-# ship pipeline profile
+# full-send pipeline profile
 
-This repository's resolved delivery pipeline, read by the `ship` skill before it
-touches the working tree. Edit it directly; ship rewrites it only when one of
+This repository's resolved delivery pipeline, read by the `full-send` skill before it
+touches the working tree. Edit it directly; full-send rewrites it only when one of
 these commands stops resolving.
 
 ```markdown
@@ -9,6 +9,5 @@ verify: bin/test-watch.sh && bin/test-guard.sh && bin/test-settle-branch.sh && b
 base: main
 release: none
 post-merge: none
-merge: yes
 merge-method: rebase   # asked
 ```

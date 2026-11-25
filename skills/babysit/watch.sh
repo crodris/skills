@@ -61,7 +61,7 @@
 # stdout gets a status line on each poll whose status changed, then one verdict
 # line. gh's stderr is passed through, never hidden.
 # The first poll that finds the pull request open on <head-sha> appends
-# "<head-sha> <UTC time>" to ship/watch.log under $XDG_STATE_HOME, or under
+# "<head-sha> <UTC time>" to full-send/watch.log under $XDG_STATE_HOME, or under
 # ~/.local/state when that is unset or not absolute, so a push gate can tell
 # that this head was watched. A failed write warns on stderr and changes no exit.
 # Requires bash, gh, and jq.
@@ -469,7 +469,7 @@ no_checks_where_ci_is_expected() {
 record_watch() {
   local state=${HOME:-}/.local/state log
   case ${XDG_STATE_HOME:-} in /*) state=$XDG_STATE_HOME ;; esac
-  log=$state/ship/watch.log
+  log=$state/full-send/watch.log
   { mkdir -p "$(dirname "$log")" && printf '%s %s\n' "$sha" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$log"; } ||
     echo "could not record this watch in $log" >&2
 }

@@ -122,9 +122,10 @@ rules:
       Reviewed, intentional: frontend-design-pipeline prints skills.sh
       install commands (npx skills@latest add) for the companion skills
       its stages call, and execute and scaffold print file-pr's and
-      execute's install commands when they are missing. The ship family
-      (ship, prove, babysit, review-loop, land, through ship/boundary.md)
-      and review print the ship family's install command when a sibling is
+      execute's install commands when they are missing. The full-send family
+      (full-send, full-stop, prove, babysit, review-loop, land, through
+      full-send/boundary.md)
+      and review print the full-send family's install command when a sibling is
       missing. Each is for the user to run, and
       frontend-design-pipeline says never to run one itself. Same
       reasoning as the agents.md rule above: pinning the CLI goes stale
@@ -146,13 +147,24 @@ rules:
     path: "SKILL.md"
     message: "*current branch*conflicts with built-in command 'branch'*"
     reason: >-
-      False positive: "Shadow Command Trigger" matched ship's description,
+      False positive: "Shadow Command Trigger" matched full-send's description,
       which says "the current branch", meaning the git branch being shipped.
       No skill here claims a /branch trigger or shadows that command.
       Caution: path "SKILL.md" matches every skill's SKILL.md, so this hides
       any TR2 'branch' hit whose description clause says "current branch"
       repo-wide; re-review before a skill description names /branch as a
       trigger.
+
+  - id: "TR2"
+    path: "SKILL.md"
+    message: "*full stop*conflicts with built-in command 'stop'*"
+    reason: >-
+      False positive: "Shadow Command Trigger" matched full-stop's
+      description, whose trigger is the two-word phrase "full stop" and the
+      /full-stop command. The scanner reads the word "stop" inside that
+      phrase as the built-in stop command. No skill here claims a /stop
+      trigger. Scoped by the "full stop" text, so a TR2 'stop' hit in any
+      other description still fails.
 
   - id: "RA2"
     path: "SKILL.md"
@@ -220,13 +232,13 @@ rules:
     path: "boundary.md"
     message: "*npx skills*"
     reason: >-
-      Reviewed, intentional: ship/boundary.md's Missing skills section holds
-      the one install command (npx skills@latest add crodris/skills -s ship
-      prove file-pr babysit review-loop land) that every skill in the ship
-      family gives the user when a sibling is missing. The user runs it; no
+      Reviewed, intentional: full-send/boundary.md's Missing skills section
+      holds the one install command (npx skills@latest add crodris/skills -s
+      full-send full-stop prove file-pr babysit review-loop land) that every
+      skill in the full-send family gives the user when a sibling is missing. The user runs it; no
       skill runs it itself. Same reasoning as the SKILL.md rule above:
       pinning the CLI goes stale and is not a security boundary. Scoped to
-      boundary.md, so an npx skills hit in another ship file still fails.
+      boundary.md, so an npx skills hit in another full-send file still fails.
 
   - id: "RA2"
     path: "SKILL.md"
@@ -249,7 +261,7 @@ rules:
     path: "guard.sh"
     message: "*git push --force*"
     reason: >-
-      Reviewed, intentional: ship's guard.sh force-pushes only when its caller
+      Reviewed, intentional: full-send's guard.sh force-pushes only when its caller
       passes a lease SHA, and then only with --force-with-lease pinned to that
       SHA, after checking that the checkout is the shipping branch and not the
       base. babysit passes the lease only for a base rebase and for the
@@ -275,7 +287,7 @@ rules:
       Reviewed, intentional: prove's resolve-verify.sh reads the repository's
       own manifests (package.json, Makefile, CI workflows) to print verify
       candidates, and runs nothing it finds. prove's verify-each.sh reads the
-      verify line of each commit's own .ship/config.md and runs it, the same
+      verify line of each commit's own .full-send/config.md and runs it, the same
       gate prove runs on the head, in a detached worktree of that commit.
       Declaring allowed-tools would
       pre-approve tools in Claude Code, which widens what the skill may do

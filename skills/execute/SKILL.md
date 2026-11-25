@@ -1,7 +1,7 @@
 ---
 name: execute
 description: This skill should be used when the user asks to "execute ONC-5", "run execute on this issue", "work on an issue", "start an issue", "implement this Asana/Linear issue", "take this issue to a PR", "take this issue to review", pastes an Asana task URL to build, or names a Linear issue key like ONC-5, or several at once like "execute ONC-5 ONC-6". Also use when the user says something like "the PR for <issue> merged", "the review for <issue> merged", "clean up merged issues", "the PR was closed", "the change landed", "that PR got abandoned", "that review was abandoned", or "close out merged work", to run the done-on-merge sweep on demand. Drives an existing tracker issue from breakdown through implementation to an open code review with resumable task tracking, on GitHub or any other forge with an adapter.
-version: 3.1.1
+version: 3.1.2
 ---
 
 # Execute
@@ -22,7 +22,7 @@ Task state flows one way, from the memory backend to the tracker.
 ## Read first
 
 Paths are relative to this file's directory.
-When `../file-pr/` is missing, stop and give the user the install command for how this skill was installed, without running it: `npx skills@latest add crodris/skills -s file-pr -g` for a global install, without `-g` for a project install, with the install's `-a <agent>` flag such as `-a kiro-cli`, or `/plugin install ship@crodris` for a Claude Code plugin.
+When `../file-pr/` is missing, stop and give the user the install command for how this skill was installed, without running it: `npx skills@latest add crodris/skills -s file-pr -g` for a global install, without `-g` for a project install, with the install's `-a <agent>` flag such as `-a kiro-cli`, or `/plugin install full-send@crodris` for a Claude Code plugin.
 
 From the first tool call, note each one the harness refuses, for the report the Permissions section of `agents.md` describes.
 Before any tracker or memory work, read `trackers.md`, `forges.md`, `memory.md`, `agents.md`, `conventions.md`, and `approval.md`.

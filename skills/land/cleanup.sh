@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cleanup.sh - after a merge, remove only what one ship run created: its
+# cleanup.sh - after a merge, remove only what one the full-send run created: its
 # worktree when it made one, and its branch, locally and on the remote, keeping
 # the local branch when a worktree has it checked out. Then fast-forward the
 # local base, in the worktree that holds it, and leave it alone when that is not
@@ -100,7 +100,7 @@ else
   post_merge_checkout=$holder
 fi
 
-# A branch a worktree has checked out, such as one ship reused, keeps its local copy.
+# A branch a worktree has checked out, such as one full-send reused, keeps its local copy.
 holders=$(git worktree list --porcelain)
 if git show-ref --verify --quiet "refs/heads/$branch"; then
   case $'\n'"$holders"$'\n' in

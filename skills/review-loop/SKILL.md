@@ -1,13 +1,13 @@
 ---
 name: review-loop
-description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass, and by ship and babysit before a push in a repository with no table bot (CodeRabbit or Greptile); use when the user asks for one review-and-fix pass on the current pull request.
-version: 3.4.1
+description: Reviews one pull request head with Standards, Spec, and lane subagents, triages their findings with the review bots' and CI's into one ledger, and fixes the blocking ones in one batch. Read by babysit on every pass, and by full-send and babysit before a push in a repository with no table bot (CodeRabbit or Greptile); use when the user asks for one review-and-fix pass on the current pull request.
+version: 4.0.0
 ---
 
 # Review loop
 
-Read `../ship/boundary.md` and `../ship/config.md` first, and stop as boundary.md's Missing skills section says when a sibling is missing.
-When `../ship/boundary.md` itself is missing, stop and tell the user to install the ship skills (`ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
+Read `../full-send/boundary.md` and `../full-send/config.md` first, and stop as boundary.md's Missing skills section says when a sibling is missing.
+When `../full-send/boundary.md` itself is missing, stop and tell the user to install the full-send skills (`full-send`, `full-stop`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`) from `crodris/skills`.
 
 Inputs: the pull request, the pinned head SHA, `base`, the pass kind, the merge method, whether the branch is exclusively this run's, the ledger so far from the run section that `../file-pr/SKILL.md` defines, the pushes so far, and which push a minor already bought, which Blocking and Budget use.
 
@@ -15,7 +15,7 @@ Inputs: the pull request, the pinned head SHA, `base`, the pass kind, the merge 
 
 The code reviewer is two subagents on the pinned SHA, dispatched in parallel and in the foreground:
 
-- Standards checks the diff against the conventions the repository documents (`AGENTS.md`, `CLAUDE.md`, `CODING_STANDARDS.md`, contributing docs, and the intent of its lint and format config), read from `origin/<base>` after fetching it as `../ship/boundary.md` says.
+- Standards checks the diff against the conventions the repository documents (`AGENTS.md`, `CLAUDE.md`, `CODING_STANDARDS.md`, contributing docs, and the intent of its lint and format config), read from `origin/<base>` after fetching it as `../full-send/boundary.md` says.
   It applies each rule to every changed line as written, and runs any search a rule names as a read-only git command at the SHA, such as `git grep` for rules a change would contradict.
   It reports only breaks of a written rule, and leaves behavior to Spec.
 - Spec checks that the diff does what the originating issue or the pull request's stated intent asked, and reports what is missing, wrong, or not asked for.

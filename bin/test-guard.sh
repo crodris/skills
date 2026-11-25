@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# test-guard.sh - run skills/ship/guard.sh in scratch repositories with a bare
+# test-guard.sh - run skills/full-send/guard.sh in scratch repositories with a bare
 # remote, and check each case's exit code and what reached the remote.
 set -euo pipefail
 
-GUARD="$(cd "$(dirname "$0")/.." && pwd)/skills/ship/guard.sh"
+GUARD="$(cd "$(dirname "$0")/.." && pwd)/skills/full-send/guard.sh"
 failures=0
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT

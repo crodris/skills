@@ -1,7 +1,7 @@
 # Working in this repository
 
-These rules cover changes to the skills here, and ship's Standards reviewer checks pull requests against them.
-The verify pipeline in `.ship/config.md` enforces the mechanical rules: no em or en dashes, skill frontmatter that parses, versions in step, a word budget for every skill file, and a clean SkillSpector scan.
+These rules cover changes to the skills here, and full-send's Standards reviewer checks pull requests against them.
+The verify pipeline in `.full-send/config.md` enforces the mechanical rules: no em or en dashes, skill frontmatter that parses, versions in step, a word budget for every skill file, and a clean SkillSpector scan.
 
 ## Skill prose
 
@@ -34,7 +34,7 @@ README headings for plugins keep the form `### <name> (v<version>)`, since the s
 Every skill needs a plugin entry in `.claude-plugin/marketplace.json`.
 This repository reaches Claude Code cloud sessions through the marketplace, since those sessions skip skills.sh installs.
 `bin/sync-versions.sh` fails on a skill that no entry claims.
-A new skill gets its own entry, named after it, unless it belongs in an existing bundle such as ship.
+A new skill gets its own entry, named after it, unless it belongs in an existing bundle such as full-send.
 
 Every Markdown file in `skills/` has a word budget in `bin/skill-budgets.txt`, and `bin/check-skill-size.sh` fails when a file goes over it or has none.
 A trim lowers the budget in the same pull request, and raising one needs a reason in the pull request.
@@ -45,7 +45,7 @@ Credit adapted outside work in the README's License section.
 
 A Claude Code mod lives in `mods/<name>/`, with its own `plugin.json` and its own marketplace entry.
 Its version is the marketplace entry's, and `bin/sync-versions.sh` copies it into the mod's `plugin.json`.
-Add each new mod to the verify line in `.ship/config.md` and to `.github/workflows/plugin-validate.yml`, which run `claude plugin validate --strict` and `claude plugin test` on it.
+Add each new mod to the verify line in `.full-send/config.md` and to `.github/workflows/plugin-validate.yml`, which run `claude plugin validate --strict` and `claude plugin test` on it.
 
 ## Security scanning
 

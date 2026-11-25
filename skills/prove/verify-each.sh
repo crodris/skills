@@ -3,7 +3,7 @@
 # its own detached worktree under a private directory in the system temp
 # directory, so a caller can stop a rebase merge from putting a commit on the
 # base that fails on its own tree.
-# Each commit runs the `verify:` line of its own .ship/config.md, read from
+# Each commit runs the `verify:` line of its own .full-send/config.md, read from
 # git, with any trailing comment dropped, so a gate a later commit adds never
 # runs on an earlier one.
 # A symlinked or missing config, no verify line, an empty value, a comment, or
@@ -34,11 +34,11 @@ usage() { echo "usage: verify-each.sh [--print] <repo> <range> <verify-command>"
 # and the callers' assignments stop the script with it.
 command_for() {
   own=''
-  meta=$(git -C "$repo" ls-tree "$1" -- .ship/config.md) || return
+  meta=$(git -C "$repo" ls-tree "$1" -- .full-send/config.md) || return
   mode=${meta%% *}
   case "$mode" in
     100644 | 100755)
-      cfg=$(git -C "$repo" show "$1:.ship/config.md") || return
+      cfg=$(git -C "$repo" show "$1:.full-send/config.md") || return
       own=$(sed -n '/^verify:/{s/^verify:[[:space:]]*//;s/[[:space:]][[:space:]][[:space:]]*#.*$//;p;q;}' <<< "$cfg")
       case $own in '#'* | none) own='' ;; esac
       ;;

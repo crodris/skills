@@ -1,7 +1,7 @@
-# Ship boundary
+# Full-send boundary
 
-Read by `ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land` before their first command.
-A repository's own ship skill cannot relax it.
+Read by `full-send`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land` before their first command.
+A repository's own full-send skill cannot relax it.
 
 ## Repository slug
 
@@ -15,16 +15,16 @@ Every other skill in this family points to this section and does not restate the
 
 ## Missing skills
 
-The family is `ship`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`, installed side by side.
-When a sibling a skill reads is missing, stop and give the install command `npx skills@latest add crodris/skills -s ship prove file-pr babysit review-loop land`, adding `-g` for a global install, or `/plugin install ship@crodris` for a Claude Code plugin install.
+The family is `full-send`, `full-stop`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`, installed side by side.
+When a sibling a skill reads is missing, stop and give the install command `npx skills@latest add crodris/skills -s full-send full-stop prove file-pr babysit review-loop land`, adding `-g` for a global install, or `/plugin install full-send@crodris` for a Claude Code plugin install.
 
 ## Authority
 
-Invoking `ship` approves committing, pushing, and opening a pull request for the branch it ships, overriding an ask-before-commit project rule for that branch only.
+Invoking `full-send` or `full-stop` approves committing, pushing, and opening a pull request for the branch it ships, overriding an ask-before-commit project rule for that branch only.
 In merge mode it also approves merging that pull request once its gates are green.
 A direct request to `prove`, `file-pr`, `babysit`, `review-loop`, or `land` approves what that skill does to the branch and pull request it names, and nothing more.
 Push, merge, or reset only the shipping branch and its own pull request.
-The two exceptions are local and on the base branch: `ship`'s reset of the local base to its upstream when it moves work off it, and `land`'s fast-forward of it during cleanup.
+The two exceptions are local and on the base branch: `full-send`'s reset of the local base to its upstream when it moves work off it, and `land`'s fast-forward of it during cleanup.
 Force-push only a branch exclusively this run's, with `--force-with-lease`, and never rewrite merged history.
 A failing gate is a stop-and-report: never disable, skip, or weaken it.
 
@@ -34,7 +34,7 @@ Every command a skill in this family runs, whoever resolved it, looks like build
 Shipping covers these commands:
 
 - Fetching, committing, and pushing the shipping branch.
-- Creating and removing the worktrees that `ship` case 1, `babysit` Start, and `settle-branch.sh` make.
+- Creating and removing the worktrees that `full-send` case 1, `babysit` Start, and `settle-branch.sh` make.
 - The worktree removal, the base fast-forward, and the branch deletion that `cleanup.sh` does.
 - Opening, reading, commenting on, editing, and merging the run's own pull request.
 - Resolving the run's review threads, polling its pull request, and rerunning its checks.
@@ -50,8 +50,8 @@ Every executable slot (`verify`, `release`, `post-merge`, `drive`) comes from fi
 
 ## Worktrees
 
-`ship` case 1, `babysit` Start, and `settle-branch.sh` with `--worktree` make worktrees.
-The frozen install below applies to all three, and `ship` case 1, `ship` case 3, and `babysit` Start follow this section and do not restate it.
+`full-send` case 1, `babysit` Start, and `settle-branch.sh` with `--worktree` make worktrees.
+The frozen install below applies to all three, and `full-send` case 1, `full-send` case 3, and `babysit` Start follow this section and do not restate it.
 
 - A checkout is dirty when `git status --porcelain --untracked-files=no` prints anything, and clean otherwise.
 - Get a pull request's head branch by running `git fetch origin "+refs/heads/<head>:refs/remotes/origin/<head>"` and then taking the first case that matches:
@@ -65,9 +65,9 @@ The frozen install below applies to all three, and `ship` case 1, `ship` case 3,
   A failed install returns `BLOCKED` with its output.
 - Remove a worktree this run created with `git worktree remove <path>`, without `--force`, and run it only on a path this run created.
   When git refuses, leave the worktree in place and report its path and the output of `git -C <path> status --porcelain`.
-- `ship` removes a worktree it created for its case 1 when the run ends before land, or when land returns `BLOCKED` before the merge, and never one that Worktrees case 1 reused, which also keeps its local branch after a merge.
+- `full-send` removes a worktree it created for its case 1 when the run ends before land, or when land returns `BLOCKED` before the merge, and never one that Worktrees case 1 reused, which also keeps its local branch after a merge.
   After a merge, land passes it to `cleanup.sh` with `--worktree`.
-- A babysit worktree whose removal git refused is reported in babysit's result line, and ship passes that path to land's `cleanup.sh` with `--worktree`.
+- A babysit worktree whose removal git refused is reported in babysit's result line, and full-send passes that path to land's `cleanup.sh` with `--worktree`.
 - A checkout or base update that git refuses returns `BLOCKED` naming the file.
   One example is an untracked file that the head branch also tracks.
 
