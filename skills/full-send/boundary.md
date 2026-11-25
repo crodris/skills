@@ -22,6 +22,7 @@ When a sibling a skill reads is missing, stop and give the install command `npx 
 
 Invoking `full-send` or `full-stop` approves committing, pushing, and opening a pull request for the branch it ships, overriding an ask-before-commit project rule for that branch only.
 In merge mode it also approves merging that pull request once its gates are green.
+A hold-mode run never merges, including one that full-send's Precedence section hands to a repository's own full-send skill.
 A direct request to `prove`, `file-pr`, `babysit`, `review-loop`, or `land` approves what that skill does to the branch and pull request it names, and nothing more.
 Push, merge, or reset only the shipping branch and its own pull request.
 The two exceptions are local and on the base branch: `full-send`'s reset of the local base to its upstream when it moves work off it, and `land`'s fast-forward of it during cleanup.

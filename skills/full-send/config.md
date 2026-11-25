@@ -22,7 +22,8 @@ A line naming a slot this table does not list, such as `review`, `pr-hook`, or `
 
 Before reading a working-tree slot or recording an answer, resolve the path against the repository root.
 When `.full-send` or `config.md` is a symlink or resolves outside the repository, refuse the write and read no working-tree slot, so each one is absent.
-When the repository root has `.ship/config.md` from an older version and no `.full-send/config.md`, stop before reading any slot and tell the user to rename the folder with `git mv .ship .full-send`, since its slots would otherwise read as absent.
+When the repository root has `.ship/config.md` from an older version and no `.full-send/config.md`, stop before reading any slot, since its slots would otherwise read as absent.
+With that stop, tell the user to update the branch from the base when `origin/<base>` already has `.full-send/config.md`, and otherwise to rename the folder with `git mv .ship .full-send`.
 Read an `origin/<base>` slot by fetching the base as the Fetching the base section of `boundary.md` says, then running `git show "origin/$base:.full-send/config.md"`, so a change cannot rewrite the policy it is shipped under.
 When `.full-send/config.md` does not exist at that ref, read `.ship/config.md` from an older version there in its place, and when neither exists, every `origin/<base>` slot is absent.
 An answer this run recorded counts as read from there too.

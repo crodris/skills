@@ -14,7 +14,7 @@ npx skills@latest add crodris/skills
 The installer lists every skill, so take only the ones you want.
 `scaffold` reads its contract files from `execute`, and `execute` opens its pull requests through `file-pr` from the full-send plugin, so take all three.
 Upgrading from Fathom 2, delete the old `fathom-shared` directory from your skills folder, since its files now live in `execute`.
-Upgrading from the `ship` plugin, remove `ship` (`/plugin uninstall ship` or `npx skills@latest remove ship`), install `full-send`, and rename each repository's `.ship/` folder to `.full-send/`.
+Upgrading from the `ship` plugin, remove `ship` (`/plugin uninstall ship` or `npx skills@latest remove ship`), install `full-send`, and rename each repository's `.ship/` folder to `.full-send/` and any repository-owned `.claude/skills/ship/`, `.agents/skills/ship/`, or `.kiro/skills/ship/` folder to `full-send/`.
 The full-send skills need each other, so take all seven: `full-send`, `full-stop`, `prove`, `file-pr`, `babysit`, `review-loop`, and `land`.
 
 On Claude Code, every skill also installs as a plugin, and so does the fathom-progress mod.
