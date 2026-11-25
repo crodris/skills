@@ -10,4 +10,6 @@ base: main
 release: none
 post-merge: none
 merge-method: rebase   # asked
+reviewers: spec=neon+opus, final=sol   # trial: Neon next to Opus on Spec, Sol once per PR
+bots: none
 ```
