@@ -3,7 +3,7 @@
 Read by review-loop when `light-paths` or `security-paths` is set in `.full-send/config.md` on `origin/<base>`, or when review-loop's Review section adds the Security subagent.
 
 Each slot holds comma-separated globs over repository-relative paths, with `**` crossing directories.
-A change that touches `.full-send/config.md` is never light, so a change cannot widen its own lane.
+A change that touches `.full-send/config.md` or `.ship/config.md` is never light, so a change cannot widen its own lane.
 
 Fetch the base as the Fetching the base section of `../full-send/boundary.md` says.
 Then resolve the lane from every file the change ships: whatever differs from `origin/<base>`, committed or not, plus the untracked files that belong to it.

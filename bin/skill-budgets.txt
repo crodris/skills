@@ -34,7 +34,7 @@ skills/land/SKILL.md 1204
 skills/prove/drive.md 345
 skills/prove/SKILL.md 854
 skills/review-loop/before-push.md 317
-skills/review-loop/lanes.md 339
+skills/review-loop/lanes.md 341
 skills/review-loop/SKILL.md 1818
 skills/review/SKILL.md 2110
 skills/review/ui.md 2476
@@ -42,9 +42,9 @@ skills/rewrite/setup.md 1101
 skills/rewrite/SKILL.md 1786
 skills/rewrite/template.md 627
 skills/scaffold/SKILL.md 1100
-skills/full-send/boundary.md 1102
-skills/full-send/config.md 586
+skills/full-send/boundary.md 1120
+skills/full-send/config.md 602
 skills/full-send/SKILL.md 1279
-skills/full-stop/SKILL.md 112
+skills/full-stop/SKILL.md 94
 skills/verification-audit/SKILL.md 929
 skills/worktree-setup/SKILL.md 272
