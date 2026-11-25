@@ -1,7 +1,7 @@
 ---
 name: full-send
 description: Use when the user says "full send" or "/full-send", or asks to carry the current branch or its open pull request from working tree to a merged release, such as "take this all the way" or "get this merged and released". It merges once the pull request is green, and `full-stop` runs it in hold mode for a green pull request without the merge. Not for a single commit or a release cut from an already-merged main.
-version: 4.2.0
+version: 4.3.0
 ---
 
 # Full Send

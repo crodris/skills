@@ -1,7 +1,7 @@
 ---
 name: land
 description: Merges a pull request that babysit reported ready, after a merge gate, with the repository's merge method, then watches the release run and cleans up what the full-send run created. Read by full-send in merge mode; use when the user asks to land a ready pull request.
-version: 4.2.0
+version: 4.3.0
 ---
 
 # Land
@@ -38,7 +38,7 @@ Merge only when every item holds, and return `BLOCKED <item>` on the first that 
    While `mergeable` is `UNKNOWN`, re-read it up to 5 times, 10 seconds apart, before deciding.
    `mergeable` is `MERGEABLE` and `mergeStateStatus` is neither `BLOCKED` nor `DIRTY`, since green checks and a blocked merge button are separate facts.
 5. The ledger in the run section has no open confirmed critical or major, and no open blocking finding.
-   A run section with neither ledger lines nor `Ledger: none` fails this item.
+   A run section with neither finding lines nor `Ledger: none` fails this item, whatever usage lines it holds.
 6. On a direct land request with no `PASS` line in the run section, return `BLOCKED proof` and say to run `full-send` on the pull request first, since `full-send` records the `PASS` line.
 7. The proof covers the diff.
    Every file that `gh api --paginate "repos/<owner/name>/pulls/<n>/files" --jq '.[].filename'` lists was exercised by verify or the drive, or changes no behavior.
