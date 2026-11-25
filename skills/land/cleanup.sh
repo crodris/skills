@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cleanup.sh - after a merge, remove only what one the full-send run created: its
+# cleanup.sh - after a merge, remove only what one full-send run created: its
 # worktree when it made one, and its branch, locally and on the remote, keeping
 # the local branch when a worktree has it checked out. Then fast-forward the
 # local base, in the worktree that holds it, and leave it alone when that is not

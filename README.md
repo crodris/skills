@@ -60,7 +60,7 @@ Each one ends with a result line that the next one reads.
 `review-loop` follows `cross-review: cursor` as its Review section says, and gets that second opinion through the `cursor` skill.
 
 `full-send` merges once the pull request is green, and `full-stop`, or a request not to merge, stops at the green pull request.
-It merges with the `merge-method` in `.full-send/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one method or its settings are unreadable.
+`full-send` merges with the `merge-method` in `.full-send/config.md` (`squash`, `rebase`, or `merge`), and asks once, with an example for each, when that line is missing and the repository allows more than one method or its settings are unreadable.
 In a repository with no CodeRabbit or Greptile, `review-loop` reviews and fixes local commits until they are clean before each push, so CI runs once per push and no fix push cancels it.
 When a review bot is rate limited, out of credits, or silent, `babysit` goes on without it on a low-risk pull request, and on a high-risk one runs a stand-in review and waits only for a short rate limit.
 The skills need a git remote, an authenticated GitHub CLI, and `jq`.

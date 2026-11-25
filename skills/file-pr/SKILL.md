@@ -15,7 +15,7 @@ When the caller supplies that title and body, as `../execute/forges/github.md` d
 
 ## Run section
 
-The run section is the part of the body a the full-send run owns, between `<!-- run:start -->` and `<!-- run:end -->`.
+The run section is the part of the body a full-send run owns, between `<!-- run:start -->` and `<!-- run:end -->`.
 It holds the summary and the evidence.
 It holds the lane, the bots present, the pass and push counts, and the rounds of each review before a push.
 It holds the `PASS` line and the record of which push a minor bought.

@@ -164,7 +164,11 @@ rules:
       /full-stop command. The scanner reads the word "stop" inside that
       phrase as the built-in stop command. No skill here claims a /stop
       trigger. Scoped by the "full stop" text, so a TR2 'stop' hit in any
-      other description still fails.
+      description without that phrase still fails.
+      Caution: path "SKILL.md" matches every skill's SKILL.md, so this hides
+      any TR2 'stop' hit whose description clause says "full stop"
+      repo-wide; re-review before a skill description names /stop as a
+      trigger.
 
   - id: "RA2"
     path: "SKILL.md"
