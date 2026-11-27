@@ -272,10 +272,10 @@ mods/fathom-progress/
     bar.ts                      splits the bar's cells across segments
     cmux.ts                     pure: a snapshot to the cmux row's pill and bar
     fixtures.ts                 real bd output, captured by the seed script
-    contract.fixtures.ts        the Fathom formats the band reads, copied from the skills by bin/sync-contract.sh
+    contract.fixtures.ts        the Fathom formats the band reads, copied from the skills by scripts/sync-contract.sh
     *.test.ts, *.test.tsx       unit and render tests
-  bin/seed-fathom-fixture.sh    drives a scratch Beads repo and writes fixtures.ts
-  bin/sync-contract.sh          copies the Fathom formats the band reads into contract.fixtures.ts
+  scripts/seed-fathom-fixture.sh drives a scratch Beads repo and writes fixtures.ts
+  scripts/sync-contract.sh      copies the Fathom formats the band reads into contract.fixtures.ts
   bench/                        drives the band through checklist runs in tmux (see bench/README.md)
 ```
 
@@ -374,7 +374,7 @@ claude plugin test mods/fathom-progress
 
 It runs every `*.test.ts` and `*.test.tsx` under the folder you give it, each in a child process that is set up like the mod's hooks. A test imports its kit from `claude-code/testing`, and the sandbox allows relative imports and `claude-code` only, so a test can't read a file from disk. That is why the captured `bd` output is a TypeScript module (`fixtures.ts`) and not a JSON file. The render tests mount the band on both the terminal and Desktop surfaces.
 
-`contract.test.ts` parses the plan document lines, the example checklist, the `bd create` commands and the skill names as Fathom's skill files state them today. `bin/sync-contract.sh` copies them into `contract.fixtures.ts`, and `skills/execute/progress.md` lists them. Run the script before the tests after a change to Fathom's skills. CI runs it and fails when the copy it writes differs from the committed one.
+`contract.test.ts` parses the plan document lines, the example checklist, the `bd create` commands and the skill names as Fathom's skill files state them today. `scripts/sync-contract.sh` copies them into `contract.fixtures.ts`, and `skills/execute/progress.md` lists them. Run the script before the tests after a change to Fathom's skills. CI runs it and fails when the copy it writes differs from the committed one.
 
 Validate the manifest and hooks.
 
@@ -394,10 +394,10 @@ The config extends `.claude-plugin/types/tsconfig.json`, which turns on strict m
 
 ### Fixtures
 
-`hooks/fixtures.ts` holds real `bd` output for one Fathom run at each stage, so the state tests run against what `bd` prints and not against a guess. `bin/seed-fathom-fixture.sh` regenerates it.
+`hooks/fixtures.ts` holds real `bd` output for one Fathom run at each stage, so the state tests run against what `bd` prints and not against a guess. `scripts/seed-fathom-fixture.sh` regenerates it.
 
 ```sh
-bash mods/fathom-progress/bin/seed-fathom-fixture.sh [scratch-dir] [out-file]
+bash mods/fathom-progress/scripts/seed-fathom-fixture.sh [scratch-dir] [out-file]
 ```
 
 The script runs the commands Fathom's Beads adapter runs (Fathom 2.2.0) in a scratch repository, and writes what `bd` printed to `hooks/fixtures.ts`. It refuses a scratch folder inside this repository or one that isn't empty, checks that `bd` resolves to the scratch repository before it writes anything, and deletes nothing. The fixtures in the repository were captured with `bd` 1.1.0. Re-run the script after a `bd` upgrade that changes its JSON (a text format for data), since `parseEpics` and the task parsing read a missing key as a missing field and don't trust it.

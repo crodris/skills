@@ -38,8 +38,17 @@ jobs:
       - name: Validate the fathom-progress mod
         run: claude plugin validate --strict mods/fathom-progress
 
+      - name: Reject top-level bin/ directories in mods
+        run: |
+          for d in mods/*/bin; do
+            if [ -d "$d" ]; then
+              echo "error: $d exists; claude.ai rejects plugins with a top-level bin/ directory" >&2
+              exit 1
+            fi
+          done
+
       - name: Check the Fathom formats the mod reads are up to date
-        run: mods/fathom-progress/bin/sync-contract.sh && git diff --exit-code
+        run: mods/fathom-progress/scripts/sync-contract.sh && git diff --exit-code
 
       - name: Test the fathom-progress mod
         run: claude plugin test mods/fathom-progress
