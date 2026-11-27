@@ -82,7 +82,7 @@ export type Checklist = {
   tasks: ChecklistTask[]
 }
 
-// Where a `/fathom:scaffold` run stands, worked out from the events a mod sees (the
+// Where a `/fathom:scaffold` or `/scaffold` run stands, worked out from the events a mod sees (the
 // tracker's MCP calls, the questions it asks, the turn ending), since scaffold records
 // nothing a mod can read. `resolving` is the lookups before the tracker is verified;
 // `drafting` is after, until the person is asked; `waiting` is the run waiting on the

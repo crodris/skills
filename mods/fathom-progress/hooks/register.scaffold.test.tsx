@@ -190,3 +190,50 @@ test('the time on the first row counts up each second while the run goes, and st
   await clock.advance(60_000)
   expect(await label($)).toBe('Scaffold · Done, 1 issue made (3m 52s)')
 })
+
+test('a typed bare /scaffold starts the band too, and the bare skill signal a moment later does not restart it', async ($, on) => {
+  engine(on, 90_000)
+  await $.prompt.submit({ text: '/scaffold turn these notes into issues' } as never)
+  await call($, { tool: `${LINEAR}get_user`, query: 'me' })
+  expect(await label($)).toBe('Scaffold · Drafting the issues (0s)')
+
+  await $.skill.prompt({ skill: 'scaffold', text: 'scaffold' })
+  expect(await label($)).toBe('Scaffold · Drafting the issues (0s)')
+})
+
+test('handing off to bare execute via skill.prompt replaces the scaffold run with execute\'s', async ($, on) => {
+  engine(on, 100_000)
+  await $.skill.prompt({ skill: 'scaffold', text: 'scaffold' })
+  await create($, { title: 'Main' })
+  expect(await label($)).toBe('Scaffold · Creating, 1 issue made (0s)')
+
+  await $.skill.prompt({ skill: 'execute', text: 'execute' })
+  expect(await band($)).toEqual(['fathom starting…'])
+})
+
+test('handing off to bare execute via the Skill tool replaces the scaffold run with execute\'s', async ($, on) => {
+  engine(on, 110_000)
+  await $.skill.prompt({ skill: 'scaffold', text: 'scaffold' })
+  await create($, { title: 'Main' })
+  expect(await label($)).toBe('Scaffold · Creating, 1 issue made (0s)')
+
+  await call($, { tool: 'Skill', skill: 'execute' })
+  expect(await band($)).toEqual(['fathom starting…'])
+})
+
+test('a typed bare /execute arms with its ref, and the bare skill signal right after keeps that ref', async ($, on) => {
+  engine(on, 120_000)
+  on('fs.read', async (_$, e) => {
+    const path = (e as { path: string }).path
+    if (path === '/work/.fathom/tasks/PHA-352.md') {
+      return { value: '# PHA-352: Add bare command support\n\n## Tasks\n- [>] 1. Update prompt parser\n' } as never
+    }
+    throw new Error(`ENOENT: ${path}`)
+  })
+
+  await $.prompt.submit({ text: '/execute pha-352' } as never)
+  await $.skill.prompt({ skill: 'execute', text: 'execute' })
+  const rendered = await band($)
+  expect(rendered?.[1]).toContain('PHA-352 Add bare command support')
+  expect(rendered?.[2]).toBe('▸ now 1/1  Update prompt parser')
+})

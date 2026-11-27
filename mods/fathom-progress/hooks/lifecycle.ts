@@ -21,12 +21,15 @@ export function startOf(skill: string): 'execute' | 'scaffold' | null {
 // The same, for a prompt as typed. A Team organization's built-in security plugin answers
 // `skill.prompt` itself and skips every user mod, so the band cannot rely on it
 // (claude-mods-fathom-5l2.5): `prompt.submit` and the Skill tool's `tool.call` are not
-// skipped, and between them they carry both ways a skill starts. Only a slash command
-// with the plugin prefix counts: a bare `/execute` may be another plugin's, and a false
-// start would leave the band on `starting` until the session ends.
+// skipped, and between them they carry both ways a skill starts. Both the plugin-prefixed
+// slash commands (`/fathom:execute`, `/fathom:scaffold`) and the bare commands installed
+// via `npx skills` (`/execute`, `/scaffold`) count, while other plugins' prefixes
+// (`/ship:execute`) and near misses (`/execute-all`, `/executex`) are ignored.
+const PROMPT_CMD = /^\s*\/(?:fathom:)?(execute|scaffold)(?=\s|$)/
+
 export function startOfPrompt(text: string): 'execute' | 'scaffold' | null {
-  const [, name] = /^\s*\/(fathom:(?:execute|scaffold))(?=\s|$)/.exec(text) ?? []
-  return name === undefined ? null : startOf(name)
+  const [, name] = PROMPT_CMD.exec(text) ?? []
+  return name === 'execute' || name === 'scaffold' ? name : null
 }
 
 // What the band shows the moment a Fathom skill starts. Execute shows `starting` until
@@ -52,10 +55,11 @@ export function refsIn(text: string): string[] {
   return refs
 }
 
-// The refs a person typed after a Fathom command (`/fathom:execute pha-352`, or the URL
-// of the issue); none for any other prompt, or a command with no arguments.
+// The refs a person typed after a Fathom command (`/fathom:execute pha-352`, `/execute pha-352`,
+// or the URL of the issue); none for any other prompt, or a command with no arguments.
 export function refsOfPrompt(text: string): string[] {
-  return startOfPrompt(text) === null ? [] : refsIn(text.replace(/^\s*\/fathom:\w+/, ''))
+  const match = PROMPT_CMD.exec(text)
+  return match === null ? [] : refsIn(text.slice(match[0].length))
 }
 
 // The ref a branch is named for, which is how Fathom itself finds the issue it resumes
