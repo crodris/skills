@@ -13,12 +13,15 @@ import {
   beadsPath,
   checklistPath,
   planPath,
+  refsIn,
   refsOfBranch,
   refsOfPrompt,
+  refsOfSkillArgs,
   snapshotOnStart,
   startOf,
   startOfPrompt,
   touchesRun,
+  touchesRunFile,
 } from './lifecycle'
 import { parsePlan } from './plan'
 import { advance, callEvent, inputOf, resultEvent } from './scaffold'
@@ -294,6 +297,14 @@ const SAME_START_MS = 3000
 // `skill.prompt` and a `prompt.submit`) does not put a run already moving back on its
 // first phase.
 let lastScaffoldAt = Number.NEGATIVE_INFINITY
+// Refs mentioned in the latest user prompt (plain language or slash command).
+// Overwritten on every prompt.submit (even when empty) and cleared on turn.complete,
+// session.end, or when arming scaffold so refs from an earlier turn or scaffold prompt
+// never leak into an arg-less execute run.
+let turnRefs: readonly string[] = []
+// Whether execute already armed in this turn, so a delayed Skill tool call more than
+// SAME_START_MS after prompt.submit does not reset the run or wipe armedRefs.
+let turnArmedExecute = false
 
 async function arm($: EngineInterface, start: 'execute' | 'scaffold' | null, via: string, refs: readonly string[] = []) {
   if (start === null) return
@@ -301,18 +312,24 @@ async function arm($: EngineInterface, start: 'execute' | 'scaffold' | null, via
   if (start === 'scaffold') {
     if (now - lastScaffoldAt < SAME_START_MS) return
     lastScaffoldAt = now
+    turnRefs = []
+    turnArmedExecute = false
   }
-  // One start can reach here by more than one signal (a typed command is a `skill.prompt`
-  // and a `prompt.submit`): the later ones, moments after the first, add nothing, except
-  // the refs, which only the typed command carries and which may come second.
+  // One start can reach here by more than one signal (a typed command is a `prompt.submit`,
+  // a `skill.prompt`, and sometimes a later `Skill` tool call): later signals in the same
+  // turn or within SAME_START_MS add nothing, except refs when they arrive second.
   const last = await read($, armedAt)
-  if (start === 'execute' && last !== null && now - last < SAME_START_MS) {
+  if (start === 'execute' && last !== null && (turnArmedExecute || now - last < SAME_START_MS)) {
     if (refs.length > 0) {
-      await update($, armedRefs, () => [...refs])
-      void refresh($)
+      const currentRefs = await read($, armedRefs)
+      if (currentRefs.length === 0 || currentRefs.join(',') !== refs.join(',')) {
+        await update($, armedRefs, () => [...refs])
+        void refresh($)
+      }
     }
     return
   }
+  if (start === 'execute') turnArmedExecute = true
   scaffoldRun = start === 'scaffold' ? { startedAt: now, endedAt: null } : null
   await update($, tick, () => now)
   await update($, armedAt, () => (start === 'execute' ? now : null))
@@ -355,6 +372,9 @@ export const register: Register = on => {
   // session.start does not fire again, so the reset is here, for every reason.
   on('session.end', async ($, e, next) => {
     scaffoldRun = null
+    lastScaffoldAt = Number.NEGATIVE_INFINITY
+    turnRefs = []
+    turnArmedExecute = false
     await update($, armedAt, () => null)
     await update($, armedRefs, () => [])
     await update($, snapshot, () => ({ kind: 'idle' }))
@@ -366,7 +386,10 @@ export const register: Register = on => {
   // The signal that Fathom started: the engine reports the skill's own text, typed as a
   // command or called through the Skill tool. A new invocation re-arms and re-picks.
   on('skill.prompt', async ($, e, next) => {
-    await arm($, startOf(e.skill), 'skill.prompt')
+    const start = startOf(e.skill)
+    const isScaffoldHandoff = start === 'execute' && (await read($, snapshot)).kind === 'scaffold'
+    const refs = start === 'execute' && !isScaffoldHandoff ? turnRefs : []
+    await arm($, start, 'skill.prompt', refs)
     return next(e)
   })
 
@@ -375,7 +398,10 @@ export const register: Register = on => {
   // only read; a failure here must never hold up the prompt or the tool.
   on('prompt.submit', async ($, e, next) => {
     try {
-      await arm($, startOfPrompt(e.text), 'prompt.submit', refsOfPrompt(e.text))
+      const start = startOfPrompt(e.text)
+      turnArmedExecute = false
+      turnRefs = start === 'scaffold' ? [] : refsIn(e.text)
+      await arm($, start, 'prompt.submit', refsOfPrompt(e.text))
     } catch {}
     return next(e)
   })
@@ -384,8 +410,12 @@ export const register: Register = on => {
     try {
       if (typeof e.skill === 'string') {
         // Scaffold handing off to execute ends the scaffold run; arm then starts execute's.
+        const start = startOf(e.skill)
+        const isScaffoldHandoff = start === 'execute' && (await read($, snapshot)).kind === 'scaffold'
+        const skillRefs = refsOfSkillArgs((e as { args?: unknown }).args)
+        const refs = start === 'execute' ? (skillRefs.length > 0 ? skillRefs : isScaffoldHandoff ? [] : turnRefs) : []
         feedScaffold($, callEvent('Skill', { skill: e.skill }))
-        await arm($, startOf(e.skill), 'tool.call')
+        await arm($, start, 'tool.call', refs)
       }
     } catch {}
     return next(e)
@@ -410,7 +440,11 @@ export const register: Register = on => {
   })
 
   on('turn.complete', async ($, e, next) => {
-    if ((e as { agentId?: string }).agentId === undefined) feedScaffold($, { kind: 'turn.complete' })
+    if ((e as { agentId?: string }).agentId === undefined) {
+      turnRefs = []
+      turnArmedExecute = false
+      feedScaffold($, { kind: 'turn.complete' })
+    }
     return next(e)
   })
 
@@ -419,6 +453,16 @@ export const register: Register = on => {
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const result = await next(e)
     if (typeof e.command === 'string' && touchesRun(e.command)) void refresh($)
+    return result
+  })
+
+  // Editing or writing a checklist or plan document moves a checklist run without a bd
+  // call or commit: catch up now, not at the next poll. Not awaited, so Claude gets the
+  // tool's result at once.
+  on('tool.call', { tool: ['Edit', 'Write'] }, async ($, e, next) => {
+    const result = await next(e)
+    const filePath = (e as { file_path?: unknown }).file_path
+    if (typeof filePath === 'string' && touchesRunFile(filePath)) void refresh($)
     return result
   })
 

@@ -68,7 +68,7 @@ In a repository with no CodeRabbit or Greptile, `review-loop` reviews and fixes 
 When a review bot is rate limited, out of credits, or silent, `babysit` goes on without it on a low-risk pull request, and on a high-risk one runs a stand-in review and waits only for a short rate limit.
 The skills need a git remote, an authenticated GitHub CLI, and `jq`.
 
-### fathom-progress (v0.2.3)
+### fathom-progress (v0.2.4)
 
 Ryan Uesato built `fathom-progress`, a Claude Code mod that draws a progress band above the prompt while `execute` or `scaffold` runs.
 It reads the run's tasks from beads or the committed checklist, and never changes them.

@@ -36,6 +36,7 @@ function engine(on: On, now: number) {
     return isRefused ? { ref: 1, result: {}, text: 'no', isError: true as const } : { ref: 1, result: {}, text: 'ok' }
   })
   on('session.start', async (_$, e) => ({ cwd: (e as { cwd: string }).cwd }) as never)
+  on('session.end', async () => ({ sessionId: 's1' }) as never)
   on('prompt.submit', async (_$, e) => ({ text: e.text }))
   on('skill.prompt', async (_$, e) => ({ text: e.text }))
   on('turn.start', async () => ({ turnId: 't1' }))
@@ -189,4 +190,134 @@ test('the time on the first row counts up each second while the run goes, and st
   await complete($)
   await clock.advance(60_000)
   expect(await label($)).toBe('Scaffold · Done, 1 issue made (3m 52s)')
+})
+
+function mockChecklists(on: On, files: Record<string, string>) {
+  on('fs.read', async (_$, e) => {
+    const path = (e as { path: string }).path
+    const content = files[path]
+    if (content !== undefined) return { value: content } as never
+    throw new Error(`ENOENT: ${path}`)
+  })
+}
+
+test('a plain-language prompt stays idle until the Skill tool runs, then locks onto the ref from that prompt', async ($, on) => {
+  engine(on, 90_000)
+  mockChecklists(on, {
+    '/work/.fathom/tasks/PHA-352.md': '# PHA-352: Plain-language execute\n\n## Tasks\n- [>] 1. Implement ref capture\n',
+  })
+
+  await $.prompt.submit({ text: 'execute pha-352' } as never)
+  expect(await band($)).toBeNull()
+
+  await call($, { tool: 'Skill', skill: 'fathom:execute' })
+  const rendered = await band($)
+  expect(rendered?.[1]).toContain('PHA-352 Plain-language execute')
+  expect(rendered?.[2]).toBe('▸ now 1/1  Implement ref capture')
+})
+
+test('a ref mentioned in an earlier chat turn does not leak into a later arg-less /fathom:execute', async ($, on) => {
+  engine(on, 100_000)
+  mockChecklists(on, {
+    '/work/.fathom/tasks/PHA-100.md': '# PHA-100: Earlier chat issue\n\n## Tasks\n- [>] 1. Should not be followed\n',
+  })
+
+  await $.prompt.submit({ text: 'what is the status of PHA-100?' } as never)
+  await complete($)
+
+  await $.prompt.submit({ text: '/fathom:execute' } as never)
+  await call($, { tool: 'Skill', skill: 'fathom:execute' })
+  expect(await band($)).toEqual(['fathom starting…'])
+})
+
+test('a delayed Skill tool call more than 3s after /fathom:execute in the same turn keeps the typed ref', async ($, on) => {
+  const clock = engine(on, 110_000)
+  mockChecklists(on, {
+    '/work/.fathom/tasks/PHA-352.md': '# PHA-352: Keep typed ref\n\n## Tasks\n- [>] 1. Preserve armedRefs\n',
+  })
+
+  await $.prompt.submit({ text: '/fathom:execute pha-352' } as never)
+  expect((await band($))?.[1]).toContain('PHA-352 Keep typed ref')
+
+  await clock.advance(5_000)
+  await call($, { tool: 'Skill', skill: 'fathom:execute' })
+  const rendered = await band($)
+  expect(rendered?.[1]).toContain('PHA-352 Keep typed ref')
+  expect(rendered?.[2]).toBe('▸ now 1/1  Preserve armedRefs')
+})
+
+test('a new turn switches to a different issue instead of staying locked on the previous turn\'s ref', async ($, on) => {
+  const clock = engine(on, 120_000)
+  mockChecklists(on, {
+    '/work/.fathom/tasks/PHA-352.md': '# PHA-352: First issue\n\n## Tasks\n- [>] 1. First task\n',
+    '/work/.fathom/tasks/PHA-400.md': '# PHA-400: Second issue\n\n## Tasks\n- [>] 1. Second task\n',
+  })
+
+  await $.prompt.submit({ text: '/fathom:execute pha-352' } as never)
+  expect((await band($))?.[1]).toContain('PHA-352 First issue')
+  await complete($)
+
+  await clock.advance(5_000)
+  await $.prompt.submit({ text: 'work on pha-400' } as never)
+  await call($, { tool: 'Skill', skill: 'fathom:execute' })
+  const rendered = await band($)
+  expect(rendered?.[1]).toContain('PHA-400 Second issue')
+  expect(rendered?.[2]).toBe('▸ now 1/1  Second task')
+})
+
+test('scaffold handoff ignores refs from the scaffold prompt, and reads refs from Skill args when present', async ($, on) => {
+  const clock = engine(on, 130_000)
+  mockChecklists(on, {
+    '/work/.fathom/tasks/PHA-100.md': '# PHA-100: Context issue from scaffold prompt\n\n## Tasks\n- [>] 1. Wrong issue\n',
+    '/work/.fathom/tasks/PHA-500.md': '# PHA-500: Newly scaffolded issue\n\n## Tasks\n- [>] 1. Right issue\n',
+  })
+
+  await $.prompt.submit({ text: '/fathom:scaffold follow up on PHA-100' } as never)
+  await create($, { title: 'Main' })
+  await call($, { tool: 'Skill', skill: 'execute' })
+  expect(await band($)).toEqual(['fathom starting…'])
+
+  await complete($)
+  await clock.advance(5_000)
+  await $.prompt.submit({ text: '/fathom:scaffold another follow up on PHA-100' } as never)
+  await create($, { title: 'Main 2' })
+  await call($, { tool: 'Skill', skill: 'execute', args: 'PHA-500' })
+  const rendered = await band($)
+  expect(rendered?.[1]).toContain('PHA-500 Newly scaffolded issue')
+  expect(rendered?.[2]).toBe('▸ now 1/1  Right issue')
+})
+
+test('editing or writing a Fathom checklist refreshes the band immediately without waiting for the poll', async ($, on) => {
+  engine(on, 140_000)
+  let checklist = '# PHA-352: Instant refresh\n\n## Tasks\n- [ ] 1. First task\n- [ ] 2. Second task\n'
+  on('fs.read', async (_$, e) => {
+    const path = (e as { path: string }).path
+    if (path === '/work/.fathom/tasks/PHA-352.md') return { value: checklist } as never
+    if (path === '/work/.fathom/plans/PHA-352.md') return { value: '# PHA-352: Instant refresh\n\n- Ref: PHA-352\n' } as never
+    throw new Error(`ENOENT: ${path}`)
+  })
+
+  await $.prompt.submit({ text: '/fathom:execute pha-352' } as never)
+  expect((await band($))?.[2]).toBe('▸ next 1/2  First task')
+
+  checklist = '# PHA-352: Instant refresh\n\n## Tasks\n- [>] 1. First task\n- [ ] 2. Second task\n'
+  await call($, { tool: 'Edit', file_path: '/work/.fathom/tasks/PHA-352.md' })
+  expect((await band($))?.[2]).toBe('▸ now 1/2  First task')
+
+  checklist = '# PHA-352: Instant refresh\n\n## Tasks\n- [x] 1. First task (done 2026-11-27)\n- [>] 2. Second task\n'
+  await call($, { tool: 'Write', file_path: '/work/.fathom/tasks/PHA-352.md' })
+  expect((await band($))?.[2]).toBe('▸ now 2/2  Second task')
+})
+
+test('session.end resets scaffold dedup so a new scaffold right after /clear arms immediately', async ($, on) => {
+  const clock = engine(on, 150_000)
+  await $.prompt.submit({ text: '/fathom:scaffold first run' } as never)
+  expect(await label($)).toBe('Scaffold · Checking the tracker (0s)')
+
+  await $.session.end({} as never)
+  expect(await band($)).toBeNull()
+
+  await clock.advance(1_000)
+  await $.prompt.submit({ text: '/fathom:scaffold second run' } as never)
+  expect(await label($)).toBe('Scaffold · Checking the tracker (0s)')
 })

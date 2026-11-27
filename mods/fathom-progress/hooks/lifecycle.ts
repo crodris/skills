@@ -58,6 +58,11 @@ export function refsOfPrompt(text: string): string[] {
   return startOfPrompt(text) === null ? [] : refsIn(text.replace(/^\s*\/fathom:\w+/, ''))
 }
 
+// Refs passed in a Skill tool call's arguments, when the engine includes them.
+export function refsOfSkillArgs(args: unknown): string[] {
+  return typeof args === 'string' ? refsIn(args) : []
+}
+
 // The ref a branch is named for, which is how Fathom itself finds the issue it resumes
 // (`feat/pha-352-relabel-results-view-control`): only the first, and none for a branch
 // with no ref in it (`main`, `wip-phase-3`).
@@ -94,6 +99,14 @@ export function checklistPath(root: string, ref: string): string | null {
 // A match that is not one, such as `git log --grep commit`, only costs a refresh.
 export function touchesRun(command: string): boolean {
   return /(^|[\s;&|(])bd\s/.test(command) || /\bgit\b[^;&|\n]*\bcommit\b/.test(command)
+}
+
+// A file path that holds a run's checklist or plan document (.fathom/tasks/<ref>.md or
+// .fathom/plans/<ref>.md). Editing or writing one moves a checklist run without a bd
+// call or commit, so the band refreshes straight away instead of waiting for the poll.
+export function touchesRunFile(path: string): boolean {
+  const normalized = path.replace(/\\/g, '/')
+  return /(^|\/)\.fathom\/(tasks|plans)\/[^/]+\.md$/.test(normalized)
 }
 
 // How often the band re-reads bd while armed. A bd call costs about 0.65s here, so
