@@ -26,8 +26,14 @@ export const beadsCreates: readonly string[] = [
   "bd create \"<issueRef>\" --type epic --external-ref \"<issueRef>\" -l \"<issueRef>\" -p 1 --silent",
 ]
 
-// The Skill tool names of the Fathom skills the band arms on.
+// The plugin-prefixed names of the Fathom skills the band arms on.
 export const skillNames: readonly string[] = [
   "fathom:execute",
   "fathom:scaffold",
+]
+
+// The bare names of the Fathom skills installed via skills.sh.
+export const bareSkillNames: readonly string[] = [
+  "execute",
+  "scaffold",
 ]

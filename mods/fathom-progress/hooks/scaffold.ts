@@ -1,6 +1,6 @@
 import type { ScaffoldPhase, Snapshot } from '../types'
 
-// Where a /fathom:scaffold run stands, worked out from the events a mod sees. Scaffold
+// Where a /fathom:scaffold or /scaffold run stands, worked out from the events a mod sees. Scaffold
 // writes no beads and no plan document, so there is nothing to read back as there is for
 // execute: the phases are inferred from the tracker's MCP calls, the questions Fathom asks
 // and the turn ending. Pure: register.tsx raises the events and keeps the state, and this

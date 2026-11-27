@@ -4,7 +4,7 @@ Ryan Uesato built fathom-progress, and "I" in this README is Ryan.
 
 fathom-progress is a Claude Code mod that draws a progress band above the prompt while Fathom works through an issue. The band shows the issue, how many of its tasks are done, and the task in progress. It is for people who run Fathom's `execute` skill and want to see where a run stands without reading the transcript.
 
-A mod is a plugin that changes Claude Code's own interface or behavior. Fathom is a Claude Code plugin that takes an Asana or Linear issue from breakdown through implementation to an open code review, and records its tasks in Beads, a local issue tracker with a command-line tool called `bd`. In a repository that doesn't use Beads, Fathom records them in a checklist file instead. fathom-progress reads the tasks from either place and draws them. It never changes them.
+A mod is a plugin that changes Claude Code's own interface or behavior. Fathom (installed as a Claude Code plugin or via `npx skills`) takes an Asana or Linear issue from breakdown through implementation to an open code review, and records its tasks in Beads, a local issue tracker with a command-line tool called `bd`. In a repository that doesn't use Beads, Fathom records them in a checklist file instead. fathom-progress reads the tasks from either place and draws them. It never changes them.
 
 I built it with Claude Code. It works in the terminal and in the Claude Code Desktop app. Inside cmux, a terminal app, it also puts the run on the workspace's sidebar row.
 
@@ -21,7 +21,7 @@ I built it with Claude Code. It works in the terminal and in the Claude Code Des
 ### What You Need
 
 - Claude Code with mods. I built and tested this on 2.1.295 and 2.1.296. The Desktop app (version 2.31226.1) bundles Claude Code 2.1.293 and 2.1.295. I have not tried earlier versions.
-- The Fathom plugin. I tested with 2.7.1.
+- Fathom, installed either as the Claude Code plugin (`/fathom:execute`, `/fathom:scaffold`) or via `npx skills` (`/execute`, `/scaffold`). I tested with 2.7.1.
 - Beads (`bd`), if the project uses it. I tested with `bd` 1.1.0 and 1.3.1. Without Beads, Fathom records its tasks in `.fathom/tasks/<ref>.md`, which the band reads with no `bd` at all (see "Where It Reads the Tasks").
 - `git`. The band reads the current branch name to find the issue when you don't type one.
 
@@ -72,7 +72,7 @@ The Desktop app reads the same settings file, so the same entry loads the mod th
 
 ### Check That It Works
 
-Run a Fathom issue.
+Run a Fathom issue (or `/execute PHA-352` if you installed Fathom via `npx skills`).
 
 ```
 /fathom:execute PHA-352
@@ -86,11 +86,11 @@ The band shows `fathom starting…` right away (`[fathom] starting…` in the De
 
 The band appears when Fathom's `execute` or `scaffold` skill starts, and not before. Three signals can start it, and you don't choose between them:
 
-- You type `/fathom:execute` (or `/fathom:scaffold`).
+- You type `/fathom:execute` or `/fathom:scaffold` (or bare `/execute` / `/scaffold` when installed via `npx skills`).
 - Claude calls the Skill tool with a Fathom skill, for example because you asked for it in plain words. This depends on Claude choosing to call the tool.
 - The engine reports the skill's own text as a skill prompt. On the Team organization account I used, this signal never reached the mod (see "Team Organization Accounts" below), so the first two carry it there.
 
-`/fathom:scaffold` writes no Beads tasks, so the band has no run to read. It follows a scaffold another way, described under "A Scaffold Run" below.
+`/fathom:scaffold` (or `/scaffold`) writes no Beads tasks, so the band has no run to read. It follows a scaffold another way, described under "A Scaffold Run" below.
 
 The band goes away when the session ends, and after `/clear`. When no Fathom run is active it passes the space to `beads-status`.
 
@@ -98,7 +98,7 @@ The band goes away when the session ends, and after `/clear`. When no Fathom run
 
 The band follows one issue at a time and picks it in this order:
 
-1. **The ref you typed.** `/fathom:execute pha-352` follows PHA-352, in any status, whether the run is open or finished. A ref with no matching issue shows `fathom starting…` and never another run. Refs are matched without regard to case, and a URL that contains the ref (a Linear issue URL does) works as well as the ref.
+1. **The ref you typed.** `/fathom:execute pha-352` (or `/execute pha-352`) follows PHA-352, in any status, whether the run is open or finished. A ref with no matching issue shows `fathom starting…` and never another run. Refs are matched without regard to case, and a URL that contains the ref (a Linear issue URL does) works as well as the ref.
 2. **The branch.** With no ref typed, the band reads the ref from the current git branch (`feat/pha-352-relabel-results-view-control` gives PHA-352). Fathom resumes a run the same way, so a run you pick up in a new session shows up. An issue created since you started wins over the branch's.
 3. **The newest run.** With no ref and no ref in the branch name, the band follows the issue created since the invocation, or else the open one with the most recent activity.
 
@@ -233,7 +233,7 @@ What I know about the limits:
 
 ### When It Doesn't Show
 
-- **Nothing appears after `/fathom:execute`.** Run `/plugin` and look for fathom-progress in the line that counts the active mods. If it isn't there, check that the session started after you installed it or saved the setting, then check the path. A session that was already running at that point doesn't load the mod.
+- **Nothing appears after `/fathom:execute` or `/execute`.** Run `/plugin` and look for fathom-progress in the line that counts the active mods. If it isn't there, check that the session started after you installed it or saved the setting, then check the path. A session that was already running at that point doesn't load the mod.
 - **`beads-status` draws instead.** If you load both from folders, move fathom-progress ahead of it in `CLAUDE_CODE_PLUGIN_DIRS`. If fathom-progress is installed and `beads-status` is loaded from a folder, load fathom-progress from a folder too. If you installed both, `beads-status` was installed first. Uninstall it and install it again so that it comes second (see Install).
 - **The band stays on `fathom starting…`** (`[fathom] starting…` in the Desktop app). Either Fathom hasn't created its issue yet, or no issue matches the ref you typed. Run `bd list --type epic --all` in the project and look for the issue ref in the epic's external ref. In a repository that doesn't use Beads, look for `.fathom/tasks/<ref>.md` in your working tree.
 - **The band says `Waiting on you` after a scaffold finished.** On Asana the band can't read a finished scaffold, and a scaffold that stopped before it made an issue looks the same. Start another Fathom command or end the session to clear it.
@@ -310,8 +310,8 @@ The module registers these hooks:
 |---|---|
 | `session.start` | Starts the poll timer and registers `/fathom-progress`. |
 | `session.end` | Resets the arm time, the typed refs and the snapshot. |
-| `skill.prompt` | Arms on `fathom:execute` and `fathom:scaffold`. |
-| `prompt.submit` | Arms from a typed `/fathom:execute` or `/fathom:scaffold`, and takes the typed refs. |
+| `skill.prompt` | Arms on `fathom:execute`, `fathom:scaffold`, `execute` and `scaffold`. |
+| `prompt.submit` | Arms from a typed `/fathom:execute`, `/fathom:scaffold`, `/execute` or `/scaffold`, and takes the typed refs. |
 | `tool.call` (Skill) | Arms from the Skill tool. The event carries the skill name and no arguments. A scaffold calling `execute` ends the scaffold run. |
 | `tool.call` (`AskUserQuestion`, MCP tools) | Moves a scaffold run: the tracker check, each issue made, each question. Does nothing for an execute run. |
 | `turn.start`, `turn.complete` | A reply resumes a scaffold that is waiting on you, and the end of a turn after an issue was made finishes it. |

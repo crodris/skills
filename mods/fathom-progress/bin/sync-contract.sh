@@ -60,6 +60,7 @@ def claims(plugin):
 
 marketplace = json.load(open(os.path.join(root, '.claude-plugin', 'marketplace.json')))
 skills = []
+bare_skills = []
 for wanted in ('execute', 'scaffold'):
     owners = [p for p in marketplace.get('plugins', []) if os.path.join('skills', wanted) in claims(p)]
     if len(owners) != 1:
@@ -68,6 +69,7 @@ for wanted in ('execute', 'scaffold'):
     if not name:
         die('skills/%s/SKILL.md has no name' % wanted)
     skills.append('%s:%s' % (owners[0]['name'], name.group(1)))
+    bare_skills.append(name.group(1))
 
 def lines(values):
     return '[\n' + ''.join('  %s,\n' % json.dumps(v, ensure_ascii=False) for v in values) + ']'
@@ -86,8 +88,11 @@ open(out, 'w', encoding='utf-8').write(
     '// The bd create commands memory/beads.md states, placeholders included.\n'
     'export const beadsCreates: readonly string[] = %s\n'
     '\n'
-    '// The Skill tool names of the Fathom skills the band arms on.\n'
+    '// The plugin-prefixed names of the Fathom skills the band arms on.\n'
     'export const skillNames: readonly string[] = %s\n'
-    % (lines(plan), json.dumps(checklist, ensure_ascii=False), lines(beads), lines(skills))
+    '\n'
+    '// The bare names of the Fathom skills installed via skills.sh.\n'
+    'export const bareSkillNames: readonly string[] = %s\n'
+    % (lines(plan), json.dumps(checklist, ensure_ascii=False), lines(beads), lines(skills), lines(bare_skills))
 )
 PY

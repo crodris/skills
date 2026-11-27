@@ -1,7 +1,7 @@
 import { test, expect } from 'claude-code/testing'
 
 import { parseChecklist } from './checklist'
-import { beadsCreates, checklistExample, planLines, skillNames } from './contract.fixtures'
+import { bareSkillNames, beadsCreates, checklistExample, planLines, skillNames } from './contract.fixtures'
 import { startOf, startOfPrompt } from './lifecycle'
 import { parsePlan } from './plan'
 
@@ -85,5 +85,6 @@ test('memory/beads.md gives the epic and each task the fields the band reads', a
 
 test('the Fathom skill names arm the band from the Skill tool and from a typed command', async () => {
   expect(skillNames.map(name => startOf(name)).sort()).toEqual(['execute', 'scaffold'])
-  for (const name of skillNames) expect(startOfPrompt(`/${name} ONC-5`)).toBe(startOf(name))
+  expect(bareSkillNames.map(name => startOf(name)).sort()).toEqual(['execute', 'scaffold'])
+  for (const name of [...skillNames, ...bareSkillNames]) expect(startOfPrompt(`/${name} ONC-5`)).toBe(startOf(name))
 })

@@ -3,12 +3,14 @@
 # a tmux pane, shows what the step should look like. No model tokens go to the run itself.
 #
 #   bash mods/fathom-progress/bench/watch-band.sh --bench <work> --target <tmux target>
-#        [--timeline chain] [--ref BENCH-1] [--arm] [--timeout 30] [--out <dir>]
+#        [--timeline chain] [--ref BENCH-1] [--arm] [--arm-cmd /fathom:execute] [--timeout 30] [--out <dir>]
 #
 #   --target     a tmux session or pane running Claude Code in the bench repo
 #                (start-session.sh starts one)
-#   --arm        first type /fathom:execute <ref> into the pane and press Esc, so the
+#   --arm        first type `<arm-cmd> <ref>` into the pane and press Esc, so the
 #                band is armed. Without it, arm the band yourself before running this.
+#   --arm-cmd C  slash command `--arm` types (default `/fathom:execute`; pass `/execute`
+#                when Fathom is installed via `npx skills`)
 #   --timeout S  how long a step may take to show (default 30; the band polls every 10)
 #   --out DIR    where each step's screen is saved (default: a new folder next to the bench)
 #   --screens D  test the checks without tmux: read D/step-N.txt for each step
@@ -20,7 +22,7 @@ PROG=watch-band
 # shellcheck source=common.sh
 . "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-BENCH="" TARGET="" TIMELINE=chain REF=BENCH-1 ARM=0 TIMEOUT=30 OUT="" SCREENS=""
+BENCH="" TARGET="" TIMELINE=chain REF=BENCH-1 ARM=0 ARM_CMD=/fathom:execute TIMEOUT=30 OUT="" SCREENS=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --bench) BENCH="$2"; shift 2 ;;
@@ -28,6 +30,7 @@ while [ $# -gt 0 ]; do
     --timeline) TIMELINE="$2"; shift 2 ;;
     --ref) REF="$2"; shift 2 ;;
     --arm) ARM=1; shift ;;
+    --arm-cmd) ARM_CMD="$2"; shift 2 ;;
     --timeout) TIMEOUT="$2"; shift 2 ;;
     --out) OUT="$2"; shift 2 ;;
     --screens) SCREENS="$2"; shift 2 ;;
@@ -51,7 +54,7 @@ mkdir -p "$OUT"
 bash "$BENCH_DIR/play-checklist.sh" --bench "$BENCH_WORK" --ref "$REF" --clean > /dev/null
 
 if [ "$ARM" -eq 1 ] && [ -z "$SCREENS" ]; then
-  tmux send-keys -t "$TARGET" "/fathom:execute $REF" Enter
+  tmux send-keys -t "$TARGET" "$ARM_CMD $REF" Enter
   sleep 3
   tmux send-keys -t "$TARGET" Escape
   sleep 1

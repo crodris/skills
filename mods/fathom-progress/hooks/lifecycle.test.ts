@@ -20,14 +20,35 @@ test('the other Fathom skills, other plugins\' skills and near misses start noth
   }
 })
 
-test('startOfPrompt reads a typed Fathom slash command, with or without arguments', async () => {
+test('startOfPrompt reads a typed Fathom slash command, with or without the plugin prefix or arguments', async () => {
   expect(startOfPrompt('/fathom:execute')).toBe('execute')
   expect(startOfPrompt('/fathom:execute pha-352')).toBe('execute')
   expect(startOfPrompt('  /fathom:scaffold\nsome notes')).toBe('scaffold')
+  expect(startOfPrompt('/execute')).toBe('execute')
+  expect(startOfPrompt('/execute pha-352')).toBe('execute')
+  expect(startOfPrompt('/scaffold')).toBe('scaffold')
+  expect(startOfPrompt('  /scaffold\nsome notes')).toBe('scaffold')
 })
 
 test('startOfPrompt ignores other prompts, other Fathom skills and near misses', async () => {
-  for (const text of ['/execute', '/fathom:review', '/fathom:execute-all', '/fathom:executex', 'fathom:execute', 'run /fathom:execute', 'please /fathom:scaffold', '/ship:execute', '']) {
+  for (const text of [
+    '/execute-all',
+    '/executex',
+    '/scaffoldx',
+    '/review',
+    '/fathom:review',
+    '/fathom:execute-all',
+    '/fathom:executex',
+    'execute',
+    'fathom:execute',
+    'run /execute',
+    'run /fathom:execute',
+    'please /scaffold',
+    'please /fathom:scaffold',
+    '/ship:execute',
+    '/full-send:execute',
+    '',
+  ]) {
     expect(startOfPrompt(text)).toBeNull()
   }
 })
@@ -45,13 +66,19 @@ test('refsIn ignores what only looks like a ref', async () => {
   }
 })
 
-test('refsOfPrompt reads the refs typed after a Fathom command, and only there', async () => {
+test('refsOfPrompt reads the refs typed after a Fathom command, with or without the plugin prefix, and only there', async () => {
   expect(refsOfPrompt('/fathom:execute pha-352')).toEqual(['PHA-352'])
   expect(refsOfPrompt('/fathom:execute ONC-5 ONC-6')).toEqual(['ONC-5', 'ONC-6'])
   expect(refsOfPrompt('/fathom:execute')).toEqual([])
   expect(refsOfPrompt('/fathom:scaffold https://linear.app/x/issue/SLU-9/some-title')).toEqual(['SLU-9'])
+  expect(refsOfPrompt('/execute pha-352')).toEqual(['PHA-352'])
+  expect(refsOfPrompt('/execute ONC-5 ONC-6')).toEqual(['ONC-5', 'ONC-6'])
+  expect(refsOfPrompt('/execute')).toEqual([])
+  expect(refsOfPrompt('/scaffold https://linear.app/x/issue/SLU-9/some-title')).toEqual(['SLU-9'])
   expect(refsOfPrompt('fathom execute pha-352')).toEqual([])
+  expect(refsOfPrompt('execute pha-352')).toEqual([])
   expect(refsOfPrompt('/fathom:review pha-352')).toEqual([])
+  expect(refsOfPrompt('/review pha-352')).toEqual([])
 })
 
 test('refsOfBranch takes the first ref a branch is named for, and none from a branch without one', async () => {
