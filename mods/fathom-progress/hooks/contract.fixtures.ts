@@ -1,4 +1,4 @@
-// Written by mods/fathom-progress/bin/sync-contract.sh from the Fathom skills. Do not edit:
+// Written by mods/fathom-progress/scripts/sync-contract.sh from the Fathom skills. Do not edit:
 // run the script again.
 
 // The plan document lines conventions.md states, placeholders included.

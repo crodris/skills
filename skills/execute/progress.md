@@ -4,7 +4,7 @@ The `fathom-progress` mod in `mods/fathom-progress/` draws the progress band, a 
 The band reads repository state and the names below, and never reads these skill files.
 A change to anything listed here changes what the band shows, so change the mod in the same pull request.
 
-`mods/fathom-progress/bin/sync-contract.sh` copies these formats from the skill files into the mod, and `hooks/contract.test.ts` parses them with the mod's own readers.
+`mods/fathom-progress/scripts/sync-contract.sh` copies these formats from the skill files into the mod, and `hooks/contract.test.ts` parses them with the mod's own readers.
 The repository's verify pipeline runs both, so a format change that the band cannot read fails verify.
 
 ## Skill names

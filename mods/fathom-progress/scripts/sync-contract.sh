@@ -4,7 +4,7 @@
 # A test cannot read a file from disk, so the formats travel as a module.
 # skills/execute/progress.md lists what is copied.
 #
-#   bash mods/fathom-progress/bin/sync-contract.sh
+#   bash mods/fathom-progress/scripts/sync-contract.sh
 #
 # CI runs it and fails when the module it writes differs from the committed one.
 # Fails when a format it copies is missing from the skill files.
@@ -74,7 +74,7 @@ def lines(values):
 
 out = os.path.join(root, 'mods', 'fathom-progress', 'hooks', 'contract.fixtures.ts')
 open(out, 'w', encoding='utf-8').write(
-    '// Written by mods/fathom-progress/bin/sync-contract.sh from the Fathom skills. Do not edit:\n'
+    '// Written by mods/fathom-progress/scripts/sync-contract.sh from the Fathom skills. Do not edit:\n'
     '// run the script again.\n'
     '\n'
     '// The plan document lines conventions.md states, placeholders included.\n'

@@ -17,7 +17,7 @@
         "./scaffold"
       ],
       "description": "Two agent skills, scaffold and execute, that carry a tracker issue from requirements to an open code review, on GitHub or any other forge with an adapter. Works with Asana or Linear, runs on Claude Code and Kiro, tracks tasks in beads or a committed markdown checklist, and resumes from repository state.",
-      "version": "3.1.2",
+      "version": "3.1.3",
       "author": {
         "name": "crodris"
       },
@@ -188,7 +188,7 @@
       "name": "fathom-progress",
       "source": "./mods/fathom-progress",
       "description": "A Claude Code mod that shows a Fathom run's progress above the prompt, in the terminal and the Claude Code Desktop app, and mirrors it on the cmux sidebar row. Built by Ryan Uesato.",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "author": {
         "name": "Ryan Uesato"
       },

@@ -5,7 +5,7 @@ import { beadsCreates, checklistExample, planLines, skillNames } from './contrac
 import { startOf, startOfPrompt } from './lifecycle'
 import { parsePlan } from './plan'
 
-// The formats as the Fathom skills state them today, copied by bin/sync-contract.sh.
+// The formats as the Fathom skills state them today, copied by scripts/sync-contract.sh.
 // A change to one of them in skills/execute fails a test here, and
 // skills/execute/progress.md says what the band reads.
 

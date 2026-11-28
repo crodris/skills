@@ -4,7 +4,7 @@
 # bd prints at each stage to mods/fathom-progress/hooks/fixtures.ts.
 #
 # Run it with bash, no chmod needed:
-#   bash mods/fathom-progress/bin/seed-fathom-fixture.sh [scratch-dir] [out-file]
+#   bash mods/fathom-progress/scripts/seed-fathom-fixture.sh [scratch-dir] [out-file]
 #
 # The scratch repo is never this one. The script refuses a scratch dir inside this
 # repo or one that is not empty, and checks that bd resolves to the scratch repo
@@ -153,7 +153,7 @@ emit_run() { # name
 }
 
 {
-  echo "// Captured from $(bd version | head -n 1) by mods/fathom-progress/bin/seed-fathom-fixture.sh. Do not edit:"
+  echo "// Captured from $(bd version | head -n 1) by mods/fathom-progress/scripts/seed-fathom-fixture.sh. Do not edit:"
   echo "// run the script again. Real bd output, so ids and times differ between runs; the"
   echo "// tests lean on the shape, not on the values."
   echo "//"
