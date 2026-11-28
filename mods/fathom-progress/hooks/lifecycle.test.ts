@@ -1,6 +1,19 @@
 import { test, expect } from 'claude-code/testing'
 
-import { beadsPath, checklistPath, planPath, refsIn, refsOfBranch, refsOfPrompt, snapshotOnStart, startOf, startOfPrompt, touchesRun } from './lifecycle'
+import {
+  beadsPath,
+  checklistPath,
+  planPath,
+  refsIn,
+  refsOfBranch,
+  refsOfPrompt,
+  refsOfSkillArgs,
+  snapshotOnStart,
+  startOf,
+  startOfPrompt,
+  touchesRun,
+  touchesRunFile,
+} from './lifecycle'
 
 test('execute starts on `starting`, and scaffold, which nothing polls, on its first phase', async () => {
   expect(snapshotOnStart('execute')).toEqual({ kind: 'starting' })
@@ -94,5 +107,44 @@ test('a bd call or a commit may have changed the run, and other commands have no
   }
   for (const command of ['ls -la', 'git status', 'echo bdx', 'cat feedback.md', 'npm test', 'git commits']) {
     expect(touchesRun(command)).toBe(false)
+  }
+})
+
+test('Skill args that are nothing but refs count as typed', async () => {
+  expect(refsOfSkillArgs('pha-352')).toEqual({ list: ['PHA-352'], isTyped: true })
+  expect(refsOfSkillArgs('ONC-5, ONC-6')).toEqual({ list: ['ONC-5', 'ONC-6'], isTyped: true })
+  expect(refsOfSkillArgs('https://linear.app/x/issue/SLU-9/title')).toEqual({ list: ['SLU-9'], isTyped: true })
+})
+
+test('refs found in prose Skill args are only mentioned', async () => {
+  expect(refsOfSkillArgs('execute pha-352')).toEqual({ list: ['PHA-352'], isTyped: false })
+  expect(refsOfSkillArgs('the issue on this branch, keep SHA-256')).toEqual({ list: ['SHA-256'], isTyped: false })
+})
+
+test('Skill args with no ref, or that are not text, carry none', async () => {
+  for (const args of ['', '   ', 'no refs here', undefined, null, 42, { ref: 'PHA-352' }]) {
+    expect(refsOfSkillArgs(args)).toEqual({ list: [], isTyped: false })
+  }
+})
+
+test('touchesRunFile matches Fathom checklist and plan files and ignores everything else', async () => {
+  for (const path of [
+    '/work/repo/.fathom/tasks/ONC-5.md',
+    '/work/repo/.fathom/plans/PHA-352.md',
+    '.fathom/tasks/ONC-5.md',
+    '.fathom/plans/PHA-352.md',
+    'C:\\work\\repo\\.fathom\\tasks\\ONC-5.md',
+  ]) {
+    expect(touchesRunFile(path)).toBe(true)
+  }
+  for (const path of [
+    '/work/repo/.fathom/config.md',
+    '/work/repo/.fathom/forge.md',
+    '/work/repo/.fathom/tasks/sub/ONC-5.md',
+    '/work/repo/.fathom/tasks/ONC-5.txt',
+    '/work/repo/src/app.ts',
+    '',
+  ]) {
+    expect(touchesRunFile(path)).toBe(false)
   }
 })

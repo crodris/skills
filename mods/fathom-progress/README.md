@@ -98,11 +98,11 @@ The band goes away when the session ends, and after `/clear`. When no Fathom run
 
 The band follows one issue at a time and picks it in this order:
 
-1. **The ref you typed.** `/fathom:execute pha-352` follows PHA-352, in any status, whether the run is open or finished. A ref with no matching issue shows `fathom starting…` and never another run. Refs are matched without regard to case, and a URL that contains the ref (a Linear issue URL does) works as well as the ref.
+1. **The ref you typed.** `/fathom:execute pha-352` follows PHA-352, in any status, whether the run is open or finished. A typed ref with no matching issue shows `fathom starting…` and never another run. Refs are matched without regard to case, and a URL that contains the ref (a Linear issue URL does) works as well as the ref.
 2. **The branch.** With no ref typed, the band reads the ref from the current git branch (`feat/pha-352-relabel-results-view-control` gives PHA-352). Fathom resumes a run the same way, so a run you pick up in a new session shows up. An issue created since you started wins over the branch's.
 3. **The newest run.** With no ref and no ref in the branch name, the band follows the issue created since the invocation, or else the open one with the most recent activity.
 
-Asana's numeric task refs are not read yet, and a ref written in a plain-words request is not used (only a typed command carries one).
+Asana's numeric task refs are not read yet. A ref written in a plain-words request (`execute pha-352`) is carried over from that turn's prompt when Claude calls the Skill tool, without arming on ordinary chat prompts. Ordinary text such as `SHA-256` looks like a ref too, so the band follows a ref from plain words, or from Skill arguments written as a sentence, only when it names an issue in Beads or a checklist. Until one does, the band picks by the branch or the newest run, as in rules 2 and 3. Skill arguments that are nothing but refs count as typed.
 
 ### Where It Reads the Tasks
 
@@ -111,7 +111,7 @@ Fathom records a run's tasks in one of two places, and the band reads either one
 - **Beads.** Fathom uses Beads when the repository's base branch tracks a `.beads/` workspace and `bd` works. The band reads the tasks with `bd`, as "How a Run Becomes a Band" describes.
 - **A checklist.** In any other repository Fathom keeps the tasks in `.fathom/tasks/<ref>.md`, one line per task, marked `[ ]` for open, `[>]` for in progress and `[x]` for done. The band reads that file from your working tree and not from git, because Fathom leaves the in-progress marker uncommitted until the task's commit. The band needs no `bd` for it.
 
-An issue has one or the other. When `bd` finds a run for the ref, the band uses it and doesn't open a checklist. When `bd` finds none, the band looks for `.fathom/tasks/<ref>.md` for the ref you typed, or else the ref in the branch name. A `bd` that is missing or fails therefore doesn't hide a checklist. With no checklist either, the band depends on the repository. If it has a `.beads/` folder, the band shows `fathom unavailable` and the reason `bd` gave. If it has none, `bd` failing is the normal state (`no beads database found`), and the band shows `fathom starting…` until Fathom writes the checklist, which it does at breakdown, after it has read the issue.
+An issue has one or the other. When `bd` finds a run for the ref, the band uses it and doesn't open a checklist. When `bd` finds none, the band looks for `.fathom/tasks/<ref>.md` for the ref you typed or mentioned, or else the ref in the branch name. A `bd` that is missing or fails therefore doesn't hide a checklist. With no checklist either, the band depends on the repository. If it has a `.beads/` folder, the band shows `fathom unavailable` and the reason `bd` gave. If it has none, `bd` failing is the normal state (`no beads database found`), and the band shows `fathom starting…` until Fathom writes the checklist, which it does at breakdown, after it has read the issue.
 
 A checklist has no creation time, so the third rule under "Which Issue It Follows", the newest run with no ref, doesn't apply to it. Type the ref, or work on the issue's branch.
 
@@ -296,9 +296,9 @@ To release a version, raise the `fathom-progress` entry's `version` in `.claude-
 
 ### How a Run Becomes a Band
 
-1. **Arm.** `arm` in `register.tsx` records when the run started (`armedAt`) and any refs you typed, and sets the snapshot to `starting`. One start can arrive by two signals, and a repeat within three seconds is counted once. The second signal can still add the typed refs, which only `prompt.submit` carries.
-2. **Refresh.** `refresh` runs once at arm, then every 10 seconds (`POLL_MS`) while the snapshot isn't `finished`, and after any Bash call that runs `bd` or `git commit` (`touchesRun`). One refresh runs at a time. A call that arrives during one asks for another straight after, so the last change is never missed.
-3. **Build.** `build` runs `bd list` for the epics (`epicsOf`, which keeps bd's error instead of throwing it) and picks the run (`pickRun` in `state.ts`). When there is an epic, it runs `bd list` for that epic's tasks and `bd ready` for the next one. When there is none, `checklistsOf` reads `.fathom/tasks/<ref>.md` for the typed or branch ref, and `runSourceOf` in `checklist.ts` chooses between the epic, the checklist, `starting` and `unavailable`. Then it reads the plan document. The `bd` calls run in sequence because `bd` keeps one embedded database.
+1. **Arm.** `arm` in `register.tsx` records when the run started (`armedAt`) and any refs that came with the start, marked as typed or only mentioned (`armedRefs`), and sets the snapshot to `starting`. One start can arrive by multiple signals within a turn, and repeats are counted once without wiping the typed refs, which mentioned ones never replace. For a plain-words request, `prompt.submit` holds the prompt's refs for that turn only (without arming) so `tool.call` (Skill) or `skill.prompt` picks them up when Fathom starts.
+2. **Refresh.** `refresh` runs once at arm, then every 10 seconds (`POLL_MS`) while the snapshot isn't `finished`, after any Bash call that runs `bd` or `git commit` (`touchesRun`), and after any `Edit` or `Write` call touching `.fathom/tasks/` or `.fathom/plans/` (`touchesRunFile`). One refresh runs at a time. A call that arrives during one asks for another straight after, so the last change is never missed.
+3. **Build.** `build` runs `bd list` for the epics (`epicsOf`, which keeps bd's error instead of throwing it) and picks the run (`pickRun` in `state.ts`). When there is an epic, it runs `bd list` for that epic's tasks and `bd ready` for the next one. When there is none, `checklistsOf` reads `.fathom/tasks/<ref>.md` for the typed, mentioned or branch ref (mentioned refs that name no run give way to the branch's), and `runSourceOf` in `checklist.ts` chooses between the epic, the checklist, `starting` and `unavailable`. Then it reads the plan document. The `bd` calls run in sequence because `bd` keeps one embedded database.
 4. **Snapshot.** `toSnapshot` orders the tasks by their `blocks` edges (`bd` lists them in no useful order, and `created_at` ties), and marks each as done, in progress, next or waiting. `toChecklistSnapshot` does the same for a checklist, from its markers and `deps`, in task-number order. A done task whose bundle has a recorded review is marked in review. The result is stored in the engine's state.
 5. **Draw.** The `ui.render` hook for `AbovePrompt` reads the snapshot and calls `drawBand`. It passes the event on with `next(e)` when idle, hidden, or when a survey holds the spot.
 
@@ -309,13 +309,14 @@ The module registers these hooks:
 | Event | Does |
 |---|---|
 | `session.start` | Starts the poll timer and registers `/fathom-progress`. |
-| `session.end` | Resets the arm time, the typed refs and the snapshot. |
+| `session.end` | Resets the arm time, the armed refs and the snapshot. |
 | `skill.prompt` | Arms on `fathom:execute` and `fathom:scaffold`. |
-| `prompt.submit` | Arms from a typed `/fathom:execute` or `/fathom:scaffold`, and takes the typed refs. |
-| `tool.call` (Skill) | Arms from the Skill tool. The event carries the skill name and no arguments. A scaffold calling `execute` ends the scaffold run. |
+| `prompt.submit` | Arms from a typed `/fathom:execute` or `/fathom:scaffold`, takes the typed refs, and stashes any refs in a plain-words prompt for the current turn. |
+| `tool.call` (Skill) | Arms from the Skill tool, reading refs from its `args` when present or else the current turn's prompt. A scaffold calling `execute` ends the scaffold run. |
 | `tool.call` (`AskUserQuestion`, MCP tools) | Moves a scaffold run: the tracker check, each issue made, each question. Does nothing for an execute run. |
-| `turn.start`, `turn.complete` | A reply resumes a scaffold that is waiting on you, and the end of a turn after an issue was made finishes it. |
-| `tool.call` (Bash) | Refreshes when the command touched the run. |
+| `turn.start`, `turn.complete` | A reply resumes a scaffold that is waiting on you, and the end of a turn after an issue was made finishes it; `turn.complete` also clears per-turn prompt refs. |
+| `tool.call` (Bash) | Refreshes when the command touched the run (`bd` or `git commit`). |
+| `tool.call` (`Edit`, `Write`) | Refreshes immediately when a `.fathom/tasks/` or `.fathom/plans/` file is edited or written. |
 | `command.run` (`fathom-progress`) | Toggles the band. |
 | `ui.render` (`AbovePrompt`) | Draws the band. |
 
@@ -382,7 +383,7 @@ Validate the manifest and hooks.
 claude plugin validate --strict mods/fathom-progress
 ```
 
-This passes. On Claude Code 2.1.323 it reports four notes of "gating hook without .catch", for `prompt.submit` and the three `tool.call` hooks. They are notes, not errors.
+This passes. On Claude Code 2.1.323 it reports five notes of "gating hook without .catch", for `prompt.submit` and the four `tool.call` hooks. They are notes, not errors.
 
 Type-check with TypeScript. This repository has no `package.json`, so use any TypeScript install you have.
 
@@ -428,7 +429,6 @@ Three things in the section I read rather than copied. The task line says `plann
 - **Task sizes.** Segments are equal widths. When Fathom records a size per task, the terminal bar changes where `barCells` passes its values to `allocate` (a task's size where there is one, 1 where there isn't), and the SVG bar changes where `barSvg` works out `seg`. The request to Fathom is `claude-mods-fathom-5l2.10`.
 - **A full task list.** A pane that shows every task of the run, opened from the band, is planned under `claude-mods-fathom-5l2.13`. It starts with a probe, `claude-mods-fathom-5l2.12`, to see whether a pane seats in the Desktop app and how wide it is. The probe isn't built.
 - **More trackers' refs.** `REF` in `lifecycle.ts` reads refs shaped like `PHA-352` (letters, a hyphen, digits). Asana's numeric task ids aren't read.
-- **A ref from plain words.** The Skill tool's call event has no arguments, so a request in plain words can arm the band but can't name the issue. A prompt's text would have to be parsed for it.
 - **Continuing a run without a Fathom command.** `claude --continue` followed by ordinary prompts leaves the band idle, because nothing arms it.
 - **Two runs in one workspace.** The pill is per pane and the bar is shared. A run that ends while the other owns the bar leaves it, and a run that ends while it owns the bar clears it, so the other run's bar returns only at that run's next change. Resending the bar on a slow timer would close that gap, at one cmux call per interval, against the goal that a poll sends nothing. The options are in `claude-mods-fathom-5l2.14.7`.
 - **An error state.** The design's Error frame colors a failed task red (`error`, `#F83A55`). When a task fails, Fathom keeps it in progress and reports the failure in the transcript, and Beads has no status for a failed task, so the band has nothing to read. Fathom would have to record the failure first.

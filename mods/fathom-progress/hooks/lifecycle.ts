@@ -1,4 +1,4 @@
-import type { Snapshot } from '../types'
+import type { ArmedRefs, Snapshot } from '../types'
 import { startScaffold } from './scaffold'
 
 // The small decisions the lifecycle in register.tsx makes, pulled out so they can be
@@ -58,6 +58,17 @@ export function refsOfPrompt(text: string): string[] {
   return startOfPrompt(text) === null ? [] : refsIn(text.replace(/^\s*\/fathom:\w+/, ''))
 }
 
+export const typedRefs = (list: readonly string[]): ArmedRefs => ({ list: [...list], isTyped: list.length > 0 })
+export const mentionedRefs = (list: readonly string[]): ArmedRefs => ({ list: [...list], isTyped: false })
+
+// Refs passed in a Skill tool call's arguments, when the engine includes them. Claude writes
+// the arguments, so they are typed only when every word of them holds a ref.
+export function refsOfSkillArgs(args: unknown): ArmedRefs {
+  if (typeof args !== 'string') return mentionedRefs([])
+  const words = args.split(/[\s,]+/).filter(Boolean)
+  return words.every(word => refsIn(word).length > 0) ? typedRefs(refsIn(args)) : mentionedRefs(refsIn(args))
+}
+
 // The ref a branch is named for, which is how Fathom itself finds the issue it resumes
 // (`feat/pha-352-relabel-results-view-control`): only the first, and none for a branch
 // with no ref in it (`main`, `wip-phase-3`).
@@ -94,6 +105,14 @@ export function checklistPath(root: string, ref: string): string | null {
 // A match that is not one, such as `git log --grep commit`, only costs a refresh.
 export function touchesRun(command: string): boolean {
   return /(^|[\s;&|(])bd\s/.test(command) || /\bgit\b[^;&|\n]*\bcommit\b/.test(command)
+}
+
+// A file path that holds a run's checklist or plan document (.fathom/tasks/<ref>.md or
+// .fathom/plans/<ref>.md). Editing or writing one moves a checklist run without a bd
+// call or commit, so the band refreshes straight away instead of waiting for the poll.
+export function touchesRunFile(path: string): boolean {
+  const normalized = path.replace(/\\/g, '/')
+  return /(^|\/)\.fathom\/(tasks|plans)\/[^/]+\.md$/.test(normalized)
 }
 
 // How often the band re-reads bd while armed. A bd call costs about 0.65s here, so
