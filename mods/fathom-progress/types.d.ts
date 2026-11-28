@@ -110,6 +110,11 @@ export type Snapshot =
   | { kind: 'finished'; ref: string; title?: string; tasks: RunTask[] }
   | { kind: 'unavailable'; reason: string }
 
+// Issue refs, upper-cased, and how far to trust them. Typed ones were given as the start's
+// own argument, so they are the issue. The others were found in prose, where a token such as
+// `SHA-256` reads like a ref, so they count only once they name a run.
+export type ArmedRefs = { list: string[]; isTyped: boolean }
+
 declare module 'claude-code' {
   interface PluginState {
     'fathom-progress': {
@@ -117,9 +122,9 @@ declare module 'claude-code' {
       // the first one and again after the session ends. While it is null the band
       // yields and nothing polls.
       armedAt: number | null
-      // The issue refs the person typed after the Fathom command that armed the band,
-      // upper-cased; empty when none, and again after the session ends.
-      refs: string[]
+      // The issue refs that came with the Fathom start that armed the band; empty when none,
+      // and again after the session ends.
+      armedRefs: ArmedRefs
       // What the band draws, rebuilt from bd or the run's checklist while armed.
       snapshot: Snapshot
       // The person's toggle, like beads-status has.

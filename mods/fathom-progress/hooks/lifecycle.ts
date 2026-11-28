@@ -1,4 +1,4 @@
-import type { Snapshot } from '../types'
+import type { ArmedRefs, Snapshot } from '../types'
 import { startScaffold } from './scaffold'
 
 // The small decisions the lifecycle in register.tsx makes, pulled out so they can be
@@ -58,9 +58,15 @@ export function refsOfPrompt(text: string): string[] {
   return startOfPrompt(text) === null ? [] : refsIn(text.replace(/^\s*\/fathom:\w+/, ''))
 }
 
-// Refs passed in a Skill tool call's arguments, when the engine includes them.
-export function refsOfSkillArgs(args: unknown): string[] {
-  return typeof args === 'string' ? refsIn(args) : []
+export const typedRefs = (list: readonly string[]): ArmedRefs => ({ list: [...list], isTyped: list.length > 0 })
+export const mentionedRefs = (list: readonly string[]): ArmedRefs => ({ list: [...list], isTyped: false })
+
+// Refs passed in a Skill tool call's arguments, when the engine includes them. Claude writes
+// the arguments, so they are typed only when every word of them holds a ref.
+export function refsOfSkillArgs(args: unknown): ArmedRefs {
+  if (typeof args !== 'string') return mentionedRefs([])
+  const words = args.split(/[\s,]+/).filter(Boolean)
+  return words.every(word => refsIn(word).length > 0) ? typedRefs(refsIn(args)) : mentionedRefs(refsIn(args))
 }
 
 // The ref a branch is named for, which is how Fathom itself finds the issue it resumes

@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Plan, Snapshot } from '../types'
+import type { ArmedRefs, Plan, Snapshot } from '../types'
 import { readBd } from './bd'
 import { runSourceOf, toChecklistSnapshot } from './checklist'
 import { NONE, barLabelOn, cmuxEntries, isOurBar, meterValue, pillKeyFor } from './cmux'
@@ -12,6 +12,7 @@ import {
   POLL_MS,
   beadsPath,
   checklistPath,
+  mentionedRefs,
   planPath,
   refsIn,
   refsOfBranch,
@@ -22,6 +23,7 @@ import {
   startOfPrompt,
   touchesRun,
   touchesRunFile,
+  typedRefs,
 } from './lifecycle'
 import { parsePlan } from './plan'
 import { advance, callEvent, inputOf, resultEvent } from './scaffold'
@@ -30,7 +32,8 @@ import { parseEpics, pickRun, toSnapshot } from './state'
 import type { Epic } from './state'
 
 const armedAt = atom({ plugin: 'fathom-progress', key: 'armedAt' } as const, null)
-const armedRefs = atom({ plugin: 'fathom-progress', key: 'refs' } as const, [])
+const NO_REFS: ArmedRefs = { list: [], isTyped: false }
+const armedRefs = atom({ plugin: 'fathom-progress', key: 'armedRefs' } as const, NO_REFS)
 const snapshot = atom({ plugin: 'fathom-progress', key: 'snapshot' } as const, { kind: 'idle' })
 const isHidden = atom({ plugin: 'fathom-progress', key: 'isHidden' } as const, false)
 const tick = atom({ plugin: 'fathom-progress', key: 'tick' } as const, 0)
@@ -101,26 +104,35 @@ async function branchOf($: EngineInterface, root: string): Promise<string> {
 let lastFollowed = ''
 
 // Reads bd and the plan document and builds what the band shows. Three bd calls, one
-// after the other: they are reads, but they share one embedded database. `typed` is
-// what the person typed after the command; with none, the branch's ref stands in.
+// after the other: they are reads, but they share one embedded database. `armed` is the
+// refs the start came with; when they do not settle the run, the branch's ref stands in.
 // When bd has no epic for that ref, the issue may be on the checklist backend: its
 // .fathom/tasks/<ref>.md is read instead, and bd being missing or failing hides neither.
-async function build($: EngineInterface, since: number, typed: readonly string[]): Promise<Snapshot> {
+async function build($: EngineInterface, since: number, armed: ArmedRefs): Promise<Snapshot> {
   try {
     const root = await $.session.root()
     const { epics, error } = await epicsOf($, root)
 
-    const branch = typed.length > 0 ? [] : refsOfBranch(await branchOf($, root))
-    const refs = typed.length > 0 ? typed : branch
-    const epic = pickRun(epics, since, { refs, isExact: typed.length > 0 })
-    // Beads wins, so the checklist files are read only when bd has no epic to follow.
-    const files = epic === null ? await checklistsOf($, root, refs) : new Map<string, string>()
+    // What some refs lead to. Beads wins, so the checklist files are read only when bd has no
+    // epic to follow.
+    const find = async (refs: readonly string[], isExact: boolean) => {
+      const epic = pickRun(epics, since, { refs, isExact })
+      const files = epic === null ? await checklistsOf($, root, refs) : new Map<string, string>()
+      return { refs, epic, files }
+    }
+    // Typed refs are the issue, found or not. Mentioned ones are followed only when they name a
+    // run, so a token that merely reads like a ref cannot hold the band on `starting`.
+    const named = armed.list.length > 0 ? await find(armed.list, true) : null
+    const isNamed = named !== null && (armed.isTyped || named.epic !== null || named.files.size > 0)
+    const branch = isNamed ? [] : refsOfBranch(await branchOf($, root))
+    const { refs, epic, files } = isNamed ? named : await find(branch, false)
     // Whether bd failing means anything is asked only when it could matter: no run to follow.
     const hasBeads = epic === null && error !== null && files.size === 0 ? await $.fs.exists(beadsPath(root)) : true
     const source = runSourceOf({ epic, bdError: error, hasBeads, refs, files })
 
     const run = source.kind === 'beads' ? source.epic.ref : source.kind === 'checklist' ? `${source.ref} (checklist)` : 'nothing'
-    const followed = `${run} (typed ${typed.join(',') || '-'}, branch ${branch.join(',') || '-'})`
+    const given = `${armed.isTyped ? 'typed' : 'mentioned'} ${armed.list.join(',') || '-'}`
+    const followed = `${run} (${given}, branch ${branch.join(',') || '-'})`
     if (followed !== lastFollowed) {
       lastFollowed = followed
       $.ui.log(`fathom-progress: following ${followed}`, { to: 'debug' })
@@ -306,7 +318,7 @@ let turnRefs: readonly string[] = []
 // SAME_START_MS after prompt.submit does not reset the run or wipe armedRefs.
 let turnArmedExecute = false
 
-async function arm($: EngineInterface, start: 'execute' | 'scaffold' | null, via: string, refs: readonly string[] = []) {
+async function arm($: EngineInterface, start: 'execute' | 'scaffold' | null, via: string, refs: ArmedRefs = NO_REFS) {
   if (start === null) return
   const now = await $.clock.now()
   if (start === 'scaffold') {
@@ -320,10 +332,12 @@ async function arm($: EngineInterface, start: 'execute' | 'scaffold' | null, via
   // turn or within SAME_START_MS add nothing, except refs when they arrive second.
   const last = await read($, armedAt)
   if (start === 'execute' && last !== null && (turnArmedExecute || now - last < SAME_START_MS)) {
-    if (refs.length > 0) {
-      const currentRefs = await read($, armedRefs)
-      if (currentRefs.length === 0 || currentRefs.join(',') !== refs.join(',')) {
-        await update($, armedRefs, () => [...refs])
+    if (refs.list.length > 0) {
+      const current = await read($, armedRefs)
+      // Mentioned refs never replace typed ones.
+      const isNews = current.isTyped !== refs.isTyped || current.list.join(',') !== refs.list.join(',')
+      if (isNews && (refs.isTyped || !current.isTyped)) {
+        await update($, armedRefs, () => refs)
         void refresh($)
       }
     }
@@ -333,10 +347,10 @@ async function arm($: EngineInterface, start: 'execute' | 'scaffold' | null, via
   scaffoldRun = start === 'scaffold' ? { startedAt: now, endedAt: null } : null
   await update($, tick, () => now)
   await update($, armedAt, () => (start === 'execute' ? now : null))
-  await update($, armedRefs, () => [...refs])
+  await update($, armedRefs, () => refs)
   await update($, snapshot, () => snapshotOnStart(start))
   void publish($)
-  $.ui.log(`fathom-progress: armed (${start}) by ${via}, typed refs ${refs.join(',') || '-'}`, { to: 'debug' })
+  $.ui.log(`fathom-progress: armed (${start}) by ${via}, ${refs.isTyped ? 'typed' : 'mentioned'} refs ${refs.list.join(',') || '-'}`, { to: 'debug' })
   if (start === 'execute') void refresh($)
 }
 
@@ -376,7 +390,7 @@ export const register: Register = on => {
     turnRefs = []
     turnArmedExecute = false
     await update($, armedAt, () => null)
-    await update($, armedRefs, () => [])
+    await update($, armedRefs, () => NO_REFS)
     await update($, snapshot, () => ({ kind: 'idle' }))
     // Awaited: the session may be gone straight after, and the row must not keep the run.
     await publish($)
@@ -388,7 +402,7 @@ export const register: Register = on => {
   on('skill.prompt', async ($, e, next) => {
     const start = startOf(e.skill)
     const isScaffoldHandoff = start === 'execute' && (await read($, snapshot)).kind === 'scaffold'
-    const refs = start === 'execute' && !isScaffoldHandoff ? turnRefs : []
+    const refs = start === 'execute' && !isScaffoldHandoff ? mentionedRefs(turnRefs) : NO_REFS
     await arm($, start, 'skill.prompt', refs)
     return next(e)
   })
@@ -401,7 +415,7 @@ export const register: Register = on => {
       const start = startOfPrompt(e.text)
       turnArmedExecute = false
       turnRefs = start === 'scaffold' ? [] : refsIn(e.text)
-      await arm($, start, 'prompt.submit', refsOfPrompt(e.text))
+      await arm($, start, 'prompt.submit', typedRefs(refsOfPrompt(e.text)))
     } catch {}
     return next(e)
   })
@@ -413,7 +427,8 @@ export const register: Register = on => {
         const start = startOf(e.skill)
         const isScaffoldHandoff = start === 'execute' && (await read($, snapshot)).kind === 'scaffold'
         const skillRefs = refsOfSkillArgs((e as { args?: unknown }).args)
-        const refs = start === 'execute' ? (skillRefs.length > 0 ? skillRefs : isScaffoldHandoff ? [] : turnRefs) : []
+        const fromTurn = isScaffoldHandoff ? NO_REFS : mentionedRefs(turnRefs)
+        const refs = start === 'execute' ? (skillRefs.list.length > 0 ? skillRefs : fromTurn) : NO_REFS
         feedScaffold($, callEvent('Skill', { skill: e.skill }))
         await arm($, start, 'tool.call', refs)
       }

@@ -28,7 +28,7 @@ const textOf = (node: Node): string => (typeof node === 'string' ? node : (node.
 // seconds of the last is the same start, and the module keeps that time between tests, so
 // each test starts later than the one before. No cmux in the environment, so the row is
 // left alone. A tool answers, or fails when the call is for an issue titled `refused`.
-function engine(on: On, now: number) {
+function engine(on: On, now: number, repo: { branch?: string; epics?: readonly unknown[] } = {}) {
   const clock = mock.clock(on, { now })
   mock.env(on, {})
   on('tool.call', async (_$, e) => {
@@ -41,9 +41,14 @@ function engine(on: On, now: number) {
   on('skill.prompt', async (_$, e) => ({ text: e.text }))
   on('turn.start', async () => ({ turnId: 't1' }))
   on('turn.complete', async (_$, e) => ({ text: e.answer }))
-  // An execute run reads bd; here bd lists no epics, so it stays on `starting`.
+  // An execute run reads bd and the branch. Unless a test gives `repo`, bd lists no epics
+  // and there is no branch, so the run stays on `starting`.
   on('session.root', async () => ({ value: '/work' }) as never)
-  on('process.run', async () => ({ value: { exitCode: 0, stdout: '[]', stderr: '' } }) as never)
+  on('process.run', async (_$, e) => {
+    const command = JSON.stringify(e)
+    const stdout = command.includes('--show-current') ? (repo.branch ?? '') : command.includes('"epic"') ? JSON.stringify(repo.epics ?? []) : '[]'
+    return { value: { exitCode: 0, stdout, stderr: '' } } as never
+  })
   on('config.list', async () => ({ value: [] }) as never)
   on('ui.log', async () => ({ value: undefined }) as never)
   // Where the plugin passes, an empty box is what draws.
@@ -320,4 +325,67 @@ test('session.end resets scaffold dedup so a new scaffold right after /clear arm
   await clock.advance(1_000)
   await $.prompt.submit({ text: '/fathom:scaffold second run' } as never)
   expect(await label($)).toBe('Scaffold · Checking the tracker (0s)')
+})
+
+const BRANCH = 'feat/pha-352-relabel'
+const checklist = (ref: string) => `# ${ref}: Issue ${ref}\n\n## Tasks\n- [>] 1. Task of ${ref}\n`
+const branchFile = { '/work/.fathom/tasks/PHA-352.md': checklist('PHA-352') }
+
+test('a token in plain words that only looks like a ref does not take the band off the branch\'s issue', async ($, on) => {
+  engine(on, 200_000, { branch: BRANCH })
+  mockChecklists(on, branchFile)
+
+  await $.prompt.submit({ text: 'execute the issue on this branch and keep the SHA-256 check' } as never)
+  await call($, { tool: 'Skill', skill: 'fathom:execute' })
+  expect((await band($))?.[1]).toContain('PHA-352 Issue PHA-352')
+})
+
+test('a ref-like token in prose Skill args does not take the band off the branch\'s issue', async ($, on) => {
+  engine(on, 210_000, { branch: BRANCH })
+  mockChecklists(on, branchFile)
+
+  await call($, { tool: 'Skill', skill: 'fathom:execute', args: 'the issue on this branch, files are UTF-8' })
+  expect((await band($))?.[1]).toContain('PHA-352 Issue PHA-352')
+})
+
+test('a ref-like token in plain words does not hide the branch\'s Beads run', async ($, on) => {
+  const epic = (ref: string, updated: string) => ({ id: ref.toLowerCase(), external_ref: ref, labels: [ref], status: 'open', created_at: '1970-01-01T00:00:01Z', updated_at: updated })
+  engine(on, 220_000, { branch: BRANCH, epics: [epic('PHA-352', '1970-01-01T00:00:02Z'), epic('PHA-900', '1970-01-01T00:00:03Z')] })
+  mockChecklists(on, {})
+
+  await $.prompt.submit({ text: 'execute the issue on this branch, files are UTF-8' } as never)
+  await call($, { tool: 'Skill', skill: 'fathom:execute' })
+  const drawn = (await band($))?.join('\n')
+  expect(drawn).toContain('PHA-352')
+})
+
+test('an issue named in plain words takes the band over once its record appears', async ($, on) => {
+  engine(on, 230_000, { branch: BRANCH })
+  const files: Record<string, string> = { ...branchFile }
+  mockChecklists(on, files)
+
+  await $.prompt.submit({ text: 'execute pha-400' } as never)
+  await call($, { tool: 'Skill', skill: 'fathom:execute' })
+  expect((await band($))?.[1]).toContain('PHA-352 Issue PHA-352')
+
+  files['/work/.fathom/tasks/PHA-400.md'] = checklist('PHA-400')
+  await call($, { tool: 'Write', file_path: '/work/.fathom/tasks/PHA-400.md' })
+  expect((await band($))?.[1]).toContain('PHA-400 Issue PHA-400')
+})
+
+test('a typed ref with no record keeps waiting, even after the same ref arrives again from the Skill tool', async ($, on) => {
+  engine(on, 250_000, { branch: BRANCH })
+  mockChecklists(on, branchFile)
+
+  await $.prompt.submit({ text: '/fathom:execute pha-999' } as never)
+  await call($, { tool: 'Skill', skill: 'fathom:execute' })
+  expect(await band($)).toEqual(['fathom starting…'])
+})
+
+test('Skill args that are only a ref are as exact as a typed ref', async ($, on) => {
+  engine(on, 260_000, { branch: BRANCH })
+  mockChecklists(on, branchFile)
+
+  await call($, { tool: 'Skill', skill: 'fathom:execute', args: 'PHA-999' })
+  expect(await band($)).toEqual(['fathom starting…'])
 })

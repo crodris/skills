@@ -110,12 +110,20 @@ test('a bd call or a commit may have changed the run, and other commands have no
   }
 })
 
-test('refsOfSkillArgs extracts issue refs from Skill args when present, and none otherwise', async () => {
-  expect(refsOfSkillArgs('pha-352')).toEqual(['PHA-352'])
-  expect(refsOfSkillArgs('ONC-5 ONC-6')).toEqual(['ONC-5', 'ONC-6'])
-  expect(refsOfSkillArgs('https://linear.app/x/issue/SLU-9/title')).toEqual(['SLU-9'])
-  for (const args of ['', 'no refs here', undefined, null, 42, { ref: 'PHA-352' }]) {
-    expect(refsOfSkillArgs(args)).toEqual([])
+test('Skill args that are nothing but refs count as typed', async () => {
+  expect(refsOfSkillArgs('pha-352')).toEqual({ list: ['PHA-352'], isTyped: true })
+  expect(refsOfSkillArgs('ONC-5, ONC-6')).toEqual({ list: ['ONC-5', 'ONC-6'], isTyped: true })
+  expect(refsOfSkillArgs('https://linear.app/x/issue/SLU-9/title')).toEqual({ list: ['SLU-9'], isTyped: true })
+})
+
+test('refs found in prose Skill args are only mentioned', async () => {
+  expect(refsOfSkillArgs('execute pha-352')).toEqual({ list: ['PHA-352'], isTyped: false })
+  expect(refsOfSkillArgs('the issue on this branch, keep SHA-256')).toEqual({ list: ['SHA-256'], isTyped: false })
+})
+
+test('Skill args with no ref, or that are not text, carry none', async () => {
+  for (const args of ['', '   ', 'no refs here', undefined, null, 42, { ref: 'PHA-352' }]) {
+    expect(refsOfSkillArgs(args)).toEqual({ list: [], isTyped: false })
   }
 })
 
